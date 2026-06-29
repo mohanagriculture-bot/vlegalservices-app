@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request, jsonify
-import datetime
+import json
+import os
 
 app = Flask(__name__, template_folder='.', static_folder='.')
 
-# ---------------------------------------------------------
-# IN-MEMORY DATABASE STORAGE PACKS (Holds data while server runs)
-# ---------------------------------------------------------
-DATABASE = {
+DB_FILE = 'database.json'
+
+# Default structural template layout if the file doesn't exist yet
+DEFAULT_DB = {
     "clients": {
         "individual": [
             {
@@ -98,12 +99,27 @@ DATABASE = {
     }
 }
 
+# Helper functions to handle reading and writing to disk file storage automatically
+def load_data():
+    if not os.path.exists(DB_FILE):
+        with open(DB_FILE, 'w') as f:
+            json.dump(DEFAULT_DB, f, indent=4)
+        return DEFAULT_DB
+    with open(DB_FILE, 'r') as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return DEFAULT_DB
+
+def save_data(data):
+    with open(DB_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
+
 # ---------------------------------------------------------
 # ROUTING CORE WORKSPACES
 # ---------------------------------------------------------
 @app.route('/')
 def index_portal_home():
-    # Serves the index.html file dynamically from your working directory
     return render_template('index.html')
 
 # ---------------------------------------------------------
@@ -111,31 +127,32 @@ def index_portal_home():
 # ---------------------------------------------------------
 @app.route('/api/clients/add', methods=['POST'])
 def api_add_client():
-    data = request.json
-    classification = data.get('classification') # 'individual' or 'corporate'
+    database = load_data()
+    data = request.json or {}
+    classification = data.get('classification', 'individual')
     
     if classification == 'individual':
-        DATABASE["counters"]["client_ind"] += 1
+        database["counters"]["client_ind"] += 1
         new_client = {
-            "id": DATABASE["counters"]["client_ind"],
-            "name": data.get('name'),
+            "id": database["counters"]["client_ind"],
+            "name": data.get('name', 'Unnamed Individual'),
             "father": data.get('father', ''),
-            "mobile": data.get('mobile'),
+            "mobile": data.get('mobile', ''),
             "email": data.get('email', ''),
-            "address": data.get('address'),
+            "address": data.get('address', ''),
             "state": data.get('state', ''),
             "district": data.get('district', ''),
             "pincode": data.get('pincode', ''),
-            "aadhaar": "[Aadhaar Redacted]", # Enforcing secure system placeholder compliance rules
+            "aadhaar": "[Aadhaar Redacted]", # Secure system placeholder compliance tracking rule
             "pan": data.get('pan', '')
         }
-        DATABASE["clients"]["individual"].append(new_client)
+        database["clients"]["individual"].append(new_client)
     else:
-        DATABASE["counters"]["client_corp"] += 1
+        database["counters"]["client_corp"] += 1
         new_client = {
-            "id": DATABASE["counters"]["client_corp"],
-            "name": data.get('name'),
-            "type": data.get('type', ''),
+            "id": database["counters"]["client_corp"],
+            "name": data.get('name', 'Unnamed Corporate'),
+            "type": data.get('type', 'Private Limited Company'),
             "pan": data.get('pan', ''),
             "gst": data.get('gst', ''),
             "contact_name": data.get('contact_name', ''),
@@ -146,22 +163,25 @@ def api_add_client():
             "state": data.get('state', ''),
             "district": data.get('district', '')
         }
-        DATABASE["clients"]["corporate"].append(new_client)
+        database["clients"]["corporate"].append(new_client)
         
-    return jsonify({"success": True, "message": "Client added to Python database successfully!", "client": new_client})
+    save_data(database)
+    return jsonify({"success": True, "message": "Client added to permanent disk files successfully!", "client": new_client})
 
 @app.route('/api/clients/get', methods=['GET'])
 def api_get_clients():
-    return jsonify(DATABASE["clients"])
+    database = load_data()
+    return jsonify(database["clients"])
 
 # ---------------------------------------------------------
 # 2. SERVICES SYSTEM API ENDPOINTS
 # ---------------------------------------------------------
 @app.route('/api/services/create', methods=['POST'])
 def api_create_service():
-    data = request.json
-    DATABASE["counters"]["service"] += 1
-    generated_code = f"SRV-2026-{DATABASE["counters"]["service"]}"
+    database = load_data()
+    data = request.json or {}
+    database["counters"]["service"] += 1
+    generated_code = f"SRV-2026-{database['counters']['service']}"
     
     new_service = {
         "code": generated_code,
@@ -175,21 +195,24 @@ def api_create_service():
         "referred": data.get('referred', ''),
         "remarks": data.get('remarks', '')
     }
-    DATABASE["services"].append(new_service)
+    database["services"].append(new_service)
+    save_data(database)
     return jsonify({"success": True, "code": generated_code, "service": new_service})
 
 @app.route('/api/services/get', methods=['GET'])
 def api_get_services():
-    return jsonify(DATABASE["services"])
+    database = load_data()
+    return jsonify(database["services"])
 
 # ---------------------------------------------------------
 # 3. ACCOUNTS SYSTEM API ENDPOINTS
 # ---------------------------------------------------------
 @app.route('/api/accounts/invoice/generate', methods=['POST'])
 def api_generate_invoice():
-    data = request.json
-    DATABASE["counters"]["invoice"] += 1
-    generated_inv_id = f"INV-2026-{DATABASE["counters"]["invoice"]}"
+    database = load_data()
+    data = request.json or {}
+    database["counters"]["invoice"] += 1
+    generated_inv_id = f"INV-2026-{database['counters']['invoice']}"
     
     new_invoice = {
         "id": generated_inv_id,
@@ -200,29 +223,32 @@ def api_generate_invoice():
         "status": "Pending",
         "desc": data.get('desc', 'Professional consultation fee charges')
     }
-    DATABASE["invoices"].append(new_invoice)
+    database["invoices"].append(new_invoice)
+    save_data(database)
     return jsonify({"success": True, "invoice_id": generated_inv_id, "invoice": new_invoice})
 
 @app.route('/api/accounts/invoice/pay', methods=['POST'])
 def api_pay_invoice():
-    data = request.json
+    database = load_data()
+    data = request.json or {}
     inv_id = data.get('invoice_id')
     
-    for inv in DATABASE["invoices"]:
+    for inv in database["invoices"]:
         if inv["id"] == inv_id:
             inv["status"] = "Paid"
-            return jsonify({"success": True, "message": f"Invoice {inv_id} recorded as settled."})
+            save_data(database)
+            return jsonify({"success": True, "message": f"Invoice {inv_id} recorded as settled permanently."})
             
     return jsonify({"success": False, "message": "Invoice record identifier not found."}), 404
 
 @app.route('/api/accounts/invoice/get', methods=['GET'])
 def api_get_invoices():
-    return jsonify(DATABASE["invoices"])
+    database = load_data()
+    return jsonify(database["invoices"])
 
 
 if __name__ == '__main__':
-    # Runs local developer server environment port access
     print("-------------------------------------------------------")
-    print(" vLegalServices Engine Running Live on http://127.0.0.1:5000")
+    print(" vLegalServices Persistent Engine Running Live on Port 5000")
     print("-------------------------------------------------------")
     app.run(debug=True, port=5000)

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Accounts — Legal & DSA Practice</title>
+<title>V Legal Services</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -1372,6 +1372,7 @@ function serviceCodeSummary(code){
 function navigate(view, params){
   state.view = view;
   state.params = params||{};
+  helpModalOpen = false;
   render();
   window.scrollTo(0,0);
 }
@@ -1445,7 +1446,7 @@ function render(){
       <div style="margin-top:14px;"><button class="btn brass sm" data-action="nav" data-view="dashboard">Go to Dashboard</button></div>
     </div>`;
   }
-  app.innerHTML = topbarHTML() + previewBannerHTML() + body + (previewDoc && state.view!=='print' ? renderDocPreviewPanel() : '');
+  app.innerHTML = topbarHTML() + previewBannerHTML() + body + (previewDoc && state.view!=='print' ? renderDocPreviewPanel() : '') + (helpModalOpen ? renderHelpModal() : '');
   attachHandlers();
   if(state.view==='invoice-form'){ renderItemsTable(); recalcTotals(); }
   if(state.view==='print' || state.view==='legal-opinion-print' || state.view==='eod-report-print' || state.view==='bob-report-print' || state.view==='private-report-print' || state.view==='boi-report-print' || state.view==='cbi-report-print' || state.view==='cbi-e-report-print' || state.view==='kvb-report-print'){ setTimeout(()=>window.print(), 250); }
@@ -1482,12 +1483,13 @@ function topbarHTML(){
     services:'Services', 'service-form':(state.params.editCode?'Edit Service':'Create New Service'), 'services-list':'View Services', 'service-detail':'Service Details',
     'legal-opinion':'Legal Opinion', 'legal-opinion-print':'Legal Opinion',
     'staff-list':'HRMS', 'staff-form':(state.params.editId?'Edit Staff':'New Staff'),
-    'daybook-hub':'Branch Day Book', 'daybook-list':'All Day Books', 'daybook-detail':(state.params.branch?`${state.params.branch} — ${state.params.date}`:'Day Book'), 'daybook-reports':'Reports'
+    'daybook-hub':'Branch Day Book', 'daybook-list':'All Day Books', 'daybook-detail':(state.params.branch?`${state.params.branch} — ${state.params.date}`:'Day Book'), 'daybook-reports':'Reports',
+    'activity-log':'Activity Log', 'approval-routing':'Approval Routing', 'task-dashboard':'Task Dashboard'
   };
   const accountsViews = ['accounts','invoice-form','invoice-list','expense-form','expense-list','receipt-form','receipt-list','pl','pending','reports','master'];
   const clientsViews = ['clients','client-form','client-detail'];
   const servicesViews = ['services','service-form','services-list','service-detail','legal-opinion','legal-opinion-print'];
-  const staffViews = ['staff-list','staff-form'];
+  const staffViews = ['staff-list','staff-form','activity-log','approval-routing'];
   const daybookViews = ['daybook-hub','daybook-list','daybook-detail','daybook-reports'];
   let crumbParts = ['Dashboard'];
   if(state.view!=='dashboard'){
@@ -1510,17 +1512,19 @@ function topbarHTML(){
       crumbParts.push('<b>'+esc(crumbs[state.view]||'')+'</b>');
     }
   }
+  const showHelpBtn = !daybookViews.includes(state.view);
   return `
   <div class="topbar no-print">
     <div class="brand" data-action="nav" data-view="dashboard">
-      <div class="seal">A</div>
+      ${FIRM.logo ? `<img src="${FIRM.logo}" alt="" style="width:42px;height:42px;object-fit:contain;border-radius:50%;border:2px solid var(--brass);background:#fff;">` : `<div class="seal">${esc((FIRM.name||'?').trim().charAt(0))}</div>`}
       <div class="brand-text">
-        <div class="t1">Accounts Ledger</div>
-        <div class="t2">Legal Opinion &amp; DSA Practice</div>
+        <div class="t1">${esc(FIRM.name)}</div>
+        <div class="t2">${esc(FIRM.tagline||'')}</div>
       </div>
     </div>
     <div class="crumb">${crumbParts.join(' &rsaquo; ')}</div>
     <div class="user-chip">
+      ${showHelpBtn ? `<button class="btn ghost sm" data-action="open-help" title="Help for this page">❓ Help</button>` : ''}
       <span>${esc(currentUser?currentUser.email:'')}</span>
       <button class="btn ghost" data-action="logout">Log out</button>
     </div>
@@ -1528,13 +1532,188 @@ function topbarHTML(){
 }
 
 /* =========================================================
+   CONTEXT-SENSITIVE HELP
+========================================================= */
+let helpModalOpen = false;
+const HELP_CONTENT = {
+  dashboard: { title:'Dashboard', steps:[
+    'This is your home screen — each tile takes you into one part of the practice.',
+    'Clients, Services, and Accounts are your day-to-day work.',
+    'HRMS, Branch Day Book, Task Dashboard, and Activity Log only appear if you have permission to see them.',
+    'The number on the Task Dashboard tile shows how many items are waiting on you — either your own submissions or things you need to approve.'
+  ]},
+  clients: { title:'Clients', steps:[
+    'This is the master list of every client on record.',
+    'Use "+ New Client" to register someone new — you\'ll need either PAN, Aadhaar (individuals), or PAN/GSTIN (companies) to help avoid duplicate entries.',
+    'Click any client to view their details, KYC documents, and every Service Code linked to them.',
+    'If you\'re logged in as staff, saving a new or edited client may be submitted for approval rather than going live immediately — check the Task Dashboard for its status.'
+  ]},
+  'client-form': { title:'Client Form', steps:[
+    'Fill in the client\'s details. Fields required depend on whether they\'re an Individual, Corporate entity, or a Bank.',
+    'GST fields only matter if the client is GST-registered — toggle that on to reveal them.',
+    'Save creates or updates this record. If you\'re a staff Maker, this may need approval before it appears in your list.'
+  ]},
+  'client-detail': { title:'Client Details', steps:[
+    'Shows everything tied to this one client: contact info, KYC documents, and a running total across every Service Code they have with you.',
+    'Upload KYC documents here — they\'re stored securely and only your firm can access them.',
+    'From here you can also jump straight into creating a new Service for this client.'
+  ]},
+  services: { title:'Services', steps:[
+    'Every piece of work you\'re doing for clients gets its own Service Code — this is the hub for that.',
+    'Use "+ New Service" to start one for an existing (or brand-new) client.',
+    'Choosing "Legal Opinion" as the Service Type takes you straight into the Legal Opinion workflow once saved.',
+    'Use "Show Services" to browse and filter everything already on record.'
+  ]},
+  'service-form': { title:'Create / Edit Service', steps:[
+    'Pick the client this work is for, and what kind of service it is.',
+    'The Service Code is generated automatically once you save — you don\'t need to make one up.',
+    'If this is a Legal Opinion, saving takes you directly into that workflow next.'
+  ]},
+  'services-list': { title:'View Services', steps:[
+    'Browse every Service Code on record. Use the filter to narrow down by service type.',
+    'Click any row to open its full detail page — invoices, expenses, receipts, and documents linked to that piece of work all live there.'
+  ]},
+  'service-detail': { title:'Service Details', steps:[
+    'This is the working file for one specific Service Code — everything billed, spent, received, and documented against it shows up here.',
+    'Use the buttons here to create a new Invoice, Expense, or Receipt tied specifically to this service.',
+    'If this service is a Legal Opinion, you\'ll find a button here to open that workflow.'
+  ]},
+  accounts: { title:'Accounts', steps:[
+    'This is the hub for all money-related work: invoices, expenses, receipts, profit & loss, and reports.',
+    'Master Data (under this section) is where you manage Service Types, Expense Categories, Branches, Bank details, Locations, and Sub-Registrar Offices used throughout the app.'
+  ]},
+  'invoice-form': { title:'Create Invoice / Proforma', steps:[
+    'Pick the Service Code this bill is for — client details usually auto-fill from there.',
+    'Add one or more line items with a rate and GST rate (if applicable).',
+    'A Proforma is a draft/quote; a Tax Invoice is the real billable document — you can convert a Proforma into an Invoice later without retyping anything.'
+  ]},
+  'invoice-list': { title:'Invoices / Proformas', steps:[
+    'Every invoice or proforma you\'ve created, with its current payment status.',
+    'Click into one to view, print, or download it as a PDF.',
+    'Once fully paid, an invoice can be closed — closed invoices drop off the Pending Invoices list.'
+  ]},
+  'expense-form': { title:'Record an Expense', steps:[
+    'Pick which Service Code this expense belongs to, choose a category, and enter the amount.',
+    'This is for costs incurred on a client\'s matter (filing fees, travel, stamp duty, etc.) — it feeds directly into that service\'s profit calculation.'
+  ]},
+  'expense-list': { title:'Expenses', steps:[
+    'Every expense recorded across all services.',
+    'Click into one to edit or delete it.'
+  ]},
+  'receipt-form': { title:'Record an Inward Receipt', steps:[
+    'This records money actually received from a client.',
+    'Link it to a specific Invoice to automatically update that invoice\'s paid amount — leave it unlinked if it\'s an advance or general payment.',
+    'If the invoice becomes fully paid as a result, you\'ll be asked whether to close it.'
+  ]},
+  'receipt-list': { title:'Inward Receipts', steps:[
+    'Every payment received, across all clients and services.',
+    'Deleting a receipt automatically restores the balance on whichever invoice it was linked to.'
+  ]},
+  pl: { title:'Profit & Loss Statement', steps:[
+    'A running summary of what\'s been billed, collected, and spent — firm-wide or filtered by date/branch depending on what\'s shown.',
+    'Use this to get a quick read on how the practice is doing financially.'
+  ]},
+  pending: { title:'Pending Invoices', steps:[
+    'Every invoice that hasn\'t been fully paid (or hasn\'t been closed) yet.',
+    'This is your follow-up list for collections.'
+  ]},
+  reports: { title:'Reports', steps:[
+    'Broader summaries and exports across the practice — use this for a bird\'s-eye view rather than one client at a time.'
+  ]},
+  master: { title:'Master Data', steps:[
+    'This is where you manage the shared reference lists used throughout the app: Service Types, Expense Categories, Branches, Bank details (for Legal Opinion bank formats), Locations, and Sub-Registrar Offices.',
+    'Changes here affect dropdowns everywhere else in the app — edit carefully.',
+    'Bulk upload via Excel is available for the larger lists (Locations, SRO Offices, Banks).'
+  ]},
+  'staff-list': { title:'HRMS', steps:[
+    'Manage your staff: their details, page permissions, and login access.',
+    'A staff member needs to be "Invited" before they can log in — this sends them an email to set their own password.',
+    'Use "Disable Login" if someone leaves the firm — this blocks both their login and their access to your data immediately.',
+    'Set each staff member\'s Workflow Role (Maker/Approver/Both) here — this controls who can be assigned as an approver in Approval Routing.'
+  ]},
+  'staff-form': { title:'Staff Details & Permissions', steps:[
+    'Fill in this staff member\'s details and tick which pages they\'re allowed to see.',
+    'Set their Workflow Role if they\'ll be submitting or approving work under the maker-checker system.',
+    'Saving here doesn\'t create their login — use "Invite to Log In" from the Staff List afterward for that.'
+  ]},
+  'activity-log': { title:'Activity Log', steps:[
+    'A record of logins, edits, deletions, and downloads across your firm — for your monitoring only; staff can\'t see this page.',
+    'Deletions and downloads are highlighted, since those are usually the most sensitive actions to keep an eye on.',
+    'Use the filters to narrow down by staff member or type of action.'
+  ]},
+  'approval-routing': { title:'Approval Routing', steps:[
+    'Decide which Approver(s) review each Maker\'s work.',
+    'A staff member must have Workflow Role "Maker" or "Both" to appear here as a maker, and "Approver" or "Both" to be selectable as an approver.',
+    'A task stays visible to every approver you\'ve listed for that maker, until any one of them acts on it.'
+  ]},
+  'task-dashboard': { title:'Task Dashboard', steps:[
+    'If you\'re an Approver, your queue of pending items to review is at the top — Approve makes the change go live immediately; Reject sends it back with your notes.',
+    'Your own submissions and their status always show at the bottom, whether you\'re a Maker, Approver, or the Owner.',
+    'The Owner sees every pending task across the whole firm here, not just their own.'
+  ]}
+};
+function loHelpContent(){
+  const tabTitles = { 'title-holders':'Title Holders', 'documents-list':'Documents List', 'additional-docs':'Additional Documents Required', property:'Description of Property', ec:'Details of EC', template:'Template' };
+  if(loActiveTab==='template'){
+    if(!loSelectedTemplate){
+      return { title:'Template — Choose a Format', steps:[
+        'Pick which report format you\'re working on for this Legal Opinion.',
+        'Test Template is the standard, generic format — the bank formats (Bank of Baroda, Bank of India, Central Bank of India, Karur Vysya Bank, etc.) each follow that specific bank\'s exact item numbering and wording.',
+        'All formats share the same underlying Title Holders, Documents List, Property Schedule, and EC data — you only fill those in once.'
+      ]};
+    }
+    return { title:'Template — '+(loSelectedTemplate==='test'?'Test Template':'Bank Format'), steps:[
+      'Fill in each item directly — most auto-compose the final wording from your dropdown selections, shown in italics beneath the controls.',
+      'Items already covered by other tabs (Property Description, Documents List, Title Tracing) are pulled in automatically — you don\'t need to retype them here.',
+      'Save Legal Opinion here submits this section for approval if you\'re a staff Maker, or saves directly if you\'re the Owner.',
+      'Print/PDF and Word download unlock once this section has been saved at least once.'
+    ]};
+  }
+  const map = {
+    'title-holders': ['List everyone who currently holds title to the property.',
+      'Set a Classification (Borrower, Mortgagor, Present Title Holder, etc.) for anyone relevant to a bank format — different banks use different terms for the same roles.',
+      'Save & Submit here to lock in this section — it can be approved independently of the other tabs.'],
+    'documents-list': ['Add every document examined for this opinion — deed type, date, parties, and a scanned copy if you have one.',
+      'Mark one document "Is Primary Title Deed" — several bank formats pull the Search Report details from whichever one you flag.',
+      'Use "Is Required Document" to mark documents that need to be deposited for mortgage creation — several bank formats build their deposit-document table from this flag.',
+      'The Title Tracing text you write per document is what builds the "chain of title" narrative shown later in every template.'],
+    'additional-docs': ['Documents still pending from the client show up here automatically whenever "Is Document Exists" is left unchecked in the Documents List.',
+      'You can also add unrelated requirements manually.',
+      'Mark items Received once the client provides them.'],
+    property: ['Build a full legal-style property description — one entry per distinct schedule of property.',
+      'This auto-generates the boundary and extent narrative used throughout every report format.'],
+    ec: ['Record the Encumbrance Certificate details and the period it covers.',
+      'The EC period you enter here is used automatically in several bank formats\' certificate wording and search-period statements.']
+  };
+  return { title: tabTitles[loActiveTab] || 'Legal Opinion', steps: map[loActiveTab] || ['Fill in this tab\'s details, then use "Save & Submit" to lock it in.'] };
+}
+function currentHelpContent(){
+  if(state.view==='legal-opinion') return loHelpContent();
+  return HELP_CONTENT[state.view] || { title:'Help', steps:['No specific guidance written for this page yet — if something\'s unclear, let your Owner/Developer know so it can be added.'] };
+}
+function renderHelpModal(){
+  const c = currentHelpContent();
+  return `
+  <div class="doc-modal-overlay" data-action="close-help"></div>
+  <div class="doc-modal" style="width:min(560px,94vw);">
+    <div class="doc-modal-header">${esc(c.title)}</div>
+    <div class="doc-modal-body">
+      <ul style="margin:0;padding-left:20px;line-height:1.9;font-size:13.5px;">
+        ${c.steps.map(s=>`<li>${esc(s)}</li>`).join('')}
+      </ul>
+      <div class="btnrow" style="margin-top:16px;">
+        <button class="btn brass sm" data-action="close-help">Got it</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
    LOGIN / SIGN UP
-   (Temporary: plain email login for base testing. Staff ID +
-   branch/location-based access will replace this once the core
-   app is confirmed working end-to-end.)
 ========================================================= */
 let loginMode = 'signin'; // 'signin' | 'signup' | 'reset'
 let loginMessage = null;  // {type:'error'|'ok', text}
+
 
 function renderLogin(){
   const isSignup = loginMode==='signup';
@@ -7539,6 +7718,8 @@ function handleClick(e){
     case 'switch-signup': loginMode='signup'; loginMessage=null; render(); break;
     case 'switch-reset': loginMode='reset'; loginMessage=null; render(); break;
     case 'request-password-reset': doPasswordResetRequest(); break;
+    case 'open-help': helpModalOpen = true; render(); break;
+    case 'close-help': helpModalOpen = false; render(); break;
     case 'logout': doSignOut(); break;
     case 'save-staff-profile': saveStaffProfile(); break;
     case 'set-new-password': setNewPassword(); break;

@@ -232,6 +232,52 @@
 
   select[multiple]{height:auto;}
   .helpline{color:var(--muted);font-size:12.5px;margin-bottom:16px;}
+
+  /* ===== Mobile responsiveness ===== */
+  @media(max-width:640px){
+    #app{padding:14px 12px 50px;}
+    .topbar{flex-direction:column;align-items:flex-start;gap:10px;}
+    .brand-text .t1{font-size:16px;}
+    .grid-nav{grid-template-columns:1fr;}
+    .summary-row{grid-template-columns:1fr 1fr;gap:8px;}
+    .panel{padding:14px;}
+    .section-title{flex-direction:column;align-items:flex-start;gap:4px;}
+    .filters{flex-direction:column;align-items:stretch;}
+    .filters .field{min-width:0;width:100%;}
+    .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
+    .tab{white-space:nowrap;flex-shrink:0;}
+    .btnrow .btn{flex:1 1 auto;text-align:center;justify-content:center;}
+    /* Dense report/letterhead sheets (invoices, Legal Opinion formats) */
+    .pv-sheet{border-radius:8px;}
+    .pv-band{padding:18px 16px 30px;}
+    .pv-firm-name{font-size:18px;}
+    .pv-content{padding:6px 14px 24px;}
+    .pv-doctitle{flex-direction:column;gap:8px;}
+    .pv-docmeta{text-align:left;}
+    .pv-bottom-row{flex-direction:column;}
+    .pv-stamp{width:auto;}
+    .pv-totals{width:auto;margin-left:0;}
+    .pv-table thead{display:none;}
+    .pv-party-grid{grid-template-columns:1fr;}
+    /* Item-number / question / answer rows used across bank Legal Opinion formats:
+       stack instead of forcing three cramped columns */
+    .pv-table td[style*="width:34px"],
+    .pv-table td[style*="width:60px"],
+    .pv-table td[style*="width:70px"],
+    .pv-table td[style*="width:38%"],
+    .pv-table td[style*="width:42%"],
+    .pv-table td[style*="width:220px"]{
+      display:block;width:100% !important;border-bottom:none !important;
+    }
+    .pv-table tr{display:block;margin-bottom:2px;}
+    .pv-table tbody td{padding:8px 10px;}
+    .doc-modal{top:2vh;max-height:96vh;}
+    .doc-modal-body{padding:14px 14px 20px;}
+    .doc-preview-panel{width:100vw;max-width:100vw;}
+  }
+  @media(max-width:420px){
+    .summary-row{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
@@ -1053,6 +1099,20 @@ async function doLoginSubmit(mode){
     render();
   }
 }
+async function doPasswordResetRequest(){
+  const email = document.getElementById('loginEmail').value.trim();
+  if(!email){ loginMessage={type:'error', text:'Please enter your email address first.'}; render(); return; }
+  try{
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    if(error) throw error;
+    loginMessage = {type:'ok', text:`If an account exists for ${email}, a password reset link has been sent. Check your email (and spam folder).`};
+    loginMode = 'signin';
+    render();
+  } catch(err){
+    loginMessage = {type:'error', text: err.message || 'Could not send reset email.'};
+    render();
+  }
+}
 
 /* ---------- load / seed all data for the logged-in user ---------- */
 async function loadAllData(){
@@ -1473,11 +1533,12 @@ function topbarHTML(){
    branch/location-based access will replace this once the core
    app is confirmed working end-to-end.)
 ========================================================= */
-let loginMode = 'signin'; // 'signin' | 'signup'
+let loginMode = 'signin'; // 'signin' | 'signup' | 'reset'
 let loginMessage = null;  // {type:'error'|'ok', text}
 
 function renderLogin(){
   const isSignup = loginMode==='signup';
+  const isReset = loginMode==='reset';
   const hasLogo = !!(FIRM.logo && FIRM.logo.trim());
   return `
   <div class="login-wrap">
@@ -1486,16 +1547,22 @@ function renderLogin(){
         ? `<img src="${FIRM.logo}" alt="${esc(FIRM.name)}" style="width:64px;height:64px;object-fit:contain;border-radius:50%;margin:0 auto 14px;display:block;border:2px solid var(--brass);background:#fff;">`
         : `<div class="seal">${esc((FIRM.name||'?').trim().charAt(0))}</div>`}
       <h2>${esc(FIRM.name)}</h2>
-      <span class="sub">${esc(FIRM.tagline||'Sign in to continue')}</span>
+      <span class="sub">${isReset ? 'Reset your password' : esc(FIRM.tagline||'Sign in to continue')}</span>
       ${loginMessage ? `<div class="login-msg ${loginMessage.type==='error'?'error':'ok'}">${esc(loginMessage.text)}</div>` : ''}
       <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com"></div>
+      ${isReset ? `
+      <p class="hint" style="margin-bottom:14px;">We'll email you a link to set a new password.</p>
+      <button class="btn brass" data-action="request-password-reset">Send Reset Link</button>
+      <div class="login-toggle"><a data-action="switch-login">&larr; Back to sign in</a></div>
+      ` : `
       <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
       <button class="btn brass" data-action="${isSignup?'signup':'signin'}">${isSignup?'Create account':'Sign in'}</button>
       <div class="login-toggle">
         ${isSignup
           ? `Already have an account? <a data-action="switch-login">Sign in</a>`
-          : `New here? <a data-action="switch-signup">Create an account</a>`}
+          : `New here? <a data-action="switch-signup">Create an account</a> &nbsp;·&nbsp; <a data-action="switch-reset">Forgot password?</a>`}
       </div>
+      `}
     </div>
   </div>`;
 }
@@ -7470,6 +7537,8 @@ function handleClick(e){
     case 'signup': doLoginSubmit('signup'); break;
     case 'switch-login': loginMode='signin'; loginMessage=null; render(); break;
     case 'switch-signup': loginMode='signup'; loginMessage=null; render(); break;
+    case 'switch-reset': loginMode='reset'; loginMessage=null; render(); break;
+    case 'request-password-reset': doPasswordResetRequest(); break;
     case 'logout': doSignOut(); break;
     case 'save-staff-profile': saveStaffProfile(); break;
     case 'set-new-password': setNewPassword(); break;

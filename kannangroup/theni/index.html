@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Palakombai Properties | Kannan Group</title>
-<meta name="description" content="Kannan Group properties at Palakombai Village, Theni District — legal opinion, title verification and registration by V Legal Services.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -12,12 +12,13 @@
     --bg:#F5F3EC; --surface:#FFFFFF; --ink:#1E2430; --muted:#6B7280;
     --navy:#16233A; --navy2:#22354F; --brass:#A9762F; --brass-light:#C99A4B;
     --line:#E1DDD0; --radius:10px;
+    --free:#2F6B4F; --sold:#A13D3D; --enc:#9C4B1F;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.6;}
   h1,h2,h3{font-family:'Lora',Georgia,serif;font-weight:600;margin:0;color:var(--navy);}
   a{color:inherit;}
-  .wrap{max-width:1100px;margin:0 auto;padding:0 16px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 16px;}
 
   header{border-bottom:2px solid var(--navy);background:var(--bg);}
   .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;}
@@ -25,51 +26,119 @@
   .seal{width:42px;height:42px;flex:none;border-radius:50%;background:var(--navy);color:var(--brass-light);display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-weight:700;border:2px solid var(--brass);}
   .t1{font-family:'Lora',serif;font-size:19px;font-weight:700;color:var(--navy);line-height:1.2;}
   .t2{font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--navy);background:var(--navy);color:#fff;padding:10px 16px;border-radius:7px;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--navy);background:var(--navy);color:#fff;padding:10px 16px;border-radius:7px;font:inherit;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;}
   .btn:hover{background:var(--navy2);}
   .btn.brass{background:var(--brass);border-color:var(--brass);}
   .btn.brass:hover{background:var(--brass-light);}
   .btn.outline{background:transparent;color:var(--navy);}
   .btn.outline:hover{background:#EFEBE0;}
-  .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
-  .btn.highlight{background:#F2C46D;border-color:#F2C46D;color:var(--navy);box-shadow:0 0 0 3px rgba(242,196,109,.28),0 6px 18px rgba(242,196,109,.25);}
-  .btn.highlight:hover{background:#F7D48F;border-color:#F7D48F;}
-  .btn.highlight .dot{width:8px;height:8px;border-radius:50%;background:var(--navy);animation:pulse 1.6s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.7);}}
-  @media (prefers-reduced-motion:reduce){.btn.highlight .dot{animation:none;}}
+  .btn.sm{padding:6px 11px;font-size:13px;border-radius:6px;}
+  .btn.danger{background:var(--sold);border-color:var(--sold);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 
-  .hero{background:var(--navy);color:#fff;padding:56px 0 52px;}
+  .hero{background:var(--navy);color:#fff;padding:44px 0 40px;}
   .eyebrow{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass-light);border:1px solid rgba(201,154,75,.5);padding:4px 10px;border-radius:999px;}
-  .hero h1{color:#fff;font-size:clamp(28px,5vw,44px);margin:16px 0 10px;line-height:1.15;}
-  .hero p{color:#C9D2E0;max-width:640px;margin:0 0 24px;font-size:16px;}
-  .hero .actions{display:flex;gap:10px;flex-wrap:wrap;}
-  .hero .btn.outline{color:#fff;border-color:rgba(255,255,255,.5);}
-  .hero .btn.outline:hover{background:rgba(255,255,255,.08);}
-
-  section{padding:48px 0;}
-  .sec-head{margin-bottom:22px;}
-  .sec-head .idx{font-size:12px;color:var(--brass);letter-spacing:.1em;text-transform:uppercase;font-weight:600;}
-  .sec-head h2{font-size:clamp(22px,3.5vw,28px);margin-top:4px;}
-  .sec-head p{color:var(--muted);margin:6px 0 0;max-width:640px;}
-
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
-  .alt{background:#EDE9DD;}
-
-  footer{border-top:2px solid var(--navy);padding:20px 0 36px;color:var(--muted);font-size:13px;}
-  footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-
-  .back{font-size:13px;color:#C9D2E0;text-decoration:none;display:inline-block;margin-bottom:14px;}
+  .hero h1{color:#fff;font-size:clamp(26px,5vw,40px);margin:14px 0 8px;line-height:1.15;}
+  .hero p{color:#C9D2E0;max-width:640px;margin:0;font-size:16px;}
+  .back{font-size:13px;color:#C9D2E0;text-decoration:none;display:inline-block;margin-bottom:12px;}
   .back:hover{color:#fff;}
-  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-  @media(max-width:800px){.facts{grid-template-columns:1fr;}}
-  .fact .lbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600;}
-  .fact .val{font-family:'Lora',serif;font-size:18px;color:var(--navy);margin-top:4px;}
-  .assure{list-style:none;padding:0;margin:0;display:grid;gap:10px;}
-  .assure li{position:relative;padding-left:28px;}
-  .assure li::before{content:"✓";position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--navy);color:var(--brass-light);font-size:12px;display:flex;align-items:center;justify-content:center;}
-  .cta{background:var(--navy);color:#fff;border-radius:var(--radius);padding:28px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;}
-  .cta h3{color:#fff;font-size:22px;}
-  .cta p{color:#C9D2E0;margin:6px 0 0;}
+
+  section{padding:36px 0;}
+  .sec-head{margin-bottom:18px;}
+  .sec-head .idx{font-size:12px;color:var(--brass);letter-spacing:.1em;text-transform:uppercase;font-weight:600;}
+  .sec-head h2{font-size:clamp(20px,3.5vw,26px);margin-top:4px;}
+  .sec-head p{color:var(--muted);margin:5px 0 0;max-width:640px;font-size:14px;}
+
+  /* login */
+  .login-wrap{display:flex;justify-content:center;padding:48px 16px 72px;}
+  .login{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--brass);border-radius:14px;padding:28px 24px;box-shadow:0 10px 30px rgba(22,35,58,.08);}
+  .login h2{font-size:21px;}
+  .login .sub{color:var(--muted);font-size:13px;margin:4px 0 20px;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--navy);margin-bottom:5px;}
+  input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:#FCFBF8;font:inherit;font-size:14px;color:var(--ink);}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--brass-light);outline-offset:1px;border-color:var(--brass);}
+  textarea{min-height:64px;resize:vertical;}
+  .msg{font-size:13px;min-height:19px;margin:8px 0;}
+  .msg.err{color:var(--sold);}
+  .msg.ok{color:var(--free);}
+
+  /* tabs */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin-bottom:24px;}
+  .tab{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 14px;font:inherit;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;}
+  .tab:hover{color:var(--navy);}
+  .tab.active{color:var(--navy);border-bottom-color:var(--brass);}
+
+  /* stats */
+  .totals{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+  @media(max-width:760px){.totals{grid-template-columns:repeat(2,1fr);}}
+  .tstat{background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px;}
+  .tstat.brass{background:var(--brass);}
+  .tn{font-family:'Lora',serif;font-size:24px;line-height:1.1;}
+  .tl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#B9C4D6;margin-top:5px;font-weight:600;}
+  .tstat.brass .tl{color:#F6E6C8;}
+
+  .egrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;}
+  @media(max-width:900px){.egrid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:620px){.egrid{grid-template-columns:1fr;}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  .ecard{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--brass);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:.15s;text-align:left;font:inherit;color:inherit;width:100%;display:block;}
+  .ecard:hover{border-color:var(--brass);box-shadow:0 4px 14px rgba(22,35,58,.09);transform:translateY(-1px);}
+  .ecard-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .ecard-name{font-family:'Lora',serif;font-weight:700;font-size:16px;color:var(--navy);}
+  .pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:999px;background:#EFEBE0;color:var(--muted);white-space:nowrap;}
+  .pill.ind{background:#E9F1F8;color:#2E6FA3;}
+  .ecard-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid var(--line);padding-top:11px;margin-top:11px;}
+  .em{text-align:center;}
+  .em-n{font-family:'Lora',serif;font-size:17px;font-weight:600;color:var(--navy);}
+  .em.free .em-n{color:var(--free);}
+  .em.sold .em-n{color:var(--sold);}
+  .em-l{font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-top:3px;line-height:1.3;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:9px 10px;border-bottom:2px solid var(--line);white-space:nowrap;}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media(max-width:700px){.row2,.row3{grid-template-columns:1fr;}}
+  .field{margin-bottom:12px;}
+  .field .hint{font-size:11px;color:var(--muted);margin-top:3px;}
+  .mono{font-family:ui-monospace,Menlo,monospace;letter-spacing:.03em;}
+
+  .acc{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:9px;background:var(--surface);overflow:hidden;}
+  .acc-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 15px;cursor:pointer;background:none;border:none;width:100%;font:inherit;text-align:left;color:inherit;}
+  .acc-head:hover{background:#FBF9F3;}
+  .acc-title{font-weight:600;font-size:14.5px;color:var(--navy);}
+  .acc-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .acc-body{display:none;padding:4px 15px 16px;border-top:1px solid var(--line);}
+  .acc.open .acc-body{display:block;}
+  .chev{color:var(--muted);transition:transform .15s;flex:none;}
+  .acc.open .chev{transform:rotate(90deg);}
+
+  .plist{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+  .pitem{display:grid;grid-template-columns:1.4fr 1.4fr .7fr auto;gap:8px;align-items:center;background:#FBF9F3;border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+  @media(max-width:620px){.pitem{grid-template-columns:1fr;}}
+  .pitem input{font-size:13px;padding:7px 9px;}
+  .xbtn{background:none;border:none;color:var(--sold);font-size:17px;font-weight:700;cursor:pointer;padding:2px 7px;line-height:1;}
+
+  .docchip{display:inline-flex;align-items:center;gap:7px;background:#EFEBE0;border-radius:999px;padding:5px 11px;font-size:12.5px;margin:0 6px 6px 0;}
+  .docchip a{color:var(--brass);font-weight:600;text-decoration:none;}
+  .empty{color:var(--muted);font-style:italic;font-size:13.5px;padding:14px 0;}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--brass);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .hidden{display:none !important;}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(14px);z-index:60;
+    background:var(--navy);color:#fff;padding:11px 20px;border-radius:9px;font-size:14px;font-weight:600;
+    box-shadow:0 8px 26px rgba(22,35,58,.28);opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;max-width:90vw;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.bad{background:var(--sold);}
+
+  footer{border-top:2px solid var(--navy);padding:18px 0 32px;color:var(--muted);font-size:12.5px;}
+  footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -83,7 +152,7 @@
         <div class="t2">Legal &amp; Documentation · Coimbatore</div>
       </div>
     </a>
-    <a class="btn brass" href="tel:+916379588507">Call</a>
+    <button class="btn outline sm hidden" id="outBtn">Sign out</button>
   </div>
 </header>
 
@@ -92,70 +161,35 @@
     <a class="back" href="/kannangroup/">← Back to Kannan Group</a><br>
     <span class="eyebrow">Kannan Group · Theni</span>
     <h1>Palakombai Village<br>Properties</h1>
-    <p>Kannan Group properties at Palakombai Village, Theni District — with legal opinion, title verification and registration handled by V Legal Services.</p>
-    <div class="actions">
-      <a class="btn highlight" href="https://wa.me/916379588507?text=Hello%2C%20I%20would%20like%20details%20of%20Kannan%20Group%20properties%20at%20Palakombai%20Village%2C%20Theni." target="_blank" rel="noopener"><span class="dot"></span>Enquire on WhatsApp</a>
-      <a class="btn outline" href="https://wa.me/916379588507?text=Hello%2C%20I%20would%20like%20to%20book%20a%20site%20visit%20at%20Palakombai%20Village%2C%20Theni%20(Kannan%20Group)." target="_blank" rel="noopener">Book a site visit</a>
-    </div>
+    <p>Palakombai Village, Andipatti Taluk, Theni District — title verification and registration by V Legal Services.</p>
   </div>
 </div>
 
-<section>
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="idx">Location</div>
-      <h2>At a glance</h2>
+<!-- ============ LOGIN ============ -->
+<div class="login-wrap" id="loginView">
+  <form class="login" id="loginForm" autocomplete="off">
+    <h2>Sign in</h2>
+    <div class="sub">Authorised access only.</div>
+    <div class="field">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" required autocomplete="current-password">
     </div>
-    <div class="facts">
-      <div class="card fact"><div class="lbl">Village</div><div class="val">Palakombai</div></div>
-      <div class="card fact"><div class="lbl">District</div><div class="val">Theni, Tamil Nadu</div></div>
-      <div class="card fact"><div class="lbl">Developer</div><div class="val">Kannan Group</div></div>
-    </div>
-  </div>
-</section>
+    <div class="msg err" id="loginMsg"></div>
+    <button class="btn brass" style="width:100%;" id="loginBtn" type="submit">Sign in</button>
+  </form>
+</div>
 
-<section class="alt">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="idx">Availability</div>
-      <h2>Plots &amp; properties</h2>
-      <p>For current availability, plot sizes and pricing at Palakombai, message us on WhatsApp — we will share the latest list and layout plan.</p>
-    </div>
-    <a class="btn brass" href="https://wa.me/916379588507?text=Hello%2C%20I%20would%20like%20details%20of%20Kannan%20Group%20properties%20at%20Palakombai%20Village%2C%20Theni." target="_blank" rel="noopener">Get the latest list</a>
+<!-- ============ APP ============ -->
+<main class="wrap hidden" id="appView" style="padding-top:28px;padding-bottom:40px;">
+  <div class="tabs">
+    <button class="tab active" data-tab="dash">Dashboard</button>
+    <button class="tab" data-tab="profiles">Company Profiles</button>
+    <button class="tab" data-tab="master">Master Data</button>
   </div>
-</section>
+  <div id="panel"></div>
+</main>
 
-<section>
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="idx">Legal assurance</div>
-      <h2>Legally checked by V Legal Services</h2>
-    </div>
-    <div class="card">
-      <ul class="assure">
-        <li>Title scrutiny and legal opinion on the property</li>
-        <li>Verification of parent documents, patta and encumbrance</li>
-        <li>Sale deed drafting and registration</li>
-        <li>Presence-less online registration through TNREGINET</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section class="alt" id="contact">
-  <div class="wrap">
-    <div class="cta">
-      <div>
-        <h3>Interested in Palakombai?</h3>
-        <p>Mohan Kumar Rajavel, B.Sc (Agri), LL.B, Advocate · 63795 88507</p>
-      </div>
-      <div class="btnrow">
-        <a class="btn highlight" href="https://wa.me/916379588507?text=Hello%2C%20I%20would%20like%20details%20of%20Kannan%20Group%20properties%20at%20Palakombai%20Village%2C%20Theni." target="_blank" rel="noopener">WhatsApp</a>
-        <a class="btn outline" style="color:#fff;border-color:rgba(255,255,255,.5);" href="tel:+916379588507">Call</a>
-      </div>
-    </div>
-  </div>
-</section>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <footer>
   <div class="wrap">
@@ -163,6 +197,596 @@
     <a href="/kannangroup/">Kannan Group</a>
   </div>
 </footer>
-<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+
+<script>
+(function(){
+var API = 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec';
+
+var token = null, DATA = {companies:[],partners:[],survey:[],documents:[]}, tab = 'dash', openKey = null, viewSlug = null;
+try { token = sessionStorage.getItem('pk_token') || null; } catch(e) {}
+
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function n(v){ var x = parseFloat(v); return isNaN(x) ? 0 : x; }
+function f2(v){ return (Math.round(n(v)*100)/100).toFixed(2); }
+
+function call(payload){
+  payload.token = token;
+  return fetch(API, {
+    method:'POST', redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); });
+}
+
+/* ---------- classification: mirrors the vault's own logic ---------- */
+function classify(r){
+  var st = (r.sold_status||'unsold').trim();
+  var de = r.document_extent_ac==='' ? null : n(r.document_extent_ac);
+  var pe = r.patta_extent_ac==='' ? null : n(r.patta_extent_ac);
+  var sa = r.sold_area_ac==='' ? null : n(r.sold_area_ac);
+  var ba = r.balance_area_ac==='' ? null : n(r.balance_area_ac);
+  var es = (r.encroachment_status||'none').trim();
+  var ea = r.encroached_area_ac==='' ? null : n(r.encroached_area_ac);
+  var avail, sold;
+  if (st === 'unsold') { avail = (ba!=null?ba:(de!=null?de:pe))||0; sold = 0; }
+  else if (st === 'fully_sold') { sold = sa!=null?sa:(de||0); avail = ba!=null?ba:0; }
+  else if (st === 'partially_sold') {
+    sold = sa||0;
+    if (ba!=null) avail = ba;
+    else if (de!=null && sold && Math.abs(de-sold)>0.001) avail = de;
+    else if (pe!=null) avail = Math.max(pe-sold,0);
+    else avail = de||0;
+  } else { avail = de!=null?de:(pe||0); sold = sa||0; }
+  var enc = 0;
+  if (es === 'full') { enc = ea!=null?ea:avail; enc = avail?Math.min(enc,avail):enc; }
+  else if (es === 'partial') { enc = ea||0; }
+  return { total: avail+sold, sold: sold, avail: avail, enc: enc, free: Math.max(avail-enc,0) };
+}
+
+function agg(){
+  var by = {}, grand = {sf:0,total:0,sold:0,avail:0,enc:0,free:0};
+  DATA.companies.forEach(function(c){
+    by[c.company_slug] = {slug:c.company_slug, name:c.company, type:c.type||'Company',
+      sf:0,total:0,sold:0,avail:0,enc:0,free:0};
+  });
+  DATA.survey.forEach(function(r){
+    var b = by[r.company_slug]; if (!b) return;
+    var c = classify(r);
+    b.sf++; b.total+=c.total; b.sold+=c.sold; b.avail+=c.avail; b.enc+=c.enc; b.free+=c.free;
+    grand.sf++; grand.total+=c.total; grand.sold+=c.sold; grand.avail+=c.avail; grand.enc+=c.enc; grand.free+=c.free;
+  });
+  return {by:by, grand:grand};
+}
+function partnersOf(slug){ return DATA.partners.filter(function(p){ return p.company_slug === slug; }); }
+function docsOf(slug){ return DATA.documents.filter(function(d){ return d.company_slug === slug; }); }
+
+/* ---------------------------- views ---------------------------- */
+var panel = document.getElementById('panel');
+
+function render(){
+  if (tab === 'dash') renderDash();
+  else if (tab === 'profiles') renderProfiles();
+  else renderMaster();
+}
+
+function renderDash(){
+  var a = agg();
+  var order = DATA.companies.slice().sort(function(x,y){
+    if ((x.type||'') !== (y.type||'')) return (x.type||'')==='Company' ? -1 : 1;
+    return (x.company||'').localeCompare(y.company||'');
+  });
+  function cardsFor(type){
+    var list = order.filter(function(c){ return (c.type||'Company') === type; });
+    if (!list.length) return '<div class="empty">None recorded.</div>';
+    return '<div class="egrid">' + list.map(function(c){
+      var b = a.by[c.company_slug] || {sf:0,total:0,free:0,sold:0};
+      return '<button class="ecard" data-open-profile="'+esc(c.company_slug)+'">'
+        + '<div class="ecard-top"><span class="ecard-name">'+esc(c.company)+'</span>'
+        + '<span class="pill'+(type==='Individual'?' ind':'')+'">'+esc(type)+'</span></div>'
+        + '<div class="ecard-metrics">'
+        +   '<div class="em"><div class="em-n">'+b.sf+'</div><div class="em-l">Survey Nos.</div></div>'
+        +   '<div class="em"><div class="em-n">'+f2(b.total)+'</div><div class="em-l">Total Ac</div></div>'
+        +   '<div class="em free"><div class="em-n">'+f2(b.free)+'</div><div class="em-l">Free Hold Ac</div></div>'
+        + '</div></button>';
+    }).join('') + '</div>';
+  }
+  var nComp = DATA.companies.filter(function(c){ return (c.type||'Company')==='Company'; }).length;
+  var nInd  = DATA.companies.length - nComp;
+  panel.innerHTML =
+    '<div class="totals">'
+    + '<div class="tstat"><div class="tn">'+a.grand.sf+'</div><div class="tl">Survey Numbers</div></div>'
+    + '<div class="tstat"><div class="tn">'+f2(a.grand.total)+'</div><div class="tl">Total Acres</div></div>'
+    + '<div class="tstat brass"><div class="tn">'+f2(a.grand.free)+'</div><div class="tl">Free Hold Acres</div></div>'
+    + '<div class="tstat"><div class="tn">'+nComp+' + '+nInd+'</div><div class="tl">Companies + Individuals</div></div>'
+    + '</div>'
+    + '<div class="sec-head"><div class="idx">Companies</div><h2>'+nComp+' Compan'+(nComp===1?'y':'ies')+'</h2></div>'
+    + cardsFor('Company')
+    + '<div class="sec-head" style="margin-top:30px;"><div class="idx">Individuals</div><h2>'+nInd+' Individual Owner'+(nInd===1?'':'s')+'</h2></div>'
+    + cardsFor('Individual')
+    + '<div class="sec-head" style="margin-top:34px;"><div class="idx">Breakdown</div><h2>Entity-wise extent</h2></div>'
+    + '<div class="tablewrap"><table><thead><tr><th>Entity</th><th>Type</th><th class="num">SF Nos.</th>'
+    + '<th class="num">Total Ac</th><th class="num">Free Hold</th><th class="num">Sold</th><th class="num">Encroached</th></tr></thead><tbody>'
+    + order.map(function(c){
+        var b = a.by[c.company_slug] || {sf:0,total:0,free:0,sold:0,enc:0};
+        return '<tr><td><b>'+esc(c.company)+'</b></td><td>'+esc(c.type||'Company')+'</td>'
+          + '<td class="num">'+b.sf+'</td><td class="num">'+f2(b.total)+'</td>'
+          + '<td class="num" style="color:var(--free);font-weight:600;">'+f2(b.free)+'</td>'
+          + '<td class="num">'+f2(b.sold)+'</td><td class="num">'+f2(b.enc)+'</td></tr>';
+      }).join('')
+    + '<tr style="background:#EFEBE0;font-weight:700;"><td>Total</td><td></td><td class="num">'+a.grand.sf+'</td>'
+    + '<td class="num">'+f2(a.grand.total)+'</td><td class="num">'+f2(a.grand.free)+'</td>'
+    + '<td class="num">'+f2(a.grand.sold)+'</td><td class="num">'+f2(a.grand.enc)+'</td></tr>'
+    + '</tbody></table></div>';
+}
+
+function renderProfiles(){
+  if (viewSlug) return renderProfileDetail(viewSlug);
+  panel.innerHTML = '<div class="sec-head"><div class="idx">Profiles</div><h2>Company Profiles</h2>'
+    + '<p>Tap an entity for its nature, PAN, GST, address, partners, share holding and documents.</p></div>'
+    + '<div class="egrid">' + DATA.companies.map(function(c){
+        var np = partnersOf(c.company_slug).length, nd = docsOf(c.company_slug).length;
+        return '<button class="ecard" data-open-profile="'+esc(c.company_slug)+'">'
+          + '<div class="ecard-top"><span class="ecard-name">'+esc(c.company)+'</span>'
+          + '<span class="pill'+((c.type||'')==='Individual'?' ind':'')+'">'+esc(c.type||'Company')+'</span></div>'
+          + '<div style="font-size:12.5px;color:var(--muted);margin-top:9px;">'
+          + np + ' partner' + (np===1?'':'s') + ' · ' + nd + ' document' + (nd===1?'':'s')
+          + '</div></button>';
+      }).join('') + '</div>';
+}
+
+function renderProfileDetail(slug){
+  var c = DATA.companies.filter(function(x){ return x.company_slug === slug; })[0];
+  if (!c) { viewSlug = null; return renderProfiles(); }
+  var a = agg().by[slug] || {sf:0,total:0,free:0};
+  var ps = partnersOf(slug), ds = docsOf(slug);
+  var shareTotal = ps.reduce(function(s,p){ return s + n(p.share_pct); }, 0);
+  var hasShare = ps.some(function(p){ return p.share_pct !== ''; });
+
+  var rows = [];
+  if (c.nature) rows.push(['Nature', esc(c.nature)]);
+  if (c.pan) rows.push(['PAN', '<span class="mono">'+esc(c.pan)+'</span>']);
+  if (c.gst) rows.push(['GST No.', '<span class="mono">'+esc(c.gst)+'</span>']);
+  if (c.address) rows.push(['Registered Address', esc(c.address).replace(/\n/g,'<br>')]);
+  if (c.registration_no) rows.push(['Registration No.', esc(c.registration_no)]);
+  if (c.notes) rows.push(['Notes', esc(c.notes)]);
+
+  panel.innerHTML = '<button class="btn outline sm" data-back-profiles="1" style="margin-bottom:16px;">← All entities</button>'
+    + '<div class="sec-head"><div class="idx">'+esc(c.type||'Company')+'</div><h2>'+esc(c.company)+'</h2></div>'
+    + '<div class="totals" style="grid-template-columns:repeat(3,1fr);">'
+    +   '<div class="tstat"><div class="tn">'+a.sf+'</div><div class="tl">Survey Numbers</div></div>'
+    +   '<div class="tstat"><div class="tn">'+f2(a.total)+'</div><div class="tl">Total Acres</div></div>'
+    +   '<div class="tstat brass"><div class="tn">'+f2(a.free)+'</div><div class="tl">Free Hold Acres</div></div>'
+    + '</div>'
+    + (rows.length
+        ? '<div class="card" style="margin-bottom:16px;"><table><tbody>' + rows.map(function(r){
+            return '<tr><td style="width:190px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;">'+r[0]+'</td><td>'+r[1]+'</td></tr>';
+          }).join('') + '</tbody></table></div>'
+        : '<div class="card empty" style="margin-bottom:16px;">No entity details recorded yet — add them under Master Data.</div>')
+    + '<h3 style="font-size:17px;margin-bottom:9px;">Partners &amp; Share Holding</h3>'
+    + (ps.length
+        ? '<div class="tablewrap" style="margin-bottom:16px;"><table><thead><tr><th>Partner</th><th>Designation</th><th class="num">Share %</th></tr></thead><tbody>'
+          + ps.map(function(p){ return '<tr><td><b>'+esc(p.partner_name)+'</b></td><td>'+esc(p.designation)+'</td>'
+              + '<td class="num">'+(p.share_pct!==''?esc(p.share_pct)+'%':'—')+'</td></tr>'; }).join('')
+          + (hasShare ? '<tr style="background:#EFEBE0;font-weight:700;"><td colspan="2">Total</td><td class="num"'
+              + (Math.abs(shareTotal-100)>0.01?' style="color:var(--sold);"':'') + '>'+(Math.round(shareTotal*100)/100)+'%'
+              + (Math.abs(shareTotal-100)>0.01?' ⚠':'') + '</td></tr>' : '')
+          + '</tbody></table></div>'
+        : '<div class="card empty" style="margin-bottom:16px;">No partners recorded.</div>')
+    + '<h3 style="font-size:17px;margin-bottom:9px;">Documents</h3>'
+    + (ds.length
+        ? '<div class="card">' + ds.map(function(d){
+            return '<span class="docchip"><a href="'+esc(d.file_url)+'" target="_blank" rel="noopener">'+esc(d.file_name)+'</a>'
+              + '<span style="color:var(--muted);font-size:11px;">'+esc(d.category||'')+(d.sf_no?' · SF '+esc(d.sf_no):'')+'</span></span>';
+          }).join('') + '</div>'
+        : '<div class="card empty">No documents uploaded yet.</div>')
+    + '<h3 style="font-size:17px;margin:24px 0 9px;">Survey Numbers</h3>'
+    + surveyTable(DATA.survey.filter(function(r){ return r.company_slug === slug; }));
+}
+
+function surveyTable(list){
+  if (!list.length) return '<div class="card empty">No survey numbers recorded.</div>';
+  return '<div class="tablewrap"><table><thead><tr><th>SF No.</th><th>Patta No.</th><th class="num">Total Ac</th>'
+    + '<th class="num">Free Ac</th><th>Status</th><th>Verification</th></tr></thead><tbody>'
+    + list.slice().sort(function(a,b){ return (a.sf_no||'').localeCompare(b.sf_no||'',undefined,{numeric:true}); })
+      .map(function(r){
+        var c = classify(r);
+        return '<tr><td><b>'+esc(r.sf_no)+'</b></td><td>'+esc((r.patta_no||'—').slice(0,60))+'</td>'
+          + '<td class="num">'+f2(c.total)+'</td>'
+          + '<td class="num" style="color:var(--free);font-weight:600;">'+f2(c.free)+'</td>'
+          + '<td>'+esc((r.sold_status||'unsold').replace(/_/g,' '))+'</td>'
+          + '<td>'+esc(r.verification_status||'—')+'</td></tr>';
+      }).join('')
+    + '</tbody></table></div>';
+}
+
+/* ---------------------------- master data ---------------------------- */
+function renderMaster(){
+  panel.innerHTML = '<div class="sec-head"><div class="idx">Master Data</div><h2>Add, edit and delete</h2>'
+    + '<p>Everything here saves straight to your Google Sheet.</p></div>'
+    + '<div class="tabs" style="border-bottom:1px solid var(--line);">'
+    +   '<button class="tab'+(mTab==='entities'?' active':'')+'" data-mtab="entities">Entities</button>'
+    +   '<button class="tab'+(mTab==='survey'?' active':'')+'" data-mtab="survey">Survey Numbers</button>'
+    +   '<button class="tab'+(mTab==='docs'?' active':'')+'" data-mtab="docs">Documents</button>'
+    + '</div><div id="mbody"></div>';
+  var b = document.getElementById('mbody');
+  if (mTab === 'entities') b.innerHTML = mEntities();
+  else if (mTab === 'survey') b.innerHTML = mSurvey();
+  else b.innerHTML = mDocs();
+}
+var mTab = 'entities';
+
+function mEntities(){
+  return DATA.companies.map(function(c){
+    var open = openKey === 'e:'+c.company_slug;
+    var ps = partnersOf(c.company_slug);
+    if (!ps.length) ps = [{partner_name:'',designation:'',share_pct:''}];
+    return '<div class="acc'+(open?' open':'')+'" data-acc="e:'+esc(c.company_slug)+'">'
+      + '<button class="acc-head" data-toggle="e:'+esc(c.company_slug)+'"><span><span class="acc-title">'+esc(c.company)+'</span>'
+      + '<span class="acc-sub">'+esc(c.type||'Company')+' · '+partnersOf(c.company_slug).length+' partners</span></span><span class="chev">▸</span></button>'
+      + '<div class="acc-body">'
+      +   '<div class="row2">'
+      +     '<div class="field"><label>Name</label><input data-cf="company" value="'+esc(c.company)+'"></div>'
+      +     '<div class="field"><label>Type</label><select data-cf="type">'
+      +       '<option value="Company"'+((c.type||'Company')==='Company'?' selected':'')+'>Company</option>'
+      +       '<option value="Individual"'+(c.type==='Individual'?' selected':'')+'>Individual</option></select></div>'
+      +   '</div>'
+      +   '<div class="field"><label>Nature of entity / business</label><textarea data-cf="nature">'+esc(c.nature)+'</textarea></div>'
+      +   '<div class="row3">'
+      +     '<div class="field"><label>PAN</label><input data-cf="pan" value="'+esc(c.pan)+'" placeholder="AAAAA0000A" style="text-transform:uppercase"></div>'
+      +     '<div class="field"><label>GST No.</label><input data-cf="gst" value="'+esc(c.gst)+'" placeholder="33AAAAA0000A1Z5" style="text-transform:uppercase"></div>'
+      +     '<div class="field"><label>Registration No.</label><input data-cf="registration_no" value="'+esc(c.registration_no)+'"></div>'
+      +   '</div>'
+      +   '<div class="field"><label>Registered address</label><textarea data-cf="address">'+esc(c.address)+'</textarea></div>'
+      +   '<div class="field"><label>Other relevant information</label><textarea data-cf="notes">'+esc(c.notes)+'</textarea></div>'
+      +   '<label style="margin-bottom:7px;">Partners &amp; share holding</label>'
+      +   '<div class="plist" data-plist="'+esc(c.company_slug)+'">' + ps.map(partnerRow).join('') + '</div>'
+      +   '<button class="btn outline sm" data-addp="'+esc(c.company_slug)+'" style="margin-bottom:14px;">+ Add partner</button>'
+      +   '<div class="btnrow"><button class="btn brass sm" data-savec="'+esc(c.company_slug)+'">Save changes</button>'
+      +   '<button class="btn danger sm" data-delc="'+esc(c.company_slug)+'">Delete entity</button>'
+      +   '<span class="msg" data-note="'+esc(c.company_slug)+'"></span></div>'
+      + '</div></div>';
+  }).join('')
+  + '<div class="card" style="margin-top:16px;border:1px dashed var(--brass);background:#FBF9F3;">'
+  +   '<h3 style="font-size:16px;margin-bottom:11px;">Add a new entity</h3>'
+  +   '<div class="row3">'
+  +     '<div class="field"><label>Name</label><input id="ncName" placeholder="e.g. New Farms LLP"></div>'
+  +     '<div class="field"><label>Type</label><select id="ncType"><option>Company</option><option>Individual</option></select></div>'
+  +     '<div class="field"><label>PAN</label><input id="ncPan" style="text-transform:uppercase"></div>'
+  +   '</div>'
+  +   '<div class="btnrow"><button class="btn brass sm" id="ncAdd">Create entity</button><span class="msg" id="ncNote"></span></div>'
+  + '</div>';
+}
+function partnerRow(p){
+  return '<div class="pitem">'
+    + '<input data-pf="partner_name" placeholder="Partner name" value="'+esc(p.partner_name)+'">'
+    + '<input data-pf="designation" placeholder="Designation" value="'+esc(p.designation)+'">'
+    + '<input data-pf="share_pct" placeholder="Share %" value="'+esc(p.share_pct)+'">'
+    + '<button class="xbtn" data-delp="1" title="Remove">×</button></div>';
+}
+
+function mSurvey(){
+  var opts = DATA.companies.map(function(c){
+    return '<option value="'+esc(c.company_slug)+'"'+(mFilter===c.company_slug?' selected':'')+'>'+esc(c.company)+'</option>';
+  }).join('');
+  var list = DATA.survey.filter(function(r){
+    if (mFilter && r.company_slug !== mFilter) return false;
+    if (mSearch && (r.sf_no||'').toLowerCase().indexOf(mSearch.toLowerCase()) === -1) return false;
+    return true;
+  }).slice().sort(function(a,b){
+    if (a.company_slug !== b.company_slug) return a.company_slug.localeCompare(b.company_slug);
+    return (a.sf_no||'').localeCompare(b.sf_no||'',undefined,{numeric:true});
+  });
+  return '<div class="btnrow" style="margin-bottom:14px;">'
+    + '<select id="sFilter" style="width:auto;"><option value="">All entities</option>'+opts+'</select>'
+    + '<input id="sSearch" placeholder="Search SF number…" value="'+esc(mSearch)+'" style="width:auto;flex:1;min-width:150px;">'
+    + '<span style="font-size:13px;color:var(--muted);">'+list.length+' records</span></div>'
+    + (list.length ? list.map(surveyAcc).join('') : '<div class="card empty">No matching survey numbers.</div>')
+    + '<div class="card" style="margin-top:16px;border:1px dashed var(--brass);background:#FBF9F3;">'
+    +   '<h3 style="font-size:16px;margin-bottom:11px;">Add a survey number</h3>'
+    +   '<div class="row3">'
+    +     '<div class="field"><label>Entity</label><select id="nsCompany">'+DATA.companies.map(function(c){
+            return '<option value="'+esc(c.company_slug)+'">'+esc(c.company)+'</option>'; }).join('')+'</select></div>'
+    +     '<div class="field"><label>SF No.</label><input id="nsSf" placeholder="e.g. 260/3"></div>'
+    +     '<div class="field"><label>Document extent (Ac)</label><input id="nsExt" placeholder="0.00"></div>'
+    +   '</div>'
+    +   '<div class="btnrow"><button class="btn brass sm" id="nsAdd">Create</button><span class="msg" id="nsNote"></span></div>'
+    + '</div>';
+}
+var mFilter = '', mSearch = '';
+
+function surveyAcc(r){
+  var key = 's:'+r.company_slug+'|'+r.sf_no;
+  var open = openKey === key;
+  var c = classify(r);
+  var sel = function(name,val,opts,field){
+    return '<div class="field"><label>'+name+'</label><select data-sf="'+field+'">'
+      + opts.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+'>'+o[1]+'</option>'; }).join('')
+      + '</select></div>';
+  };
+  return '<div class="acc'+(open?' open':'')+'">'
+    + '<button class="acc-head" data-toggle="'+esc(key)+'"><span><span class="acc-title">SF '+esc(r.sf_no)+'</span>'
+    + '<span class="acc-sub">'+esc(r.company)+' · '+f2(c.total)+' Ac · '+esc((r.sold_status||'unsold').replace(/_/g,' '))+'</span></span>'
+    + '<span class="chev">▸</span></button>'
+    + '<div class="acc-body" data-srow="'+esc(key)+'">'
+    +   '<div class="row3">'
+    +     '<div class="field"><label>SF No.</label><input data-sf="sf_no" value="'+esc(r.sf_no)+'"></div>'
+    +     '<div class="field"><label>Document extent (Ac)</label><input data-sf="document_extent_ac" value="'+esc(r.document_extent_ac)+'"></div>'
+    +     '<div class="field"><label>Patta extent (Ac)</label><input data-sf="patta_extent_ac" value="'+esc(r.patta_extent_ac)+'"></div>'
+    +   '</div>'
+    +   '<div class="field"><label>Patta No.</label><input data-sf="patta_no" value="'+esc(r.patta_no)+'"></div>'
+    +   '<div class="row3">'
+    +     sel('Sold status', r.sold_status||'unsold', [['unsold','Unsold'],['partially_sold','Partially sold'],['fully_sold','Fully sold']], 'sold_status')
+    +     '<div class="field"><label>Sold area (Ac)</label><input data-sf="sold_area_ac" value="'+esc(r.sold_area_ac)+'"></div>'
+    +     '<div class="field"><label>Balance area (Ac)</label><input data-sf="balance_area_ac" value="'+esc(r.balance_area_ac)+'"></div>'
+    +   '</div>'
+    +   '<div class="row3">'
+    +     '<div class="field"><label>Sold to</label><input data-sf="sold_to" value="'+esc(r.sold_to)+'"></div>'
+    +     '<div class="field"><label>Original deed</label><input data-sf="original_deed" value="'+esc(r.original_deed)+'"></div>'
+    +     '<div class="field"><label>Sale deed (if sold)</label><input data-sf="sale_deed_if_sold" value="'+esc(r.sale_deed_if_sold)+'"></div>'
+    +   '</div>'
+    +   '<div class="row3">'
+    +     sel('Encroachment', r.encroachment_status||'none', [['none','None'],['partial','Partial'],['full','Full'],['unknown','Not checked']], 'encroachment_status')
+    +     '<div class="field"><label>Encroached area (Ac)</label><input data-sf="encroached_area_ac" value="'+esc(r.encroached_area_ac)+'"></div>'
+    +     sel('Verification', r.verification_status||'review', [['verified','Verified'],['flagged','Advocate flag'],['review','Needs verification']], 'verification_status')
+    +   '</div>'
+    +   '<div class="field"><label>Remarks</label><textarea data-sf="remarks" style="min-height:90px;">'+esc(r.remarks)+'</textarea></div>'
+    +   '<div class="btnrow"><button class="btn brass sm" data-saves="'+esc(key)+'">Save changes</button>'
+    +   '<button class="btn danger sm" data-dels="'+esc(key)+'">Delete</button>'
+    +   '<span class="msg" data-snote="'+esc(key)+'"></span></div>'
+    + '</div></div>';
+}
+
+function mDocs(){
+  return '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:16px;">'
+    + '<h3 style="font-size:16px;margin-bottom:11px;">Upload a document</h3>'
+    + '<div class="row3">'
+    +   '<div class="field"><label>Entity</label><select id="udCompany">'+DATA.companies.map(function(c){
+          return '<option value="'+esc(c.company_slug)+'">'+esc(c.company)+'</option>'; }).join('')+'</select></div>'
+    +   '<div class="field"><label>Category</label><select id="udCat">'
+    +     '<option>Partnership Deed</option><option>Primary Document</option><option>Patta</option>'
+    +     '<option>Legal Opinion</option><option>Encumbrance Certificate</option><option>VAO Record</option>'
+    +     '<option>Parent Document</option><option>Other</option></select></div>'
+    +   '<div class="field"><label>SF No. (optional)</label><input id="udSf" placeholder="e.g. 260/3"></div>'
+    + '</div>'
+    + '<div class="field"><label>File</label><input type="file" id="udFile"></div>'
+    + '<div class="btnrow"><button class="btn brass sm" id="udBtn">Upload</button><span class="msg" id="udNote"></span></div>'
+    + '<div class="hint" style="font-size:11.5px;color:var(--muted);margin-top:8px;">Files are stored in your Google Drive folder “Palakombai Master Data”.</div>'
+    + '</div>'
+    + (DATA.documents.length
+        ? '<div class="tablewrap"><table><thead><tr><th>Document</th><th>Entity</th><th>Category</th><th>SF No.</th><th></th></tr></thead><tbody>'
+          + DATA.documents.map(function(d){
+              var c = DATA.companies.filter(function(x){ return x.company_slug===d.company_slug; })[0];
+              return '<tr><td><a href="'+esc(d.file_url)+'" target="_blank" rel="noopener" style="color:var(--brass);font-weight:600;">'+esc(d.file_name)+'</a></td>'
+                + '<td>'+esc(c?c.company:d.company_slug)+'</td><td>'+esc(d.category)+'</td><td>'+esc(d.sf_no||'—')+'</td>'
+                + '<td><button class="btn danger sm" data-deld="'+esc(d.doc_id)+'">Delete</button></td></tr>';
+            }).join('') + '</tbody></table></div>'
+        : '<div class="card empty">No documents uploaded yet.</div>');
+}
+
+/* ---------------------------- events ---------------------------- */
+function note(el, text, ok){
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+var toastTimer = null;
+function toast(text, bad){
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'toast show' + (bad ? ' bad' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.className = 'toast' + (bad ? ' bad' : ''); }, 2600);
+}
+
+document.addEventListener('click', function(e){
+  var t = e.target, el;
+
+  if ((el = t.closest('[data-tab]'))) {
+    tab = el.getAttribute('data-tab'); viewSlug = null;
+    document.querySelectorAll('[data-tab]').forEach(function(b){ b.classList.toggle('active', b === el); });
+    render(); return;
+  }
+  if ((el = t.closest('[data-mtab]'))) { mTab = el.getAttribute('data-mtab'); openKey = null; render(); return; }
+  if ((el = t.closest('[data-open-profile]'))) { tab='profiles'; viewSlug = el.getAttribute('data-open-profile');
+    document.querySelectorAll('[data-tab]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')==='profiles'); });
+    render(); window.scrollTo(0,0); return; }
+  if (t.closest('[data-back-profiles]')) { viewSlug = null; render(); return; }
+  if ((el = t.closest('[data-toggle]'))) {
+    var k = el.getAttribute('data-toggle');
+    openKey = (openKey === k) ? null : k; render(); return;
+  }
+  if ((el = t.closest('[data-addp]'))) {
+    var list = document.querySelector('[data-plist="'+el.getAttribute('data-addp')+'"]');
+    if (list) list.insertAdjacentHTML('beforeend', partnerRow({partner_name:'',designation:'',share_pct:''}));
+    return;
+  }
+  if (t.closest('[data-delp]')) { var it = t.closest('.pitem'); if (it) it.remove(); return; }
+
+  if ((el = t.closest('[data-savec]'))) { saveEntity(el.getAttribute('data-savec')); return; }
+  if ((el = t.closest('[data-delc]'))) { delEntity(el.getAttribute('data-delc')); return; }
+  if ((el = t.closest('[data-saves]'))) { saveSurvey(el.getAttribute('data-saves')); return; }
+  if ((el = t.closest('[data-dels]'))) { delSurvey(el.getAttribute('data-dels')); return; }
+  if ((el = t.closest('[data-deld]'))) { delDoc(el.getAttribute('data-deld')); return; }
+  if (t.id === 'ncAdd') { addEntity(); return; }
+  if (t.id === 'nsAdd') { addSurvey(); return; }
+  if (t.id === 'udBtn') { uploadDoc(); return; }
+  if (t.id === 'outBtn') { signOut(); return; }
+});
+
+document.addEventListener('change', function(e){
+  if (e.target.id === 'sFilter') { mFilter = e.target.value; openKey = null; render(); }
+});
+document.addEventListener('input', function(e){
+  if (e.target.id === 'sSearch') {
+    mSearch = e.target.value; openKey = null;
+    var pos = e.target.selectionStart; render();
+    var box = document.getElementById('sSearch');
+    if (box) { box.focus(); box.setSelectionRange(pos,pos); }
+  }
+});
+
+/* ---------------------------- actions ---------------------------- */
+function saveEntity(slug){
+  var acc = document.querySelector('[data-acc="e:'+slug+'"]');
+  var noteEl = acc.querySelector('[data-note]');
+  var data = {company_slug: slug};
+  acc.querySelectorAll('[data-cf]').forEach(function(i){
+    var k = i.getAttribute('data-cf');
+    data[k] = (k==='pan'||k==='gst') ? i.value.trim().toUpperCase() : i.value.trim();
+  });
+  var partners = Array.prototype.map.call(acc.querySelectorAll('.pitem'), function(it){
+    var g = function(f){ var x = it.querySelector('[data-pf="'+f+'"]'); return x ? x.value.trim() : ''; };
+    return {partner_name:g('partner_name'), designation:g('designation'), share_pct:g('share_pct')};
+  }).filter(function(p){ return p.partner_name; });
+
+  note(noteEl, 'Saving…', true);
+  call({action:'saveCompany', data:data})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      return call({action:'savePartners', slug:slug, partners:partners}); })
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Saved.'); return reload(true); })
+    .catch(function(err){ note(noteEl,'Could not save: '+err.message,false); toast('Could not save.',true); });
+}
+function delEntity(slug){
+  var c = DATA.companies.filter(function(x){ return x.company_slug===slug; })[0];
+  if (!confirm('Delete "'+(c?c.company:slug)+'"?\n\nIts survey numbers and documents stay in the sheet but will no longer be linked.')) return;
+  call({action:'deleteCompany', data:{company_slug:slug}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); openKey=null; toast('Entity deleted.'); return reload(true); })
+    .catch(function(err){ toast('Could not delete: '+err.message, true); });
+}
+function addEntity(){
+  var name = document.getElementById('ncName').value.trim();
+  var noteEl = document.getElementById('ncNote');
+  if (!name) { note(noteEl,'Name is required.',false); return; }
+  var slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  if (DATA.companies.some(function(c){ return c.company_slug===slug; })) { note(noteEl,'That entity already exists.',false); return; }
+  note(noteEl,'Creating…',true);
+  call({action:'saveCompany', data:{company_slug:slug, company:name,
+    type:document.getElementById('ncType').value, pan:document.getElementById('ncPan').value.trim().toUpperCase(),
+    nature:'', gst:'', address:'', registration_no:'', notes:''}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      document.getElementById('ncName').value=''; document.getElementById('ncPan').value='';
+      toast('Entity created.'); return reload(true); })
+    .catch(function(err){ note(noteEl,'Could not create: '+err.message,false); });
+}
+
+function saveSurvey(key){
+  var body = document.querySelector('[data-srow="'+key.replace(/"/g,'\\"')+'"]');
+  var noteEl = body.querySelector('[data-snote]');
+  var parts = key.slice(2).split('|');
+  var orig = DATA.survey.filter(function(r){ return r.company_slug===parts[0] && r.sf_no===parts[1]; })[0] || {};
+  var data = {company_slug: parts[0], company: orig.company || '', _row: orig._row};
+  body.querySelectorAll('[data-sf]').forEach(function(i){ data[i.getAttribute('data-sf')] = i.value.trim(); });
+  note(noteEl,'Saving…',true);
+  call({action:'saveSurvey', data:data})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Saved.'); return reload(true); })
+    .catch(function(err){ note(noteEl,'Could not save: '+err.message,false); toast('Could not save.',true); });
+}
+function delSurvey(key){
+  var parts = key.slice(2).split('|');
+  if (!confirm('Delete SF '+parts[1]+'? This cannot be undone.')) return;
+  call({action:'deleteSurvey', data:{company_slug:parts[0], sf_no:parts[1]}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); openKey=null; toast('Survey number deleted.'); return reload(true); })
+    .catch(function(err){ toast('Could not delete: '+err.message, true); });
+}
+function addSurvey(){
+  var slug = document.getElementById('nsCompany').value;
+  var sf = document.getElementById('nsSf').value.trim();
+  var ext = document.getElementById('nsExt').value.trim();
+  var noteEl = document.getElementById('nsNote');
+  if (!sf) { note(noteEl,'SF number is required.',false); return; }
+  if (DATA.survey.some(function(r){ return r.company_slug===slug && r.sf_no===sf; })) {
+    note(noteEl,'That SF number already exists for this entity.',false); return; }
+  var c = DATA.companies.filter(function(x){ return x.company_slug===slug; })[0];
+  note(noteEl,'Creating…',true);
+  call({action:'saveSurvey', data:{company_slug:slug, company:c?c.company:'', sf_no:sf,
+    document_extent_ac:ext, sold_status:'unsold', encroachment_status:'none', verification_status:'review'}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      document.getElementById('nsSf').value=''; document.getElementById('nsExt').value='';
+      toast('Survey number created.'); return reload(true); })
+    .catch(function(err){ note(noteEl,'Could not create: '+err.message,false); });
+}
+
+function uploadDoc(){
+  var fileEl = document.getElementById('udFile');
+  var noteEl = document.getElementById('udNote');
+  var file = fileEl.files && fileEl.files[0];
+  if (!file) { note(noteEl,'Choose a file first.',false); return; }
+  if (file.size > 8*1024*1024) { note(noteEl,'File is larger than 8 MB — upload it to Drive directly.',false); return; }
+  note(noteEl,'Uploading…',true);
+  var fr = new FileReader();
+  fr.onload = function(){
+    var b64 = String(fr.result).split(',')[1];
+    call({action:'uploadDoc', company_slug:document.getElementById('udCompany').value,
+      sf_no:document.getElementById('udSf').value.trim(), category:document.getElementById('udCat').value,
+      file_name:file.name, mime_type:file.type||'application/octet-stream', file_base64:b64})
+      .then(function(r){ if(!r.ok) throw new Error(r.error);
+        fileEl.value=''; document.getElementById('udSf').value=''; toast('Document uploaded.'); return reload(true); })
+      .catch(function(err){ note(noteEl,'Upload failed: '+err.message,false); });
+  };
+  fr.readAsDataURL(file);
+}
+function delDoc(id){
+  if (!confirm('Delete this document? The file is moved to your Drive trash.')) return;
+  call({action:'deleteDoc', doc_id:id})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Document deleted.'); return reload(true); })
+    .catch(function(err){ toast('Could not delete: '+err.message, true); });
+}
+
+/* ---------------------------- session ---------------------------- */
+function reload(keepView){
+  return call({action:'load'}).then(function(r){
+    if (!r.ok) throw new Error(r.error);
+    DATA = {companies:r.companies||[], partners:r.partners||[], survey:r.survey||[], documents:r.documents||[]};
+    if (!keepView) { tab='dash'; viewSlug=null; }
+    render();
+  });
+}
+
+function showApp(){
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+  document.getElementById('outBtn').classList.remove('hidden');
+}
+function signOut(){
+  token = null;
+  try { sessionStorage.removeItem('pk_token'); } catch(e) {}
+  document.getElementById('appView').classList.add('hidden');
+  document.getElementById('outBtn').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('pw').value = '';
+}
+
+document.getElementById('loginForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var btn = document.getElementById('loginBtn'), msg = document.getElementById('loginMsg');
+  var pw = document.getElementById('pw').value;
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Checking…'; msg.textContent = '';
+  fetch(API, {method:'POST', redirect:'follow', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action:'login', password:pw})})
+    .then(function(r){ return r.json(); })
+    .then(function(r){
+      if (!r.ok) throw new Error(r.error || 'Incorrect password.');
+      token = r.token;
+      try { sessionStorage.setItem('pk_token', token); } catch(e) {}
+      showApp();
+      return reload(false);
+    })
+    .catch(function(err){
+      msg.textContent = err.message;
+      document.getElementById('pw').value = '';
+    })
+    .then(function(){ btn.disabled = false; btn.textContent = 'Sign in'; });
+});
+
+if (token) {
+  showApp();
+  reload(false).catch(function(){ signOut(); });
+}
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kannan Group | V Legal Services</title>
+<meta name="description" content="Legal & documentation desk for Kannan Group — legal opinion, title scrutiny and registration by V Legal Services, Coimbatore.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EC; --surface:#FFFFFF; --ink:#1E2430; --muted:#6B7280;
+    --navy:#16233A; --navy2:#22354F; --brass:#A9762F; --brass-light:#C99A4B;
+    --line:#E1DDD0; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.6;}
+  h1,h2,h3{font-family:'Lora',Georgia,serif;font-weight:600;margin:0;color:var(--navy);}
+  a{color:inherit;}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px;}
+
+  header{border-bottom:2px solid var(--navy);background:var(--bg);}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;}
+  .seal{width:42px;height:42px;flex:none;border-radius:50%;background:var(--navy);color:var(--brass-light);display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-weight:700;border:2px solid var(--brass);}
+  .t1{font-family:'Lora',serif;font-size:19px;font-weight:700;color:var(--navy);line-height:1.2;}
+  .t2{font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--navy);background:var(--navy);color:#fff;padding:10px 16px;border-radius:7px;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;}
+  .btn:hover{background:var(--navy2);}
+  .btn.brass{background:var(--brass);border-color:var(--brass);}
+  .btn.brass:hover{background:var(--brass-light);}
+  .btn.outline{background:transparent;color:var(--navy);}
+  .btn.outline:hover{background:#EFEBE0;}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn.highlight{background:#F2C46D;border-color:#F2C46D;color:var(--navy);box-shadow:0 0 0 3px rgba(242,196,109,.28),0 6px 18px rgba(242,196,109,.25);}
+  .btn.highlight:hover{background:#F7D48F;border-color:#F7D48F;}
+  .btn.highlight .dot{width:8px;height:8px;border-radius:50%;background:var(--navy);animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.7);}}
+  @media (prefers-reduced-motion:reduce){.btn.highlight .dot{animation:none;}}
+
+  .hero{background:var(--navy);color:#fff;padding:56px 0 52px;}
+  .eyebrow{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass-light);border:1px solid rgba(201,154,75,.5);padding:4px 10px;border-radius:999px;}
+  .hero h1{color:#fff;font-size:clamp(28px,5vw,44px);margin:16px 0 10px;line-height:1.15;}
+  .hero p{color:#C9D2E0;max-width:640px;margin:0 0 24px;font-size:16px;}
+  .hero .actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .hero .btn.outline{color:#fff;border-color:rgba(255,255,255,.5);}
+  .hero .btn.outline:hover{background:rgba(255,255,255,.08);}
+
+  section{padding:48px 0;}
+  .sec-head{margin-bottom:22px;}
+  .sec-head .idx{font-size:12px;color:var(--brass);letter-spacing:.1em;text-transform:uppercase;font-weight:600;}
+  .sec-head h2{font-size:clamp(22px,3.5vw,28px);margin-top:4px;}
+  .sec-head p{color:var(--muted);margin:6px 0 0;max-width:640px;}
+
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:600px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+  .card .num{font-family:'Lora',serif;color:var(--brass);font-size:14px;font-weight:700;}
+  .card h3{font-size:17px;margin:6px 0 6px;}
+  .card p{margin:0;color:var(--muted);font-size:14px;}
+
+  .alt{background:#EDE9DD;}
+
+  .contact{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;}
+  @media(max-width:800px){.contact{grid-template-columns:1fr;}}
+  .contact .card p{color:var(--ink);}
+  .contact dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;}
+  .contact dt{color:var(--muted);font-size:13px;}
+  .contact dd{margin:0;font-weight:500;word-break:break-word;}
+  .contact .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+
+  footer{border-top:2px solid var(--navy);padding:20px 0 36px;color:var(--muted);font-size:13px;}
+  footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap topbar">
+    <a class="brand" href="/">
+      <div class="seal">VL</div>
+      <div>
+        <div class="t1">V Legal Services</div>
+        <div class="t2">Legal &amp; Documentation · Coimbatore</div>
+      </div>
+    </a>
+    <a class="btn brass" href="tel:+916379588507">Call</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Kannan Group</span>
+    <h1>Legal &amp; Documentation Desk<br>for Kannan Group</h1>
+    <p>A dedicated desk for Kannan Group and its customers — title scrutiny, legal opinion and registration handled end to end by V Legal Services.</p>
+    <div class="actions">
+      <a class="btn brass" href="https://wa.me/916379588507?text=Hello%2C%20I%20am%20contacting%20you%20regarding%20Kannan%20Group." target="_blank" rel="noopener">WhatsApp us</a>
+      <a class="btn outline" href="#contact">Contact details</a>
+      <a class="btn highlight" href="/kannangroup/theni/"><span class="dot"></span>Theni Properties</a>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="idx">Services</div>
+      <h2>What we handle for Kannan Group</h2>
+      <p>From checking the title to handing over the registered document.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="num">01</div><h3>Legal Opinion</h3><p>Title scrutiny and legal opinion on projects, layouts and individual plots, including bank-format opinions for loan processing.</p></div>
+      <div class="card"><div class="num">02</div><h3>Document Verification</h3><p>Parent documents, patta, encumbrance and approval records checked before sale or purchase.</p></div>
+      <div class="card"><div class="num">03</div><h3>Sale Deed Drafting &amp; Registration</h3><p>Sale deeds and related documents drafted for first sale of plots and flats.</p></div>
+      <div class="card"><div class="num">04</div><h3>Presence-less Registration</h3><p>Online registration through TNREGINET for first sale of plots/flats, across all SROs in Tamil Nadu.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="contact">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="idx">Contact</div>
+      <h2>Get in touch</h2>
+    </div>
+    <div class="contact">
+      <div class="card">
+        <h3>Mohan Kumar Rajavel</h3>
+        <p style="color:var(--muted);margin:2px 0 16px;">B.Sc (Agri), LL.B, Advocate</p>
+        <dl>
+          <dt>Office</dt><dd>Gowtham Centre, Coimbatore</dd>
+          <dt>Phone</dt><dd><a href="tel:+916379588507">63795 88507</a></dd>
+          <dt>Registration</dt><dd><a href="tel:+917373735222">73737 35222</a></dd>
+          <dt>Email</dt><dd><a href="mailto:mohanagriculture@gmail.com">mohanagriculture@gmail.com</a></dd>
+        </dl>
+        <div class="actions">
+          <a class="btn brass" href="https://wa.me/916379588507?text=Hello%2C%20I%20am%20contacting%20you%20regarding%20Kannan%20Group." target="_blank" rel="noopener">WhatsApp</a>
+          <a class="btn outline" href="mailto:mohanagriculture@gmail.com?subject=Kannan%20Group">Email</a>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Coverage</h3>
+        <p style="margin-top:8px;">All Sub-Registrar Offices across <b>Tamil Nadu</b>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="yr"></span> V Legal Services and Documentation, Coimbatore</span>
+    <a href="/">www.vlegalservices.in</a>
+  </div>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body>
+</html>

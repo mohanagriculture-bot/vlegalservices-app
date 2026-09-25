@@ -116,6 +116,29 @@
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   td.entcell{font-weight:600;min-width:150px;}
   .notehint{font-size:11.5px;color:var(--muted);margin:0 0 10px;}
+  .searchwrap{position:relative;margin-bottom:18px;}
+  .searchbox{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);
+    border-radius:9px;padding:0 12px;transition:border-color .15s,box-shadow .15s;}
+  .searchbox:focus-within{border-color:var(--brass);box-shadow:0 0 0 3px rgba(169,118,47,.13);}
+  .searchicon{font-size:14px;opacity:.55;flex:none;}
+  .searchbox input{border:none;background:none;padding:12px 0;font-size:14.5px;outline:none;}
+  .searchbox input::-webkit-search-cancel-button{display:none;}
+  .searchclear{background:none;border:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 4px;}
+  .searchclear:hover{color:var(--ink);}
+  .searchpanel{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:40;background:var(--surface);
+    border:1px solid var(--line);border-radius:11px;box-shadow:0 14px 40px rgba(22,35,58,.18);
+    max-height:min(66vh,520px);overflow:auto;}
+  .qgroup{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--brass);
+    padding:11px 15px 6px;background:var(--bg);position:sticky;top:0;}
+  .qrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;width:100%;text-align:left;
+    background:none;border:none;border-top:1px solid var(--line);padding:10px 15px;font:inherit;color:inherit;cursor:pointer;}
+  .qrow:hover,.qrow.on{background:#FBF9F3;}
+  .qmain{font-size:14px;font-weight:600;color:var(--navy);}
+  .qsub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45;}
+  .qmeta{font-size:11.5px;color:var(--muted);white-space:nowrap;flex:none;}
+  .qrow mark{background:#FBEFD4;color:var(--ink);padding:0 1px;border-radius:2px;}
+  .qempty{padding:22px 15px;text-align:center;color:var(--muted);font-size:13.5px;}
+  .qcount{padding:9px 15px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);background:var(--bg);}
   .ck{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;margin:0;}
   .ck input{width:auto;padding:0;margin:0;accent-color:var(--brass);}
   .secrow{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--brass);
@@ -217,6 +240,16 @@
 
 <!-- ============ APP ============ -->
 <main class="wrap hidden" id="appView" style="padding-top:28px;padding-bottom:40px;">
+  <div class="searchwrap">
+    <div class="searchbox">
+      <span class="searchicon">&#128269;</span>
+      <input id="q" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Search SF number, Patta, entity, buyer, deed, document or note…">
+      <button class="searchclear hidden" id="qClear" title="Clear">&times;</button>
+    </div>
+    <div class="searchpanel hidden" id="qPanel"></div>
+  </div>
+
   <div class="tabs">
     <button class="tab active" data-tab="dash">Dashboard</button>
     <button class="tab" data-tab="profiles">Company Profiles</button>
@@ -1332,6 +1365,153 @@ function docBlock(label, files, editable, small){
     + '</div>';
 }
 
+/* ============================ search ============================ */
+var qSel = -1, qHits = [];
+
+function hl(text, q){
+  var t = String(text == null ? '' : text);
+  var i = t.toLowerCase().indexOf(q.toLowerCase());
+  if (i === -1) return esc(t.slice(0,150));
+  return esc(t.slice(0,i)) + '<mark>' + esc(t.slice(i, i+q.length)) + '</mark>' + esc(t.slice(i+q.length, i+130));
+}
+/* show the part of a long field where the match actually is */
+function snippet(text, q, pad){
+  var t = String(text == null ? '' : text);
+  var i = t.toLowerCase().indexOf(q.toLowerCase());
+  if (i === -1) return t.slice(0, pad || 110);
+  var from = Math.max(0, i - 40);
+  return (from ? '…' : '') + t.slice(from, i + q.length + (pad || 70));
+}
+
+function runSearch(q){
+  q = q.trim();
+  if (q.length < 2) return [];
+  var lc = q.toLowerCase();
+  var has = function(v){ return String(v == null ? '' : v).toLowerCase().indexOf(lc) !== -1; };
+  var out = [];
+
+  // survey numbers
+  DATA.survey.forEach(function(r){
+    var fields = [['SF number', r.sf_no], ['Patta', r.patta_no], ['sold to', r.sold_to],
+                  ['deed', r.original_deed], ['sale deed', r.sale_deed_if_sold], ['note', r.remarks]];
+    var hit = fields.filter(function(f){ return has(f[1]); })[0];
+    if (!hit) return;
+    var c = classify(r);
+    out.push({ group:'Survey numbers', slug:r.company_slug, tab:'survey',
+      main:'SF ' + r.sf_no, mainRaw:r.sf_no,
+      sub: companyName(r.company_slug) + ' · matched in ' + hit[0] + ': ' + snippet(hit[1], q),
+      hlField: hit[1],
+      meta: f2(c.total) + ' Ac' });
+  });
+
+  // entities
+  DATA.companies.forEach(function(c){
+    var fields = [['name', c.company], ['PAN', c.pan], ['GST', c.gst], ['address', c.address],
+                  ['nature', c.nature], ['registration', c.registration_no], ['notes', c.notes]];
+    var hit = fields.filter(function(f){ return has(f[1]); })[0];
+    if (!hit) return;
+    var a2 = agg().by[c.company_slug] || {sf:0,total:0};
+    out.push({ group:'Entities', slug:c.company_slug, tab:'overview',
+      main:c.company, mainRaw:c.company,
+      sub:(hit[0] === 'name' ? (c.type||'Company') : 'matched in ' + hit[0] + ': ' + snippet(hit[1], q)),
+      hlField: hit[1],
+      meta:a2.sf + ' SF · ' + f2(a2.total) + ' Ac' });
+  });
+
+  // partners
+  DATA.partners.forEach(function(pr){
+    if (!has(pr.partner_name) && !has(pr.designation)) return;
+    out.push({ group:'Partners', slug:pr.company_slug, tab:'overview',
+      main:pr.partner_name, mainRaw:pr.partner_name,
+      sub:companyName(pr.company_slug) + (pr.designation ? ' · ' + pr.designation : ''),
+      hlField: pr.partner_name,
+      meta:pr.share_pct ? pr.share_pct + '%' : '' });
+  });
+
+  // documents
+  DATA.documents.forEach(function(d){
+    if (!has(d.file_name) && !has(catLabel(d.category)) && !has(d.sf_no)) return;
+    out.push({ group:'Documents', slug:d.company_slug, tab:'docs',
+      main:d.file_name, mainRaw:d.file_name,
+      sub:companyName(d.company_slug) + ' · ' + catLabel(d.category) + (d.sf_no ? ' · SF ' + d.sf_no : ''),
+      hlField: d.file_name, docId:d.doc_id, meta:'' });
+  });
+
+  // text under your own headings
+  DATA.seccontent.forEach(function(sc){
+    if (!has(sc.content)) return;
+    var sec = sectionById(sc.section_id);
+    out.push({ group:'Notes', slug:sc.company_slug, tab:'sec:' + sc.section_id,
+      main:(sec ? sec.title : sc.section_id), mainRaw:(sec ? sec.title : sc.section_id),
+      sub:companyName(sc.company_slug) + ' · ' + snippet(sc.content, q),
+      hlField: sc.content, meta:'' });
+  });
+
+  // exact-ish matches first, then by group
+  var order = {'Survey numbers':0, 'Entities':1, 'Partners':2, 'Documents':3, 'Notes':4};
+  out.sort(function(x,y){
+    var xs = String(x.mainRaw||'').toLowerCase() === lc ? 0 : String(x.mainRaw||'').toLowerCase().indexOf(lc) === 0 ? 1 : 2;
+    var ys = String(y.mainRaw||'').toLowerCase() === lc ? 0 : String(y.mainRaw||'').toLowerCase().indexOf(lc) === 0 ? 1 : 2;
+    if (xs !== ys) return xs - ys;
+    if (order[x.group] !== order[y.group]) return order[x.group] - order[y.group];
+    return String(x.main).localeCompare(String(y.main), undefined, {numeric:true});
+  });
+  return out.slice(0, 60);
+}
+
+function renderSearch(){
+  var panel = document.getElementById('qPanel');
+  var box = document.getElementById('q');
+  var q = box.value.trim();
+  document.getElementById('qClear').classList.toggle('hidden', !q);
+
+  if (q.length < 2) { panel.classList.add('hidden'); qHits = []; qSel = -1; return; }
+
+  qHits = runSearch(q);
+  if (!qHits.length) {
+    panel.innerHTML = '<div class="qempty">Nothing found for &ldquo;' + esc(q) + '&rdquo;.</div>';
+    panel.classList.remove('hidden');
+    return;
+  }
+  var html = '', lastGroup = null;
+  qHits.forEach(function(h, i){
+    if (h.group !== lastGroup) { html += '<div class="qgroup">' + esc(h.group) + '</div>'; lastGroup = h.group; }
+    html += '<button class="qrow' + (i === qSel ? ' on' : '') + '" data-qhit="' + i + '">'
+      + '<span><span class="qmain">' + hl(h.main, q) + '</span>'
+      + (h.sub ? '<span class="qsub" style="display:block;">' + hl(h.sub, q) + '</span>' : '') + '</span>'
+      + (h.meta ? '<span class="qmeta">' + esc(h.meta) + '</span>' : '')
+      + '</button>';
+  });
+  html += '<div class="qcount">' + qHits.length + (qHits.length === 60 ? '+ matches — narrow the search' : ' match' + (qHits.length===1?'':'es')) + '</div>';
+  panel.innerHTML = html;
+  panel.classList.remove('hidden');
+}
+
+function closeSearch(){
+  document.getElementById('qPanel').classList.add('hidden');
+  qSel = -1;
+}
+function clearSearch(){
+  var box = document.getElementById('q');
+  box.value = ''; closeSearch();
+  document.getElementById('qClear').classList.add('hidden');
+  box.focus();
+}
+
+function gotoHit(i){
+  var h = qHits[i];
+  if (!h) return;
+  closeSearch();
+  tab = 'profiles';
+  viewSlug = h.slug;
+  pTab = h.tab;
+  document.querySelectorAll('[data-tab]').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-tab') === 'profiles'); });
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (h.docId) setTimeout(function(){ openDoc(h.docId); }, 350);
+}
+
 /* ---------------------------- events ---------------------------- */
 function note(el, text, ok){
   if (!el) return;
@@ -1396,6 +1576,9 @@ document.addEventListener('click', function(e){
   if ((el = t.closest('[data-savesec]'))) { saveSectionText(el.getAttribute('data-savesec')); return; }
   if ((el = t.closest('[data-saveentsec]'))) { saveEntitySection(el.getAttribute('data-saveentsec')); return; }
   if (t.id === 'outBtn') { signOut(); return; }
+  if (t.id === 'qClear') { clearSearch(); return; }
+  if ((el = t.closest('[data-qhit]'))) { gotoHit(parseInt(el.getAttribute('data-qhit'),10)); return; }
+  if (!t.closest('.searchwrap')) closeSearch();
 });
 
 document.addEventListener('change', function(e){
@@ -1405,10 +1588,31 @@ document.addEventListener('change', function(e){
   if (e.target.id === 'udSf')      { udState.sf = e.target.value; }
 });
 document.addEventListener('keydown', function(e){
+  var panel = document.getElementById('qPanel');
+  if (panel && !panel.classList.contains('hidden')) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      qSel += (e.key === 'ArrowDown' ? 1 : -1);
+      if (qSel < 0) qSel = qHits.length - 1;
+      if (qSel >= qHits.length) qSel = 0;
+      renderSearch();
+      var on = panel.querySelector('.qrow.on');
+      if (on) on.scrollIntoView({block:'nearest'});
+      return;
+    }
+    if (e.key === 'Enter') { e.preventDefault(); gotoHit(qSel >= 0 ? qSel : 0); return; }
+    if (e.key === 'Escape') { e.preventDefault(); closeSearch(); return; }
+  }
+  // "/" focuses the search box, the way most apps do
+  if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||''))) {
+    var box = document.getElementById('q');
+    if (box && !document.getElementById('appView').classList.contains('hidden')) { e.preventDefault(); box.focus(); }
+  }
   if (e.key === 'Escape' && !document.getElementById('docModal').hasAttribute('hidden')) closeDoc();
   if (e.key === 'Escape' && !document.getElementById('repModal').hasAttribute('hidden')) closeReport();
 });
 document.addEventListener('input', function(e){
+  if (e.target.id === 'q') { qSel = -1; renderSearch(); return; }
   if (e.target.id === 'sSearch') {
     mSearch = e.target.value; openKey = null;
     var pos = e.target.selectionStart; render();

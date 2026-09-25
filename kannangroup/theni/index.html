@@ -112,6 +112,17 @@
   td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
   .tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);}
+  td.notecell{color:var(--muted);font-size:12px;line-height:1.45;max-width:300px;min-width:180px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  td.entcell{font-weight:600;min-width:150px;}
+  .notehint{font-size:11.5px;color:var(--muted);margin:0 0 10px;}
+  .ck{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;margin:0;}
+  .ck input{width:auto;padding:0;margin:0;accent-color:var(--brass);}
+  .secrow{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--brass);
+    border-radius:var(--radius);padding:13px 15px;margin-bottom:9px;}
+  .secrow-main{display:grid;grid-template-columns:1.3fr 1.6fr auto;gap:11px;margin-bottom:11px;}
+  @media(max-width:700px){.secrow-main{grid-template-columns:1fr;}}
+  .secrow-opts{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line);}
 
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
@@ -258,7 +269,7 @@
 (function(){
 var API = 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec';
 
-var token = null, DATA = {companies:[],partners:[],survey:[],documents:[]}, tab = 'dash', openKey = null, viewSlug = null;
+var token = null, DATA = {companies:[],partners:[],survey:[],documents:[],sections:[],seccontent:[]}, tab = 'dash', openKey = null, viewSlug = null;
 
 var DOC_CATS = [
   {id:'primary_docs',    label:'Primary Documents',    scope:'company'},
@@ -274,7 +285,12 @@ function catById(id){
   for (var i=0;i<DOC_CATS.length;i++) if (DOC_CATS[i].id===id) return DOC_CATS[i];
   return null;
 }
-function catLabel(id){ var c=catById(id); return c ? c.label : (id||'Other'); }
+function catLabel(id){
+  var c = catById(id);
+  if (c) return c.label;
+  var sec = DATA.sections.filter(function(x){ return x.section_id === id; })[0];
+  return sec ? sec.title : (id || 'Other');
+}
 function sfNosFor(slug){
   return DATA.survey.filter(function(r){ return r.company_slug===slug; })
     .map(function(r){ return r.sf_no; })
@@ -448,6 +464,10 @@ function renderProfileDetail(slug){
                 free:recs.filter(function(r){ return classify(r).free > 0.0001; }).length,
                 docs:ds.length};
 
+  var customs = sectionsFor('company_profile', false);
+  var allTabs = PROFILE_TABS.concat(customs.map(function(sec){ return ['sec:'+sec.section_id, sec.title]; }));
+  if (!allTabs.some(function(t){ return t[0] === pTab; })) pTab = 'overview';
+
   panel.innerHTML = '<button class="btn outline sm" data-back-profiles="1" style="margin-bottom:16px;">← All entities</button>'
     + '<div class="sec-head"><div class="idx">'+esc(c.type||'Company')+'</div><h2>'+esc(c.company)+'</h2></div>'
     + '<div class="totals" style="grid-template-columns:repeat(5,1fr);">'
@@ -458,21 +478,68 @@ function renderProfileDetail(slug){
     +   tile('enc', f2(a.enc), 'Encroached', 'enc', slug)
     + '</div>'
     + '<div class="tabs" style="border-bottom:1px solid var(--line);">'
-    + PROFILE_TABS.map(function(t){
+    + allTabs.map(function(t){
         var n = counts[t[0]];
-        return '<button class="tab'+(pTab===t[0]?' active':'')+'" data-ptab="'+t[0]+'">'+t[1]
+        return '<button class="tab'+(pTab===t[0]?' active':'')+'" data-ptab="'+esc(t[0])+'">'+esc(t[1])
           + (n !== undefined ? ' <span style="font-weight:400;opacity:.65;">('+n+')</span>' : '') + '</button>';
       }).join('')
     + '</div><div id="pbody"></div>';
 
   document.getElementById('pbody').innerHTML =
-      pTab === 'overview' ? profileOverview(c, slug)
+      pTab.indexOf('sec:') === 0 ? customSectionView(pTab.slice(4), slug)
+    : pTab === 'overview' ? profileOverview(c, slug)
     : pTab === 'survey'   ? surveyTable(recs, slug)
     : pTab === 'sold'     ? profileSold(recs, slug)
     : pTab === 'enc'      ? profileEnc(recs, slug)
     : pTab === 'free'     ? profileFree(recs, slug)
     :                       (ds.length ? docLibrary(false, slug)
                              : '<div class="card empty">No documents uploaded yet — add them under Master Data.</div>');
+}
+
+/* A section you created yourself: your text, then its files if you ticked upload. */
+function customSectionView(sectionId, slug){
+  var sec = sectionById(sectionId);
+  if (!sec) return '<div class="card empty">This section no longer exists.</div>';
+  var txt = sectionText(slug, sectionId);
+  var files = isTrue(sec.allow_upload) ? sectionFiles(slug, sectionId) : [];
+  var editing = editingSection === sectionId;
+
+  var head = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">'
+    + '<div><h3 style="font-size:18px;">'+esc(sec.title)+'</h3>'
+    + (sec.blurb ? '<div style="font-size:13px;color:var(--muted);margin-top:3px;">'+esc(sec.blurb)+'</div>' : '')
+    + '</div>'
+    + (editing ? '' : '<button class="btn outline sm" data-editsec="'+esc(sectionId)+'">Edit</button>')
+    + '</div>';
+
+  var bodyHtml;
+  if (editing) {
+    bodyHtml = '<div class="card" style="margin-bottom:14px;">'
+      + '<div class="field"><label>Content for '+esc(companyName(slug))+'</label>'
+      + '<textarea id="secEdit" style="min-height:190px;">'+esc(txt)+'</textarea>'
+      + '<div class="hint">Plain text. Line breaks are kept.</div></div>'
+      + '<div class="btnrow"><button class="btn brass sm" data-savesec="'+esc(sectionId)+'">Save</button>'
+      + '<button class="btn outline sm" data-cancelsec="1">Cancel</button>'
+      + '<span class="msg" id="secNote"></span></div></div>';
+  } else {
+    bodyHtml = txt
+      ? '<div class="card" style="margin-bottom:14px;white-space:pre-wrap;">'+esc(txt)+'</div>'
+      : '<div class="card empty" style="margin-bottom:14px;">Nothing written here yet for '+esc(companyName(slug))+' — press Edit to add it.</div>';
+  }
+
+  var filesHtml = '';
+  if (isTrue(sec.allow_upload)) {
+    filesHtml = '<h3 style="font-size:16px;margin:20px 0 9px;">Files</h3>'
+      + (files.length
+          ? '<div class="card">' + files.map(function(d){
+              return '<div class="docrow"><span class="docname">&#128196; '+esc(d.file_name)+'</span>'
+                + '<span class="docacts">'
+                + (isTrue(sec.allow_preview) ? '<button class="btn outline sm" data-view="'+esc(d.doc_id)+'">View</button>' : '')
+                + '<a class="btn outline sm" href="'+esc(d.file_url)+'" target="_blank" rel="noopener">Open</a>'
+                + '</span></div>';
+            }).join('') + '</div>'
+          : '<div class="card empty">No files yet — upload them under Master Data &rarr; Documents, choosing &ldquo;'+esc(sec.title)+'&rdquo; as the document type.</div>');
+  }
+  return head + bodyHtml + filesHtml;
 }
 
 function profileOverview(c, slug){
@@ -507,6 +574,29 @@ function profileOverview(c, slug){
 function sortSf(list){
   return list.slice().sort(function(a,b){ return (a.sf_no||'').localeCompare(b.sf_no||'',undefined,{numeric:true}); });
 }
+function isTrue(v){ var t=String(v).trim().toLowerCase(); return t==='true'||t==='yes'||t==='1'; }
+
+/* Sections you define yourself in Master Data > Page Builder. */
+function sectionsFor(page, includeHidden){
+  return DATA.sections
+    .filter(function(x){ return (x.page||'company_profile') === page && (includeHidden || isTrue(x.visible)); })
+    .slice()
+    .sort(function(a,b){ return (parseFloat(a.sort_order)||0) - (parseFloat(b.sort_order)||0); });
+}
+function sectionById(id){
+  return DATA.sections.filter(function(x){ return x.section_id === id; })[0] || null;
+}
+function sectionText(slug, sectionId){
+  var r = DATA.seccontent.filter(function(x){ return x.company_slug === slug && x.section_id === sectionId; })[0];
+  return r ? (r.content || '') : '';
+}
+function sectionFiles(slug, sectionId){
+  return DATA.documents.filter(function(d){ return d.company_slug === slug && d.category === sectionId; });
+}
+function slugify(t){
+  return 'sec_' + String(t).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40);
+}
+
 function companyName(slug){
   var c = DATA.companies.filter(function(x){ return x.company_slug === slug; })[0];
   return c ? c.company : slug;
@@ -565,7 +655,7 @@ var REPORT_DEFS = {
     ],
     row: function(r,c){ return {sf_no:r.sf_no, kind:((r.encroachment_status||'')==='full'?'Full':'Partial'),
       enc:c.enc, held:c.avail, clean:c.free, patta:(r.patta_no||'—'),
-      note:(r.remarks||'—').slice(0,200)}; }
+      note:(r.remarks||'—')}; }
   },
   free: {
     label: 'Free Hold',
@@ -627,7 +717,8 @@ function reportTable(b){
                : 'background:#FBE9DC;color:var(--enc);';
         return '<td><span class="pill" style="'+bg+'">'+esc(v)+'</span></td>';
       }
-      if (c.k==='note') return '<td style="color:var(--muted);font-size:12.5px;max-width:320px;">'+esc(v)+'</td>';
+      if (c.k==='note') return '<td class="notecell" title="'+esc(v)+'">'+esc(v)+'</td>';
+      if (c.k==='company') return '<td class="entcell">'+esc(v)+'</td>';
       if (c.k==='sf_no') return '<td><b>'+esc(v)+'</b></td>';
       return '<td>'+esc(String(v).slice(0,80))+'</td>';
     }).join('') + '</tr>';
@@ -649,7 +740,10 @@ function openReport(kind, slug){
   document.getElementById('repTitle').textContent = b.title;
   document.getElementById('repSub').textContent = b.rows.length + ' record' + (b.rows.length===1?'':'s')
     + ' · ' + b.note;
-  document.getElementById('repBody').innerHTML = reportTable(b);
+  var hasNote = b.cols.some(function(c){ return c.k==='note'; });
+  document.getElementById('repBody').innerHTML =
+    (hasNote && b.rows.length ? '<p class="notehint">Notes are shortened here — hover to read one in full, or download the Excel file for the complete text.</p>' : '')
+    + reportTable(b);
   document.getElementById('repModal').removeAttribute('hidden');
   document.body.style.overflow = 'hidden';
 }
@@ -713,7 +807,12 @@ function exportPdf(){
     + '   ·   Generated ' + stamp(), 40, 99);
 
   var body = b.rows.map(function(o){
-    return b.cols.map(function(c){ return c.num ? f2(o[c.k]) : String(o[c.k]==null?'':o[c.k]); });
+    return b.cols.map(function(c){
+      if (c.num) return f2(o[c.k]);
+      var v = String(o[c.k]==null?'':o[c.k]);
+      if (c.k === 'note' && v.length > 180) v = v.slice(0,177) + '\u2026';
+      return v;
+    });
   });
   if (b.cols.some(function(c){ return c.sum; })) {
     body.push(b.cols.map(function(c,i){
@@ -725,6 +824,8 @@ function exportPdf(){
   b.cols.forEach(function(c,i){
     colStyles[i] = {halign: c.num ? 'right' : 'left'};
     if (c.w) colStyles[i].cellWidth = Math.min(c.w, landscape ? 200 : 150);
+    if (c.k === 'note') { colStyles[i].cellWidth = landscape ? 215 : 150; colStyles[i].fontSize = 6.5; }
+    if (c.k === 'company') colStyles[i].cellWidth = landscape ? 105 : 88;
   });
 
   doc.autoTable({
@@ -910,13 +1011,68 @@ function renderMaster(){
     +   '<button class="tab'+(mTab==='entities'?' active':'')+'" data-mtab="entities">Entities</button>'
     +   '<button class="tab'+(mTab==='survey'?' active':'')+'" data-mtab="survey">Survey Numbers</button>'
     +   '<button class="tab'+(mTab==='docs'?' active':'')+'" data-mtab="docs">Documents</button>'
+    +   '<button class="tab'+(mTab==='builder'?' active':'')+'" data-mtab="builder">Page Builder</button>'
     + '</div><div id="mbody"></div>';
   var b = document.getElementById('mbody');
   if (mTab === 'entities') b.innerHTML = mEntities();
   else if (mTab === 'survey') b.innerHTML = mSurvey();
+  else if (mTab === 'builder') b.innerHTML = mBuilder();
   else b.innerHTML = mDocs();
 }
 var mTab = 'entities';
+var editingSection = null;
+
+function mBuilder(){
+  var list = sectionsFor('company_profile', true);
+  return '<p style="font-size:13.5px;color:var(--muted);margin:0 0 16px;max-width:760px;">'
+    + 'Headings you add here appear as extra tabs on every Company Profile. Give one a name, tick whether it '
+    + 'takes file uploads and whether those files can be previewed, and save. Each entity then gets its own text '
+    + 'under that heading, which you can type here or straight on the profile page.</p>'
+
+    + '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:20px;">'
+    +   '<h3 style="font-size:16px;margin-bottom:12px;">Add a heading</h3>'
+    +   '<div class="row2">'
+    +     '<div class="field"><label>Heading</label><input id="nsecTitle" placeholder="e.g. Revenue Records"></div>'
+    +     '<div class="field"><label>Note under the heading (optional)</label><input id="nsecBlurb" placeholder="e.g. Kist, adangal and chitta extracts"></div>'
+    +   '</div>'
+    +   '<div class="btnrow" style="margin-bottom:12px;">'
+    +     '<label class="ck"><input type="checkbox" id="nsecUpload" checked> Allow file upload</label>'
+    +     '<label class="ck"><input type="checkbox" id="nsecPreview" checked> Allow preview in page</label>'
+    +     '<label class="ck"><input type="checkbox" id="nsecVisible" checked> Visible</label>'
+    +   '</div>'
+    +   '<div class="btnrow"><button class="btn brass sm" id="nsecAdd">Create heading</button>'
+    +   '<span class="msg" id="nsecNote"></span></div>'
+    + '</div>'
+
+    + '<h3 style="font-size:16px;margin-bottom:10px;">Your headings <span style="font-weight:400;font-size:13px;color:var(--muted);">('+list.length+')</span></h3>'
+    + (list.length
+        ? '<div id="secList">' + list.map(secRow).join('') + '</div>'
+          + '<div class="btnrow" style="margin-top:12px;"><button class="btn brass sm" id="secSaveAll">Save all changes</button>'
+          + '<span class="msg" id="secAllNote"></span></div>'
+        : '<div class="card empty">No extra headings yet. Add one above and it will appear on every Company Profile.</div>');
+}
+
+function secRow(sec, i){
+  var used = DATA.documents.filter(function(d){ return d.category === sec.section_id; }).length;
+  var written = DATA.seccontent.filter(function(x){ return x.section_id === sec.section_id && (x.content||'').trim(); }).length;
+  return '<div class="secrow" data-secrow="'+esc(sec.section_id)+'">'
+    + '<div class="secrow-main">'
+    +   '<div class="field" style="margin:0;"><label>Heading</label>'
+    +     '<input data-sf2="title" value="'+esc(sec.title)+'"></div>'
+    +   '<div class="field" style="margin:0;"><label>Note</label>'
+    +     '<input data-sf2="blurb" value="'+esc(sec.blurb)+'" placeholder="optional"></div>'
+    +   '<div class="field" style="margin:0;max-width:92px;"><label>Order</label>'
+    +     '<input data-sf2="sort_order" value="'+esc(sec.sort_order)+'" inputmode="numeric"></div>'
+    + '</div>'
+    + '<div class="secrow-opts">'
+    +   '<label class="ck"><input type="checkbox" data-sf2="visible"'+(isTrue(sec.visible)?' checked':'')+'> Visible</label>'
+    +   '<label class="ck"><input type="checkbox" data-sf2="allow_upload"'+(isTrue(sec.allow_upload)?' checked':'')+'> Upload</label>'
+    +   '<label class="ck"><input type="checkbox" data-sf2="allow_preview"'+(isTrue(sec.allow_preview)?' checked':'')+'> Preview</label>'
+    +   '<span style="font-size:11.5px;color:var(--muted);">'+written+' filled · '+used+' file'+(used===1?'':'s')+'</span>'
+    +   '<button class="btn danger sm" data-delsec="'+esc(sec.section_id)+'">Delete</button>'
+    + '</div></div>';
+}
+
 
 function mEntities(){
   return DATA.companies.map(function(c){
@@ -944,6 +1100,7 @@ function mEntities(){
       +   '<label style="margin-bottom:7px;">Partners &amp; share holding</label>'
       +   '<div class="plist" data-plist="'+esc(c.company_slug)+'">' + ps.map(partnerRow).join('') + '</div>'
       +   '<button class="btn outline sm" data-addp="'+esc(c.company_slug)+'" style="margin-bottom:14px;">+ Add partner</button>'
+      +   customSectionFields(c.company_slug)
       +   '<div class="btnrow"><button class="btn brass sm" data-savec="'+esc(c.company_slug)+'">Save changes</button>'
       +   '<button class="btn danger sm" data-delc="'+esc(c.company_slug)+'">Delete entity</button>'
       +   '<span class="msg" data-note="'+esc(c.company_slug)+'"></span></div>'
@@ -959,6 +1116,22 @@ function mEntities(){
   +   '<div class="btnrow"><button class="btn brass sm" id="ncAdd">Create entity</button><span class="msg" id="ncNote"></span></div>'
   + '</div>';
 }
+function customSectionFields(slug){
+  var secs = sectionsFor('company_profile', true);
+  if (!secs.length) return '';
+  return '<div style="margin:16px 0 4px;padding-top:14px;border-top:1px dashed var(--line);">'
+    + '<label style="margin-bottom:9px;">Your own headings</label>'
+    + secs.map(function(sec){
+        var key = slug + '||' + sec.section_id;
+        return '<div class="field">'
+          + '<label>' + esc(sec.title) + (isTrue(sec.visible) ? '' : ' <span style="color:var(--muted);font-weight:400;">(hidden)</span>') + '</label>'
+          + '<textarea data-entsec="'+esc(key)+'" style="min-height:70px;">'+esc(sectionText(slug, sec.section_id))+'</textarea>'
+          + '<div class="btnrow" style="margin-top:6px;"><button class="btn outline sm" data-saveentsec="'+esc(key)+'">Save this section</button></div>'
+          + '</div>';
+      }).join('')
+    + '</div>';
+}
+
 function partnerRow(p){
   return '<div class="pitem">'
     + '<input data-pf="partner_name" placeholder="Partner name" value="'+esc(p.partner_name)+'">'
@@ -1041,9 +1214,20 @@ function surveyAcc(r){
 
 var udState = {company:'', cat:'primary_docs', sf:''};
 
+function uploadSections(){
+  return sectionsFor('company_profile', true).filter(function(x){ return isTrue(x.allow_upload); });
+}
+/* a custom heading behaves like a company-wide document type */
+function anyCat(id){
+  var c = catById(id);
+  if (c) return c;
+  var sec = sectionById(id);
+  return sec ? {id:sec.section_id, label:sec.title, scope:'company'} : null;
+}
+
 function mDocs(){
   if (!udState.company && DATA.companies.length) udState.company = DATA.companies[0].company_slug;
-  var cat = catById(udState.cat) || DOC_CATS[0];
+  var cat = anyCat(udState.cat) || DOC_CATS[0];
   var sfList = sfNosFor(udState.company);
 
   var sfField = cat.scope === 'sf'
@@ -1064,6 +1248,11 @@ function mDocs(){
     +   '</select></div>'
     +   '<div class="field"><label>Document type</label><select id="udCat">'
     +     DOC_CATS.map(function(c){ return '<option value="'+esc(c.id)+'"'+(udState.cat===c.id?' selected':'')+'>'+esc(c.label)+(c.scope==='company'?' (company-wide)':'')+'</option>'; }).join('')
+    +     (uploadSections().length
+        ? '<optgroup label="Your own headings">'
+          + uploadSections().map(function(sec){ return '<option value="'+esc(sec.section_id)+'"'+(udState.cat===sec.section_id?' selected':'')+'>'+esc(sec.title)+' (company-wide)</option>'; }).join('')
+          + '</optgroup>'
+        : '')
     +   '</select></div>'
     +   sfField
     + '</div>'
@@ -1092,10 +1281,14 @@ function docLibrary(editable, onlySlug){
 
     var blocks = [];
 
-    // company-level categories
+    // company-level categories, including headings you added yourself
     DOC_CATS.filter(function(k){ return k.scope === 'company'; }).forEach(function(k){
       var files = mine.filter(function(d){ return d.category === k.id; });
       if (files.length) blocks.push(docBlock(k.label, files, editable));
+    });
+    sectionsFor('company_profile', true).forEach(function(sec){
+      var files = mine.filter(function(d){ return d.category === sec.section_id; });
+      if (files.length) blocks.push(docBlock(sec.title, files, editable));
     });
 
     // survey-number categories, grouped by SF
@@ -1195,6 +1388,13 @@ document.addEventListener('click', function(e){
   if (t.id === 'ncAdd') { addEntity(); return; }
   if (t.id === 'nsAdd') { addSurvey(); return; }
   if (t.id === 'udBtn') { uploadDoc(); return; }
+  if (t.id === 'nsecAdd') { addSection(); return; }
+  if (t.id === 'secSaveAll') { saveAllSections(); return; }
+  if ((el = t.closest('[data-delsec]'))) { deleteSection(el.getAttribute('data-delsec')); return; }
+  if ((el = t.closest('[data-editsec]'))) { editingSection = el.getAttribute('data-editsec'); render(); return; }
+  if (t.closest('[data-cancelsec]')) { editingSection = null; render(); return; }
+  if ((el = t.closest('[data-savesec]'))) { saveSectionText(el.getAttribute('data-savesec')); return; }
+  if ((el = t.closest('[data-saveentsec]'))) { saveEntitySection(el.getAttribute('data-saveentsec')); return; }
   if (t.id === 'outBtn') { signOut(); return; }
 });
 
@@ -1298,10 +1498,89 @@ function addSurvey(){
     .catch(function(err){ note(noteEl,'Could not create: '+err.message,false); });
 }
 
+/* ---- page builder actions ---- */
+function addSection(){
+  var title = document.getElementById('nsecTitle').value.trim();
+  var noteEl = document.getElementById('nsecNote');
+  if (!title) { note(noteEl,'Give the heading a name.',false); return; }
+  var id = slugify(title);
+  if (sectionById(id)) { note(noteEl,'A heading with that name already exists.',false); return; }
+  var maxOrder = DATA.sections.reduce(function(m,x){ return Math.max(m, parseFloat(x.sort_order)||0); }, 0);
+  note(noteEl,'Creating…',true);
+  call({action:'saveSection', data:{
+    section_id:id, page:'company_profile', title:title,
+    sort_order:String(maxOrder+10),
+    visible: document.getElementById('nsecVisible').checked ? 'TRUE' : 'FALSE',
+    allow_upload: document.getElementById('nsecUpload').checked ? 'TRUE' : 'FALSE',
+    allow_preview: document.getElementById('nsecPreview').checked ? 'TRUE' : 'FALSE',
+    blurb: document.getElementById('nsecBlurb').value.trim(),
+    updated_at: new Date().toISOString()}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      document.getElementById('nsecTitle').value=''; document.getElementById('nsecBlurb').value='';
+      toast('Heading created — it now appears on every Company Profile.');
+      return reload(true); })
+    .catch(function(err){ note(noteEl,'Could not create: '+err.message,false); });
+}
+
+function saveAllSections(){
+  var noteEl = document.getElementById('secAllNote');
+  var rows = Array.prototype.map.call(document.querySelectorAll('[data-secrow]'), function(row){
+    var id = row.getAttribute('data-secrow');
+    var g = function(f){ var x = row.querySelector('[data-sf2="'+f+'"]'); return x ? x.value.trim() : ''; };
+    var ck = function(f){ var x = row.querySelector('[data-sf2="'+f+'"]'); return x && x.checked ? 'TRUE' : 'FALSE'; };
+    var prev = sectionById(id) || {};
+    return {section_id:id, page:'company_profile', title:g('title') || prev.title || id,
+      sort_order:g('sort_order') || '0', visible:ck('visible'),
+      allow_upload:ck('allow_upload'), allow_preview:ck('allow_preview'),
+      blurb:g('blurb'), updated_at:new Date().toISOString()};
+  });
+  if (!rows.length) return;
+  note(noteEl,'Saving…',true);
+  call({action:'saveSections', sections:rows})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Headings saved.'); return reload(true); })
+    .catch(function(err){ note(noteEl,'Could not save: '+err.message,false); });
+}
+
+function deleteSection(id){
+  var sec = sectionById(id); if (!sec) return;
+  var files = DATA.documents.filter(function(d){ return d.category === id; }).length;
+  var msg = 'Delete the heading "'+sec.title+'"?\n\nThe text written under it for every entity is removed.';
+  if (files) msg += '\n\n' + files + ' uploaded file' + (files===1?'':'s') + ' stay in your Google Drive but will no longer show here.';
+  if (!confirm(msg)) return;
+  call({action:'deleteSection', data:{section_id:id}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Heading deleted.'); return reload(true); })
+    .catch(function(err){ toast('Could not delete: '+err.message, true); });
+}
+
+/* text for one entity, edited on the profile page */
+function saveSectionText(sectionId){
+  var box = document.getElementById('secEdit');
+  var noteEl = document.getElementById('secNote');
+  if (!box) return;
+  note(noteEl,'Saving…',true);
+  call({action:'saveSectionContent', data:{company_slug:viewSlug, section_id:sectionId,
+    content:box.value, updated_at:new Date().toISOString()}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      editingSection = null; toast('Saved.'); return reload(true); })
+    .catch(function(err){ note(noteEl,'Could not save: '+err.message,false); });
+}
+
+/* the same text, edited from Master Data > Entities */
+function saveEntitySection(key){
+  var parts = key.split('||');
+  var slug = parts[0], sectionId = parts[1];
+  var box = document.querySelector('[data-entsec="'+key+'"]');
+  if (!box) return;
+  call({action:'saveSectionContent', data:{company_slug:slug, section_id:sectionId,
+    content:box.value, updated_at:new Date().toISOString()}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Saved.'); return reload(true); })
+    .catch(function(err){ toast('Could not save: '+err.message, true); });
+}
+
 function uploadDoc(){
   var fileEl = document.getElementById('udFile');
   var noteEl = document.getElementById('udNote');
-  var cat = catById(udState.cat) || DOC_CATS[0];
+  var cat = anyCat(udState.cat) || DOC_CATS[0];
   var sfEl = document.getElementById('udSf');
   var sf = (cat.scope === 'sf' && sfEl) ? sfEl.value : '';
   var file = fileEl && fileEl.files && fileEl.files[0];
@@ -1354,7 +1633,8 @@ function delDoc(id){
 function reload(keepView){
   return call({action:'load'}).then(function(r){
     if (!r.ok) throw new Error(r.error);
-    DATA = {companies:r.companies||[], partners:r.partners||[], survey:r.survey||[], documents:r.documents||[]};
+    DATA = {companies:r.companies||[], partners:r.partners||[], survey:r.survey||[],
+            documents:r.documents||[], sections:r.sections||[], seccontent:r.seccontent||[]};
     if (!keepView) { tab='dash'; viewSlug=null; }
     render();
   });

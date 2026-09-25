@@ -196,11 +196,103 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.bad{background:var(--sold);}
 
+  .printonly{display:none;}
+
+  @media print {
+    @page { size: A4; margin: 14mm 12mm 15mm; }
+
+    /* the screen furniture has no place on paper */
+    header, .hero, .tabs, .searchwrap, .searchpanel, footer,
+    #outBtn, #loginView, .toast, .docmodal, .btn, .xbtn,
+    .admin-new-box, .secrow-opts, .notehint, .hint,
+    [data-editsec], [data-savesec], [data-cancelsec], [data-saveentsec],
+    input[type=file], .docacts, .click-hint, .tstat .hint { display: none !important; }
+
+    html, body { background:#fff !important; color:#000; font-size:10pt; }
+    body { padding:0 !important; }
+    .wrap { max-width:none; padding:0; }
+    main.wrap { padding:0 !important; }
+
+    .printonly { display:block; }
+
+    #printHead { margin-bottom:14px; }
+    .ph-firm  { font-family:'Lora',Georgia,serif; font-size:15pt; font-weight:700; color:#000; }
+    .ph-adv   { font-size:9.5pt; margin-top:2px; }
+    .ph-meta  { font-size:8.5pt; color:#444; margin-top:1px; }
+    .ph-rule  { border-bottom:1.5pt solid #000; margin:8px 0 10px; }
+    .ph-title { font-family:'Lora',Georgia,serif; font-size:13pt; font-weight:700; }
+    .ph-sub   { font-size:8.5pt; color:#444; margin-top:2px; }
+    #printFoot{ margin-top:16px; padding-top:7px; border-top:.5pt solid #999;
+                font-size:7.5pt; color:#555; }
+
+    /* tables: no clipping, headers repeat, rows stay whole */
+    .tablewrap { overflow:visible !important; border:none !important; border-radius:0 !important; background:none !important; }
+    table { width:100%; border-collapse:collapse; font-size:8.5pt; }
+    thead { display:table-header-group; }
+    tr, .card, .acc, .docrow, .secrow { page-break-inside:avoid; }
+    th { border-bottom:1pt solid #000; color:#000; font-size:7.5pt; padding:5px 6px; background:none !important; }
+    td { border-bottom:.4pt solid #bbb; padding:5px 6px; color:#000; }
+    td.num { text-align:right; }
+    td.notecell { -webkit-line-clamp:unset; display:table-cell; max-width:none; color:#333;
+                  width:34%; font-size:7.5pt; line-height:1.35; }
+    tr[style*="EFEBE0"] td { border-top:1pt solid #000; font-weight:700; white-space:nowrap; }
+    tr[style*="EFEBE0"] td.notecell { white-space:normal; }
+
+    /* stat tiles print as a plain figure row */
+    .totals { display:flex !important; gap:0; border:1pt solid #000; margin-bottom:12px; }
+    .tstat { background:none !important; color:#000 !important; flex:1; padding:7px 9px;
+             border-right:.4pt solid #999; box-shadow:none !important; transform:none !important; }
+    .tstat:last-child { border-right:none; }
+    .tn { font-size:12pt; color:#000 !important; }
+    .tl { font-size:6.5pt; color:#444 !important; letter-spacing:.03em; }
+
+    /* cards and panels flatten */
+    .card, .ecard, .acc, .secrow { border:.5pt solid #999 !important; box-shadow:none !important;
+      background:none !important; border-radius:0 !important; page-break-inside:avoid; }
+    .ecard { border-top-width:.5pt !important; }
+
+    /* everything collapsed on screen prints open */
+    .acc-body, .mgroup-table-wrap { display:block !important; }
+    .chev { display:none !important; }
+    .acc-head { padding-left:0; }
+
+    /* status pills read as outlines, not blocks of ink */
+    .pill { border:.5pt solid #555 !important; background:none !important; color:#000 !important; }
+
+    /* printing with the report pop-up open prints the report itself */
+    body.printing-report #panel,
+    body.printing-report .tabs { display:none !important; }
+    body.printing-report .docmodal#repModal { display:block !important; position:static !important;
+      inset:auto !important; height:auto !important; min-height:0 !important;
+      background:none !important; padding:0 !important; overflow:visible !important; }
+    body.printing-report .docmodal-box { box-shadow:none !important; display:block !important;
+      height:auto !important; max-height:none !important; min-height:0 !important;
+      max-width:none !important; border-radius:0 !important; overflow:visible !important; }
+    body.printing-report .docmodal-head { display:none !important; }
+    body.printing-report #repBody { overflow:visible !important; padding:0 !important;
+      height:auto !important; max-height:none !important; flex:none !important; }
+
+    h1,h2,h3 { color:#000; page-break-after:avoid; }
+    .sec-head { margin-bottom:8px; }
+    .sec-head .idx { color:#555; }
+    a { color:#000; text-decoration:none; }
+    .empty { color:#666; }
+  }
+
   footer{border-top:2px solid var(--navy);padding:18px 0 32px;color:var(--muted);font-size:12.5px;}
   footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
+
+<div class="printonly" id="printHead">
+  <div class="ph-firm">V Legal Services and Documentation</div>
+  <div class="ph-adv">Mohan Kumar Rajavel, B.Sc.(Agri), LL.B., Advocate</div>
+  <div class="ph-meta">Gowtham Centre, Coimbatore &middot; 6379588507 &middot; mohanagriculture@gmail.com</div>
+  <div class="ph-rule"></div>
+  <div class="ph-title" id="printTitle"></div>
+  <div class="ph-sub" id="printSub"></div>
+</div>
 
 <header>
   <div class="wrap topbar">
@@ -287,6 +379,11 @@
     </div>
     <div style="flex:1;overflow:auto;padding:14px 16px;" id="repBody"></div>
   </div>
+</div>
+
+<div class="printonly" id="printFoot">
+  Prepared by V Legal Services and Documentation as a working reference &mdash; not a substitute for the
+  source-referenced title documents.
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1511,6 +1608,44 @@ function gotoHit(i){
   window.scrollTo({top:0, behavior:'smooth'});
   if (h.docId) setTimeout(function(){ openDoc(h.docId); }, 350);
 }
+
+/* ---------------------------- printing ---------------------------- */
+/* Name whatever is on screen, so the printed sheet says what it is. */
+function currentViewTitle(){
+  if (tab === 'dash')    return 'Portfolio Summary';
+  if (tab === 'reports') return 'Report — ' + ((REPORTS.filter(function(r){ return r[0]===rTab; })[0]||[])[1] || '');
+  if (tab === 'master')  return 'Master Data — ' + (mTab==='entities' ? 'Entities'
+                                 : mTab==='survey' ? 'Survey Numbers'
+                                 : mTab==='builder' ? 'Page Builder' : 'Documents');
+  if (tab === 'profiles') {
+    if (!viewSlug) return 'Company Profiles';
+    var name = companyName(viewSlug);
+    var label;
+    if (pTab.indexOf('sec:') === 0) {
+      var sec = sectionById(pTab.slice(4));
+      label = sec ? sec.title : '';
+    } else {
+      label = (PROFILE_TABS.filter(function(t){ return t[0]===pTab; })[0]||[])[1] || '';
+    }
+    return name + (label ? ' — ' + label : '');
+  }
+  return 'Palakombai Properties';
+}
+
+function preparePrint(){
+  var modalOpen = !document.getElementById('repModal').hasAttribute('hidden');
+  var title = modalOpen && CURRENT_REPORT ? CURRENT_REPORT.title : currentViewTitle();
+  var scope = modalOpen && CURRENT_REPORT
+    ? CURRENT_REPORT.scope + ' · ' + CURRENT_REPORT.rows.length + ' record' + (CURRENT_REPORT.rows.length===1?'':'s')
+    : 'Palakombai Village, Andipatti Taluk, Theni District';
+  var d = new Date();
+  var printed = d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]
+    + ' ' + d.getFullYear();
+  document.getElementById('printTitle').textContent = title;
+  document.getElementById('printSub').textContent = scope + '  ·  Printed ' + printed;
+  document.body.classList.toggle('printing-report', modalOpen);
+}
+window.addEventListener('beforeprint', preparePrint);
 
 /* ---------------------------- events ---------------------------- */
 function note(el, text, ok){

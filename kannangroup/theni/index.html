@@ -7,6 +7,9 @@
 <title>Palakombai Properties | Kannan Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root{
     --bg:#F5F3EC; --surface:#FFFFFF; --ink:#1E2430; --muted:#6B7280;
@@ -75,6 +78,9 @@
   @media(max-width:760px){.totals{grid-template-columns:repeat(2,1fr);}}
   .tstat{background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px;}
   .tstat.brass{background:var(--brass);}
+  button.tstat{text-align:left;border:none;font:inherit;cursor:pointer;width:100%;transition:.14s;}
+  button.tstat:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(22,35,58,.22);}
+  .tstat .hint{font-size:10px;color:rgba(255,255,255,.72);margin-top:7px;font-weight:600;}
   .tstat.sold{background:var(--sold);}
   .tstat.sold .tl{color:#F4D9D9;}
   .tstat.enc{background:var(--enc);}
@@ -222,6 +228,23 @@
   </div>
 </div>
 
+<div class="docmodal" id="repModal" hidden>
+  <div class="docmodal-box" style="height:88vh;max-width:1120px;">
+    <div class="docmodal-head">
+      <span>
+        <span id="repTitle" style="display:block;"></span>
+        <span id="repSub" style="display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:2px;"></span>
+      </span>
+      <span class="btnrow">
+        <button class="btn brass sm" id="repXlsx">Excel</button>
+        <button class="btn brass sm" id="repPdf">PDF</button>
+        <button class="btn outline sm" id="repClose">Close</button>
+      </span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:14px 16px;" id="repBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <footer>
@@ -327,6 +350,12 @@ function render(){
   else renderMaster();
 }
 
+function tile(cls, value, label, kind, slug){
+  return '<button class="tstat'+(cls?' '+cls:'')+'" data-report="'+kind+'" data-slug="'+esc(slug||'')+'">'
+    + '<div class="tn">'+value+'</div><div class="tl">'+esc(label)+'</div>'
+    + '<div class="hint">Tap for detail &rarr;</div></button>';
+}
+
 function renderDash(){
   var a = agg();
   var order = DATA.companies.slice().sort(function(x,y){
@@ -351,11 +380,15 @@ function renderDash(){
   var nComp = DATA.companies.filter(function(c){ return (c.type||'Company')==='Company'; }).length;
   var nInd  = DATA.companies.length - nComp;
   panel.innerHTML =
-    '<div class="totals">'
-    + '<div class="tstat"><div class="tn">'+a.grand.sf+'</div><div class="tl">Survey Numbers</div></div>'
-    + '<div class="tstat"><div class="tn">'+f2(a.grand.total)+'</div><div class="tl">Total Acres</div></div>'
-    + '<div class="tstat brass"><div class="tn">'+f2(a.grand.free)+'</div><div class="tl">Free Hold Acres</div></div>'
-    + '<div class="tstat"><div class="tn">'+nComp+' + '+nInd+'</div><div class="tl">Companies + Individuals</div></div>'
+    '<div class="totals" style="grid-template-columns:repeat(5,1fr);">'
+    + tile('', a.grand.sf, 'Survey Numbers', 'all', null)
+    + tile('', f2(a.grand.total), 'Total Acres', 'all', null)
+    + tile('brass', f2(a.grand.free), 'Free Hold', 'free', null)
+    + tile('sold', f2(a.grand.sold), 'Sold', 'sold', null)
+    + tile('enc', f2(a.grand.enc), 'Encroached', 'enc', null)
+    + '</div>'
+    + '<div style="font-size:12.5px;color:var(--muted);margin:-14px 0 22px;">'
+    +   nComp+' companies and '+nInd+' individual owners. Tap any figure above for the detail, with Excel and PDF download.'
     + '</div>'
     + '<div class="sec-head"><div class="idx">Companies</div><h2>'+nComp+' Compan'+(nComp===1?'y':'ies')+'</h2></div>'
     + cardsFor('Company')
@@ -418,11 +451,11 @@ function renderProfileDetail(slug){
   panel.innerHTML = '<button class="btn outline sm" data-back-profiles="1" style="margin-bottom:16px;">← All entities</button>'
     + '<div class="sec-head"><div class="idx">'+esc(c.type||'Company')+'</div><h2>'+esc(c.company)+'</h2></div>'
     + '<div class="totals" style="grid-template-columns:repeat(5,1fr);">'
-    +   '<div class="tstat"><div class="tn">'+a.sf+'</div><div class="tl">Survey Numbers</div></div>'
-    +   '<div class="tstat"><div class="tn">'+f2(a.total)+'</div><div class="tl">Total Acres</div></div>'
-    +   '<div class="tstat brass"><div class="tn">'+f2(a.free)+'</div><div class="tl">Free Hold</div></div>'
-    +   '<div class="tstat sold"><div class="tn">'+f2(a.sold)+'</div><div class="tl">Sold</div></div>'
-    +   '<div class="tstat enc"><div class="tn">'+f2(a.enc)+'</div><div class="tl">Encroached</div></div>'
+    +   tile('', a.sf, 'Survey Numbers', 'all', slug)
+    +   tile('', f2(a.total), 'Total Acres', 'all', slug)
+    +   tile('brass', f2(a.free), 'Free Hold', 'free', slug)
+    +   tile('sold', f2(a.sold), 'Sold', 'sold', slug)
+    +   tile('enc', f2(a.enc), 'Encroached', 'enc', slug)
     + '</div>'
     + '<div class="tabs" style="border-bottom:1px solid var(--line);">'
     + PROFILE_TABS.map(function(t){
@@ -434,10 +467,10 @@ function renderProfileDetail(slug){
 
   document.getElementById('pbody').innerHTML =
       pTab === 'overview' ? profileOverview(c, slug)
-    : pTab === 'survey'   ? surveyTable(recs)
-    : pTab === 'sold'     ? profileSold(recs)
-    : pTab === 'enc'      ? profileEnc(recs)
-    : pTab === 'free'     ? profileFree(recs)
+    : pTab === 'survey'   ? surveyTable(recs, slug)
+    : pTab === 'sold'     ? profileSold(recs, slug)
+    : pTab === 'enc'      ? profileEnc(recs, slug)
+    : pTab === 'free'     ? profileFree(recs, slug)
     :                       (ds.length ? docLibrary(false, slug)
                              : '<div class="card empty">No documents uploaded yet — add them under Master Data.</div>');
 }
@@ -474,98 +507,257 @@ function profileOverview(c, slug){
 function sortSf(list){
   return list.slice().sort(function(a,b){ return (a.sf_no||'').localeCompare(b.sf_no||'',undefined,{numeric:true}); });
 }
+function companyName(slug){
+  var c = DATA.companies.filter(function(x){ return x.company_slug === slug; })[0];
+  return c ? c.company : slug;
+}
 
-function surveyTable(list){
-  if (!list.length) return '<div class="card empty">No survey numbers recorded.</div>';
-  var tot={t:0,f:0,s:0,e:0};
-  var body = sortSf(list).map(function(r){
+/* ============================================================
+   Report builders — one definition per view, shared by the tab
+   tables, the pop-up and the Excel / PDF exports.
+   ============================================================ */
+var REPORT_DEFS = {
+  all: {
+    label: 'Survey Numbers',
+    note: 'Every survey number with its extent, free hold, sold and encroached position.',
+    keep: function(){ return true; },
+    cols: [
+      {k:'sf_no',   label:'SF No.',        w:70},
+      {k:'patta_no',label:'Patta No.',     w:150},
+      {k:'total',   label:'Total Ac',      num:true, sum:true},
+      {k:'free',    label:'Free Ac',       num:true, sum:true},
+      {k:'sold',    label:'Sold Ac',       num:true, sum:true},
+      {k:'enc',     label:'Encr. Ac',      num:true, sum:true},
+      {k:'status',  label:'Status',        w:90},
+      {k:'verif',   label:'Verification',  w:90}
+    ],
+    row: function(r,c){ return {sf_no:r.sf_no, patta_no:(r.patta_no||'—'), total:c.total, free:c.free,
+      sold:c.sold, enc:c.enc, status:(r.sold_status||'unsold').replace(/_/g,' '), verif:(r.verification_status||'—')}; }
+  },
+  sold: {
+    label: 'Sold Areas',
+    note: 'Survey numbers with any extent sold, the buyer and the outgoing deed.',
+    keep: function(r,c){ return c.sold > 0.0001; },
+    cols: [
+      {k:'sf_no',  label:'SF No.',            w:70},
+      {k:'extent', label:'Extent of sale',    w:80},
+      {k:'sold',   label:'Sold Ac',           num:true, sum:true},
+      {k:'balance',label:'Balance held Ac',   num:true, sum:true},
+      {k:'buyer',  label:'Sold to',           w:110},
+      {k:'deed',   label:'Sale deed (out)',   w:150},
+      {k:'orig',   label:'Original deed',     w:120}
+    ],
+    row: function(r,c){ return {sf_no:r.sf_no, extent:((r.sold_status||'')==='fully_sold'?'Fully sold':'Partly sold'),
+      sold:c.sold, balance:c.avail, buyer:(r.sold_to||'—'), deed:(r.sale_deed_if_sold||'—'), orig:(r.original_deed||'—')}; }
+  },
+  enc: {
+    label: 'Encroached Areas',
+    note: 'Survey numbers carrying a full or partial encroachment.',
+    keep: function(r,c){ return c.enc > 0.0001; },
+    cols: [
+      {k:'sf_no', label:'SF No.',            w:70},
+      {k:'kind',  label:'Extent',            w:65},
+      {k:'enc',   label:'Encroached Ac',     num:true, sum:true},
+      {k:'held',  label:'Held Ac',           num:true, sum:true},
+      {k:'clean', label:'Clean balance Ac',  num:true, sum:true},
+      {k:'patta', label:'Patta No.',         w:110},
+      {k:'note',  label:'Note',              w:200}
+    ],
+    row: function(r,c){ return {sf_no:r.sf_no, kind:((r.encroachment_status||'')==='full'?'Full':'Partial'),
+      enc:c.enc, held:c.avail, clean:c.free, patta:(r.patta_no||'—'),
+      note:(r.remarks||'—').slice(0,200)}; }
+  },
+  free: {
+    label: 'Free Hold',
+    note: 'Clean, unsold, unencroached extent available for sale.',
+    keep: function(r,c){ return c.free > 0.0001; },
+    cols: [
+      {k:'sf_no', label:'SF No.',        w:70},
+      {k:'free',  label:'Free hold Ac',  num:true, sum:true},
+      {k:'patta', label:'Patta No.',     w:150},
+      {k:'orig',  label:'Original deed', w:140},
+      {k:'verif', label:'Verification',  w:90}
+    ],
+    row: function(r,c){ return {sf_no:r.sf_no, free:c.free, patta:(r.patta_no||'—'),
+      orig:(r.original_deed||'—'), verif:(r.verification_status||'—')}; }
+  }
+};
+
+/* slug === null builds the report across every entity, with a Company column. */
+function buildReport(kind, slug){
+  var def = REPORT_DEFS[kind];
+  var src = DATA.survey.filter(function(r){ return !slug || r.company_slug === slug; });
+  var cols = def.cols.slice();
+  if (!slug) cols.unshift({k:'company', label:'Entity', w:150});
+
+  var rows = [];
+  (slug ? sortSf(src) : src.slice().sort(function(a,b){
+      if (a.company_slug !== b.company_slug) return companyName(a.company_slug).localeCompare(companyName(b.company_slug));
+      return (a.sf_no||'').localeCompare(b.sf_no||'',undefined,{numeric:true});
+    })).forEach(function(r){
     var c = classify(r);
-    tot.t+=c.total; tot.f+=c.free; tot.s+=c.sold; tot.e+=c.enc;
-    return '<tr><td><b>'+esc(r.sf_no)+'</b></td><td>'+esc((r.patta_no||'—').slice(0,60))+'</td>'
-      + '<td class="num">'+f2(c.total)+'</td>'
-      + '<td class="num" style="color:var(--free);font-weight:600;">'+f2(c.free)+'</td>'
-      + '<td class="num">'+(c.sold>0.0001?f2(c.sold):'—')+'</td>'
-      + '<td class="num">'+(c.enc>0.0001?f2(c.enc):'—')+'</td>'
-      + '<td>'+esc((r.sold_status||'unsold').replace(/_/g,' '))+'</td>'
-      + '<td>'+esc(r.verification_status||'—')+'</td></tr>';
-  }).join('');
-  return '<div class="tablewrap"><table><thead><tr><th>SF No.</th><th>Patta No.</th><th class="num">Total Ac</th>'
-    + '<th class="num">Free Ac</th><th class="num">Sold Ac</th><th class="num">Encr. Ac</th><th>Status</th><th>Verification</th></tr></thead><tbody>'
-    + body
-    + '<tr style="background:#EFEBE0;font-weight:700;"><td colspan="2">Total</td><td class="num">'+f2(tot.t)+'</td>'
-    + '<td class="num">'+f2(tot.f)+'</td><td class="num">'+f2(tot.s)+'</td><td class="num">'+f2(tot.e)+'</td><td colspan="2"></td></tr>'
-    + '</tbody></table></div>';
+    if (!def.keep(r,c)) return;
+    var o = def.row(r,c);
+    if (!slug) o.company = companyName(r.company_slug);
+    rows.push(o);
+  });
+
+  var totals = {};
+  cols.forEach(function(col){ if (col.sum) totals[col.k] = rows.reduce(function(a,o){ return a + n(o[col.k]); }, 0); });
+
+  return { kind:kind, cols:cols, rows:rows, totals:totals,
+    title: def.label + (slug ? ' — ' + companyName(slug) : ' — All entities'),
+    note: def.note,
+    scope: slug ? companyName(slug) : 'All 8 entities' };
 }
 
-function profileSold(list){
-  var rows = sortSf(list.filter(function(r){ return classify(r).sold > 0.0001; }));
-  if (!rows.length) return '<div class="card empty">Nothing sold from this entity\u2019s holding.</div>';
-  var tot = 0, bal = 0;
-  var body = rows.map(function(r){
-    var c = classify(r);
-    tot += c.sold; bal += c.avail;
-    var full = (r.sold_status||'') === 'fully_sold';
-    return '<tr><td><b>'+esc(r.sf_no)+'</b></td>'
-      + '<td><span class="pill" style="'+(full?'background:#F8EAE9;color:var(--sold);':'background:#FBF1DE;color:#8a5a12;')+'">'
-      + (full?'Fully sold':'Partly sold')+'</span></td>'
-      + '<td class="num" style="color:var(--sold);font-weight:700;">'+f2(c.sold)+'</td>'
-      + '<td class="num">'+f2(c.avail)+'</td>'
-      + '<td>'+esc(r.sold_to||'—')+'</td>'
-      + '<td>'+esc(r.sale_deed_if_sold||'—')+'</td>'
-      + '<td>'+esc(r.original_deed||'—')+'</td></tr>';
+function reportTable(b){
+  if (!b.rows.length) return '<div class="card empty">Nothing recorded under this heading.</div>';
+  var head = b.cols.map(function(c){ return '<th'+(c.num?' class="num"':'')+'>'+esc(c.label)+'</th>'; }).join('');
+  var body = b.rows.map(function(o){
+    return '<tr>' + b.cols.map(function(c){
+      var v = o[c.k];
+      if (c.num) {
+        var col = c.k==='free'||c.k==='clean' ? 'var(--free)' : c.k==='sold' ? 'var(--sold)' : c.k==='enc' ? 'var(--enc)' : '';
+        return '<td class="num"'+(col?' style="color:'+col+';font-weight:600;"':'')+'>'+f2(v)+'</td>';
+      }
+      if (c.k==='extent' || c.k==='kind') {
+        var bg = v==='Fully sold' ? 'background:#F8EAE9;color:var(--sold);'
+               : v==='Partly sold' ? 'background:#FBF1DE;color:#8a5a12;'
+               : 'background:#FBE9DC;color:var(--enc);';
+        return '<td><span class="pill" style="'+bg+'">'+esc(v)+'</span></td>';
+      }
+      if (c.k==='note') return '<td style="color:var(--muted);font-size:12.5px;max-width:320px;">'+esc(v)+'</td>';
+      if (c.k==='sf_no') return '<td><b>'+esc(v)+'</b></td>';
+      return '<td>'+esc(String(v).slice(0,80))+'</td>';
+    }).join('') + '</tr>';
   }).join('');
-  return '<div class="tablewrap"><table><thead><tr><th>SF No.</th><th>Extent of sale</th>'
-    + '<th class="num">Sold (Ac)</th><th class="num">Balance held (Ac)</th>'
-    + '<th>Sold to</th><th>Sale deed (out)</th><th>Original deed</th></tr></thead><tbody>'
-    + body
-    + '<tr style="background:#EFEBE0;font-weight:700;"><td colspan="2">Total</td>'
-    + '<td class="num">'+f2(tot)+'</td><td class="num">'+f2(bal)+'</td><td colspan="3"></td></tr>'
-    + '</tbody></table></div>';
+  var hasTotals = b.cols.some(function(c){ return c.sum; });
+  var totalRow = hasTotals ? '<tr style="background:#EFEBE0;font-weight:700;">'
+    + b.cols.map(function(c,i){
+        if (c.sum) return '<td class="num">'+f2(b.totals[c.k])+'</td>';
+        return i===0 ? '<td>Total ('+b.rows.length+')</td>' : '<td></td>';
+      }).join('') + '</tr>' : '';
+  return '<div class="tablewrap"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+totalRow+'</tbody></table></div>';
 }
 
-function profileEnc(list){
-  var rows = sortSf(list.filter(function(r){ return classify(r).enc > 0.0001; }));
-  if (!rows.length) return '<div class="card empty">No encroachment recorded against this entity.</div>';
-  var tot = 0, clean = 0, held = 0;
-  var body = rows.map(function(r){
-    var c = classify(r);
-    tot += c.enc; clean += c.free; held += c.avail;
-    var full = (r.encroachment_status||'') === 'full';
-    return '<tr><td><b>'+esc(r.sf_no)+'</b></td>'
-      + '<td><span class="pill" style="background:#FBE9DC;color:var(--enc);">'+(full?'Full':'Partial')+'</span></td>'
-      + '<td class="num" style="color:var(--enc);font-weight:700;">'+f2(c.enc)+'</td>'
-      + '<td class="num">'+f2(c.avail)+'</td>'
-      + '<td class="num" style="color:var(--free);font-weight:600;">'+f2(c.free)+'</td>'
-      + '<td>'+esc((r.patta_no||'—').slice(0,40))+'</td>'
-      + '<td style="color:var(--muted);max-width:320px;font-size:12.5px;">'+esc((r.remarks||'—').slice(0,200))+'</td></tr>';
-  }).join('');
-  return '<div class="tablewrap"><table><thead><tr><th>SF No.</th><th>Extent</th>'
-    + '<th class="num">Encroached (Ac)</th><th class="num">Held (Ac)</th><th class="num">Clean balance (Ac)</th>'
-    + '<th>Patta No.</th><th>Note</th></tr></thead><tbody>'
-    + body
-    + '<tr style="background:#EFEBE0;font-weight:700;"><td colspan="2">Total</td>'
-    + '<td class="num">'+f2(tot)+'</td><td class="num">'+f2(held)+'</td><td class="num">'+f2(clean)+'</td><td colspan="2"></td></tr>'
-    + '</tbody></table></div>';
+/* ---- pop-up + exports ---- */
+var CURRENT_REPORT = null;
+function openReport(kind, slug){
+  var b = buildReport(kind, slug);
+  CURRENT_REPORT = b;
+  document.getElementById('repTitle').textContent = b.title;
+  document.getElementById('repSub').textContent = b.rows.length + ' record' + (b.rows.length===1?'':'s')
+    + ' · ' + b.note;
+  document.getElementById('repBody').innerHTML = reportTable(b);
+  document.getElementById('repModal').removeAttribute('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closeReport(){
+  document.getElementById('repModal').setAttribute('hidden','');
+  document.body.style.overflow = '';
+}
+function stamp(){
+  var d = new Date();
+  return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+}
+function safeName(b){
+  return ('Palakombai ' + b.title).replace(/[^A-Za-z0-9 \-]/g,'').replace(/\s+/g,'_') + '_' + stamp();
 }
 
-function profileFree(list){
-  var rows = sortSf(list.filter(function(r){ return classify(r).free > 0.0001; }));
-  if (!rows.length) return '<div class="card empty">No free hold extent available.</div>';
-  var tot = 0;
-  var body = rows.map(function(r){
-    var c = classify(r); tot += c.free;
-    return '<tr><td><b>'+esc(r.sf_no)+'</b></td>'
-      + '<td class="num" style="color:var(--free);font-weight:700;">'+f2(c.free)+'</td>'
-      + '<td>'+esc((r.patta_no||'—').slice(0,50))+'</td>'
-      + '<td>'+esc(r.original_deed||'—')+'</td>'
-      + '<td>'+esc(r.verification_status||'—')+'</td></tr>';
-  }).join('');
-  return '<div class="tablewrap"><table><thead><tr><th>SF No.</th><th class="num">Free hold (Ac)</th>'
-    + '<th>Patta No.</th><th>Original deed</th><th>Verification</th></tr></thead><tbody>'
-    + body
-    + '<tr style="background:#EFEBE0;font-weight:700;"><td>Total</td><td class="num">'+f2(tot)+'</td><td colspan="3"></td></tr>'
-    + '</tbody></table></div>';
+function exportExcel(){
+  var b = CURRENT_REPORT; if (!b || !window.XLSX) { toast('Excel export unavailable.',true); return; }
+  var aoa = [];
+  aoa.push(['Palakombai Village, Andipatti Taluk, Theni District']);
+  aoa.push([b.title]);
+  aoa.push(['Scope: ' + b.scope, 'Generated: ' + stamp(), 'V Legal Services and Documentation, Coimbatore']);
+  aoa.push([]);
+  aoa.push(b.cols.map(function(c){ return c.label; }));
+  b.rows.forEach(function(o){
+    aoa.push(b.cols.map(function(c){ return c.num ? Math.round(n(o[c.k])*100)/100 : String(o[c.k]==null?'':o[c.k]); }));
+  });
+  if (b.cols.some(function(c){ return c.sum; })) {
+    aoa.push(b.cols.map(function(c,i){
+      if (c.sum) return Math.round(b.totals[c.k]*100)/100;
+      return i===0 ? 'Total ('+b.rows.length+')' : '';
+    }));
+  }
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = b.cols.map(function(c){ return {wch: c.num ? 13 : Math.max(10, Math.min(46, (c.w||90)/6)) }; });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, REPORT_DEFS[b.kind].label.slice(0,28));
+  XLSX.writeFile(wb, safeName(b) + '.xlsx');
+  toast('Excel file downloaded.');
 }
+
+function exportPdf(){
+  var b = CURRENT_REPORT;
+  var J = window.jspdf && window.jspdf.jsPDF;
+  if (!b || !J) { toast('PDF export unavailable.',true); return; }
+  var landscape = b.cols.length > 5;
+  var doc = new J({orientation: landscape ? 'landscape' : 'portrait', unit:'pt', format:'a4'});
+  var W = doc.internal.pageSize.getWidth();
+
+  doc.setFillColor(22,35,58); doc.rect(0,0,W,62,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('V Legal Services and Documentation', 40, 26);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(201,154,75);
+  doc.text('Mohan Kumar Rajavel, B.Sc.(Agri), LL.B., Advocate  ·  Gowtham Centre, Coimbatore  ·  6379588507', 40, 42);
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  doc.text('Palakombai Village, Andipatti Taluk, Theni District', 40, 55);
+
+  doc.setTextColor(22,35,58); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(b.title, 40, 86);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(107,114,128);
+  doc.text('Scope: ' + b.scope + '   ·   ' + b.rows.length + ' record' + (b.rows.length===1?'':'s')
+    + '   ·   Generated ' + stamp(), 40, 99);
+
+  var body = b.rows.map(function(o){
+    return b.cols.map(function(c){ return c.num ? f2(o[c.k]) : String(o[c.k]==null?'':o[c.k]); });
+  });
+  if (b.cols.some(function(c){ return c.sum; })) {
+    body.push(b.cols.map(function(c,i){
+      if (c.sum) return f2(b.totals[c.k]);
+      return i===0 ? 'Total (' + b.rows.length + ')' : '';
+    }));
+  }
+  var colStyles = {};
+  b.cols.forEach(function(c,i){
+    colStyles[i] = {halign: c.num ? 'right' : 'left'};
+    if (c.w) colStyles[i].cellWidth = Math.min(c.w, landscape ? 200 : 150);
+  });
+
+  doc.autoTable({
+    startY: 112,
+    head: [b.cols.map(function(c){ return c.label; })],
+    body: body,
+    styles: {font:'helvetica', fontSize:7.5, cellPadding:4, overflow:'linebreak', lineColor:[225,221,208], lineWidth:.4},
+    headStyles: {fillColor:[22,35,58], textColor:255, fontStyle:'bold', fontSize:7.5},
+    alternateRowStyles: {fillColor:[251,249,243]},
+    columnStyles: colStyles,
+    margin: {left:40, right:40, bottom:46},
+    didParseCell: function(d){
+      if (d.section === 'body' && d.row.index === body.length - 1 && body.length > b.rows.length) {
+        d.cell.styles.fillColor = [239,235,224]; d.cell.styles.fontStyle = 'bold';
+      }
+    },
+    didDrawPage: function(d){
+      var H = doc.internal.pageSize.getHeight();
+      doc.setFontSize(7); doc.setTextColor(140,140,140);
+      doc.text('Prepared by V Legal Services and Documentation as a working reference — not a substitute for the '
+        + 'source-referenced title documents.', 40, H - 26);
+      doc.text('Page ' + doc.internal.getNumberOfPages(), W - 70, H - 26);
+    }
+  });
+  doc.save(safeName(b) + '.pdf');
+  toast('PDF downloaded.');
+}
+
+/* ---- profile tab views now reuse the builders ---- */
+function surveyTable(list, slug){ return reportTable(buildReport('all', slug)); }
+function profileSold(list, slug){ return reportTable(buildReport('sold', slug)); }
+function profileEnc(list, slug){  return reportTable(buildReport('enc', slug)); }
+function profileFree(list, slug){ return reportTable(buildReport('free', slug)); }
 
 /* ---------------------------- reports ---------------------------- */
 var rTab = 'document';
@@ -974,6 +1166,10 @@ document.addEventListener('click', function(e){
   if ((el = t.closest('[data-mtab]'))) { mTab = el.getAttribute('data-mtab'); openKey = null; render(); return; }
   if ((el = t.closest('[data-rtab]'))) { rTab = el.getAttribute('data-rtab'); openKey = null; render(); return; }
   if ((el = t.closest('[data-ptab]'))) { pTab = el.getAttribute('data-ptab'); render(); return; }
+  if ((el = t.closest('[data-report]'))) { openReport(el.getAttribute('data-report'), el.getAttribute('data-slug')||null); return; }
+  if (t.id === 'repClose' || t.id === 'repModal') { closeReport(); return; }
+  if (t.id === 'repXlsx') { exportExcel(); return; }
+  if (t.id === 'repPdf')  { exportPdf(); return; }
   if ((el = t.closest('[data-open-profile]'))) { tab='profiles'; viewSlug = el.getAttribute('data-open-profile'); pTab='overview';
     document.querySelectorAll('[data-tab]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')==='profiles'); });
     render(); window.scrollTo(0,0); return; }
@@ -1010,6 +1206,7 @@ document.addEventListener('change', function(e){
 });
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape' && !document.getElementById('docModal').hasAttribute('hidden')) closeDoc();
+  if (e.key === 'Escape' && !document.getElementById('repModal').hasAttribute('hidden')) closeReport();
 });
 document.addEventListener('input', function(e){
   if (e.target.id === 'sSearch') {

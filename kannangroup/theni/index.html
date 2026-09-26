@@ -177,6 +177,28 @@
     margin-top:6px;font-variant-numeric:tabular-nums;}
   .minicap b{color:var(--brass);font-weight:700;}
 
+  /* a document that covers a group of survey numbers */
+  .dgroup{border:1px solid var(--line);border-left:3px solid var(--navy);border-radius:8px;
+    padding:12px 14px 4px;margin:14px 0 10px;background:#FBF9F3;}
+  .dgroup-h{font-family:'Lora',Georgia,serif;font-weight:700;color:var(--navy);font-size:14.5px;
+    margin-bottom:9px;}
+  .dgroup-n{display:block;font-family:'Inter',system-ui,sans-serif;font-weight:400;font-size:11px;
+    color:var(--muted);margin-top:3px;line-height:1.45;}
+  .viatag{display:inline-block;margin-left:8px;font-size:10px;text-transform:uppercase;
+    letter-spacing:.05em;font-weight:700;color:var(--navy);background:#EFEBE0;
+    padding:2px 7px;border-radius:20px;vertical-align:middle;}
+  .pgrow{display:grid;grid-template-columns:1fr 150px auto;gap:10px;align-items:end;margin-bottom:9px;}
+  @media(max-width:620px){.pgrow{grid-template-columns:1fr 110px auto;}}
+  .pgsum{background:#FBF9F3;border:1px dashed var(--brass);border-radius:8px;padding:11px 14px;
+    font-size:12.5px;color:var(--muted);margin:12px 0;line-height:1.7;}
+  .pgsum b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .pgwarn{color:var(--sold);font-weight:600;}
+  .pgcard{border:1px solid var(--line);border-radius:8px;padding:11px 14px;margin-bottom:8px;
+    background:var(--surface);display:flex;justify-content:space-between;align-items:center;gap:12px;
+    flex-wrap:wrap;}
+  .pgcard-t{font-family:'Lora',Georgia,serif;font-weight:700;color:var(--navy);font-size:14.5px;}
+  .pgcard-s{font-size:11.5px;color:var(--muted);}
+
   /* ---- phones: one card per record --------------------------------
      Eight columns in a horizontal scroll loses the SF number the moment
      you swipe right, and on site that is the one thing that must stay on
@@ -532,15 +554,20 @@ var API = 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq
 
 var token = null, DATA = {companies:[],partners:[],survey:[],documents:[],sections:[],seccontent:[]}, tab = 'dash', openKey = null, viewSlug = null;
 
+/* scope: company-wide category or one tied to survey numbers.
+   def:   what it normally covers, pre-selected on the upload form.
+          A Patta lists many survey numbers; an FMB is drawn for the parent
+          survey number and shows every subdivision inside it; a surveyor's
+          sketch really is for one SF. All four are overridable per upload. */
 var DOC_CATS = [
-  {id:'primary_docs',    label:'Primary Documents',    scope:'company'},
-  {id:'patta',           label:'Patta',                scope:'sf'},
-  {id:'ec',              label:'EC',                   scope:'sf'},
-  {id:'a_register',      label:'A Register',           scope:'sf'},
-  {id:'fmb',             label:'FMB',                  scope:'sf'},
-  {id:'surveyor_sketch', label:'Surveyor Sketch',      scope:'sf'},
-  {id:'legal_opinion',   label:'Legal Opinion Report', scope:'sf'},
-  {id:'parent_docs',     label:'Parent Documents',     scope:'sf'}
+  {id:'primary_docs',    label:'Primary Documents',    scope:'company', def:'company'},
+  {id:'patta',           label:'Patta',                scope:'sf',      def:'patta'},
+  {id:'ec',              label:'EC',                   scope:'sf',      def:'sf'},
+  {id:'a_register',      label:'A Register',           scope:'sf',      def:'patta'},
+  {id:'fmb',             label:'FMB',                  scope:'sf',      def:'block'},
+  {id:'surveyor_sketch', label:'Surveyor Sketch',      scope:'sf',      def:'sf'},
+  {id:'legal_opinion',   label:'Legal Opinion Report', scope:'sf',      def:'sf'},
+  {id:'parent_docs',     label:'Parent Documents',     scope:'sf',      def:'sf'}
 ];
 function catById(id){
   for (var i=0;i<DOC_CATS.length;i++) if (DOC_CATS[i].id===id) return DOC_CATS[i];
@@ -556,6 +583,80 @@ function sfNosFor(slug){
   return DATA.survey.filter(function(r){ return r.company_slug===slug; })
     .map(function(r){ return r.sf_no; })
     .sort(function(a,b){ return (a||'').localeCompare(b||'',undefined,{numeric:true}); });
+}
+
+/* ======================= what a document covers =======================
+   Four scopes: one survey number; every subdivision of a parent survey
+   number (block); every survey number under a Patta; or the whole entity.
+   The file is stored ONCE and found by the survey numbers it applies to,
+   so re-issuing a Patta means replacing one file, not nineteen.
+
+   Rows written before scoping existed carry no scope and are read the way
+   they were meant -- SF-level when they name a survey number, entity-level
+   otherwise -- so nothing already uploaded needs touching. */
+function sfBlock(sf){ return String(sf||'').split('/')[0].trim(); }
+
+function docScope(d){
+  var s = String(d.scope||'').trim();
+  if (s) return s;
+  return String(d.sf_no||'').trim() ? 'sf' : 'company';
+}
+function docKey(d){
+  var k = String(d.scope_key||'').trim();
+  if (k) return k;
+  return docScope(d) === 'sf' ? String(d.sf_no||'').trim() : '';
+}
+function scopeLabel(sc, key){
+  return sc === 'patta' ? 'Patta ' + key
+       : sc === 'block' ? 'Survey number ' + key + ' \u2014 all subdivisions'
+       : sc === 'sf'    ? 'SF ' + key
+       :                  'Entity-wide';
+}
+function pattaOfSf(slug, sf){
+  var r = DATA.survey.filter(function(x){ return x.company_slug===slug && x.sf_no===sf; })[0];
+  return r ? String(r.patta_no||'').trim() : '';
+}
+/* the distinct Patta numbers an entity holds, and the SF under each */
+function pattasFor(slug){
+  var m = {};
+  DATA.survey.filter(function(r){ return r.company_slug===slug; }).forEach(function(r){
+    var k = String(r.patta_no||'').trim(); if (!k) return;
+    (m[k] = m[k] || []).push(r.sf_no);
+  });
+  return Object.keys(m).sort(function(a,b){ return a.localeCompare(b,undefined,{numeric:true}); })
+    .map(function(k){ return {key:k, sf:m[k]}; });
+}
+/* the distinct parent survey numbers, and the subdivisions under each */
+function blocksFor(slug){
+  var m = {};
+  DATA.survey.filter(function(r){ return r.company_slug===slug; }).forEach(function(r){
+    var k = sfBlock(r.sf_no); if (!k) return;
+    (m[k] = m[k] || []).push(r.sf_no);
+  });
+  return Object.keys(m).sort(function(a,b){ return a.localeCompare(b,undefined,{numeric:true}); })
+    .map(function(k){ return {key:k, sf:m[k]}; });
+}
+/* which survey numbers a stored document reaches */
+function sfCoveredBy(d){
+  var sc = docScope(d), k = docKey(d), slug = d.company_slug;
+  if (sc === 'sf') return k ? [k] : [];
+  if (sc === 'block') return DATA.survey.filter(function(r){
+      return r.company_slug===slug && sfBlock(r.sf_no)===k; }).map(function(r){ return r.sf_no; });
+  if (sc === 'patta') return DATA.survey.filter(function(r){
+      return r.company_slug===slug && String(r.patta_no||'').trim()===k; }).map(function(r){ return r.sf_no; });
+  return [];
+}
+/* every document that applies to one survey number -- its own and inherited */
+function docsForSf(slug, sf){
+  var pno = pattaOfSf(slug, sf), blk = sfBlock(sf);
+  return DATA.documents.filter(function(d){
+    if (d.company_slug !== slug) return false;
+    var sc = docScope(d), k = docKey(d);
+    return sc === 'sf'    ? k === sf
+         : sc === 'block' ? k === blk
+         : sc === 'patta' ? (!!pno && k === pno)
+         :                  false;
+  });
 }
 try { token = sessionStorage.getItem('pk_token') || null; } catch(e) {}
 
@@ -1405,6 +1506,7 @@ function renderMaster(){
     + '<div class="tabs" style="border-bottom:1px solid var(--line);">'
     +   '<button class="tab'+(mTab==='entities'?' active':'')+'" data-mtab="entities">Entities</button>'
     +   '<button class="tab'+(mTab==='survey'?' active':'')+'" data-mtab="survey">Survey Numbers</button>'
+    +   '<button class="tab'+(mTab==='patta'?' active':'')+'" data-mtab="patta">Patta</button>'
     +   '<button class="tab'+(mTab==='docs'?' active':'')+'" data-mtab="docs">Documents</button>'
     +   '<button class="tab'+(mTab==='builder'?' active':'')+'" data-mtab="builder">Page Builder</button>'
     + '</div><div id="mbody"></div>';
@@ -1412,6 +1514,7 @@ function renderMaster(){
   if (mTab === 'entities') b.innerHTML = mEntities();
   else if (mTab === 'survey') b.innerHTML = mSurvey();
   else if (mTab === 'builder') b.innerHTML = mBuilder();
+  else if (mTab === 'patta') { b.innerHTML = mPatta(); renderPattaSummary(); }
   else b.innerHTML = mDocs();
 }
 var mTab = 'entities';
@@ -1608,7 +1711,197 @@ function surveyAcc(r){
     + '</div></div>';
 }
 
-var udState = {company:'', cat:'primary_docs', sf:''};
+/* ===================== Patta registration =====================
+   A Patta is a record before it is a file: one number, the survey numbers
+   it lists, and the extent it grants each of them. Recording it here writes
+   patta_no and patta_extent_ac onto those survey rows -- so the By Patta
+   report and the Patta column fill in -- and gives the Patta document a
+   group to attach to, uploaded once instead of once per survey number. */
+var pgState = {company:'', patta:'', rows:[{sf:'',ext:''}]};
+
+function pgRow(r, i, sfList){
+  return '<div class="pgrow" data-pgi="'+i+'">'
+    + '<div class="field" style="margin:0;"><label'+(i?' style="display:none;"':'')+'>Survey number</label>'
+    +   '<select data-pgrow="sf" data-pgi="'+i+'"><option value="">Choose\u2026</option>'
+    +   sfList.map(function(x){ return '<option value="'+esc(x)+'"'+(r.sf===x?' selected':'')+'>SF '+esc(x)+'</option>'; }).join('')
+    +   '</select></div>'
+    + '<div class="field" style="margin:0;"><label'+(i?' style="display:none;"':'')+'>Extent as per Patta</label>'
+    +   '<input data-pgrow="ext" data-pgi="'+i+'" value="'+esc(r.ext)+'" inputmode="decimal" placeholder="Ac"></div>'
+    + '<button class="btn outline sm" data-pgdel="'+i+'" title="Remove this row">&times;</button>'
+    + '</div>';
+}
+
+function mPatta(){
+  if (!pgState.company && DATA.companies.length) pgState.company = DATA.companies[0].company_slug;
+  var sfList = sfNosFor(pgState.company);
+  var existing = pattasFor(pgState.company);
+  if (!pgState.rows.length) pgState.rows = [{sf:'',ext:''}];
+
+  return '<p style="font-size:13.5px;color:var(--muted);margin:0 0 16px;max-width:780px;">'
+    + 'One Patta usually lists many survey numbers. Record it once here \u2014 the number, the survey '
+    + 'numbers it covers and the extent it gives each \u2014 and the Patta document is uploaded once '
+    + 'and appears under every one of them. It also fills the Patta number and Patta extent on those '
+    + 'survey rows, which is what the By Patta report reads.</p>'
+
+    + '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:20px;">'
+    +   '<h3 style="font-size:16px;margin-bottom:12px;">Record a Patta</h3>'
+    +   '<div class="row2">'
+    +     '<div class="field"><label>Patta number <span style="color:var(--sold);">*</span></label>'
+    +       '<input id="pgPatta" value="'+esc(pgState.patta)+'" placeholder="e.g. 1292"></div>'
+    +     '<div class="field"><label>Entity</label><select id="pgCompany">'
+    +       DATA.companies.map(function(c){ return '<option value="'+esc(c.company_slug)+'"'
+              +(pgState.company===c.company_slug?' selected':'')+'>'+esc(c.company)+'</option>'; }).join('')
+    +     '</select></div>'
+    +   '</div>'
+    +   '<div id="pgRows">' + pgState.rows.map(function(r,i){ return pgRow(r,i,sfList); }).join('') + '</div>'
+    +   '<div class="btnrow" style="margin-bottom:4px;">'
+    +     '<button class="btn outline sm" id="pgAdd">+ Add survey number</button></div>'
+    +   '<div class="pgsum" id="pgSum"></div>'
+    +   '<div class="field"><label>Patta document (optional)</label><input type="file" id="pgFile">'
+    +     '<div class="hint">Stored once and shown under every survey number above. '
+    +     'You can also add it later from the Documents tab.</div></div>'
+    +   '<div class="btnrow"><button class="btn brass sm" id="pgSave">Save Patta</button>'
+    +     '<button class="btn outline sm" id="pgClear">Clear</button>'
+    +     '<span class="msg" id="pgNote"></span></div>'
+    + '</div>'
+
+    + '<h3 style="font-size:16px;margin-bottom:10px;">Pattas recorded for this entity '
+    +   '<span style="font-weight:400;font-size:13px;color:var(--muted);">('+existing.length+')</span></h3>'
+    + (existing.length
+        ? existing.map(function(g){
+            var ext = DATA.survey.filter(function(r){ return r.company_slug===pgState.company
+                        && String(r.patta_no||'').trim()===g.key; })
+                      .reduce(function(a,r){ return a + n(r.patta_extent_ac); }, 0);
+            var docs = DATA.documents.filter(function(d){ return d.company_slug===pgState.company
+                        && docScope(d)==='patta' && docKey(d)===g.key; }).length;
+            return '<div class="pgcard"><span><span class="pgcard-t">Patta '+esc(g.key)+'</span>'
+              + '<span class="pgcard-s">'+g.sf.length+' survey number'+(g.sf.length===1?'':'s')
+              + (ext ? ' \u00b7 '+f2(ext)+' Ac as per Patta' : ' \u00b7 no Patta extent recorded')
+              + ' \u00b7 '+docs+' document'+(docs===1?'':'s')+'</span></span>'
+              + '<button class="btn outline sm" data-pgload="'+esc(g.key)+'">Load</button></div>';
+          }).join('')
+        : '<div class="card empty">None recorded yet.</div>');
+}
+
+/* Live totals under the rows: what the Patta says against what the documents
+   say, plus the two things worth stopping for -- a survey number already
+   under another Patta, and the same one entered twice. */
+function renderPattaSummary(){
+  var box = document.getElementById('pgSum');
+  if (!box) return;
+  var rows = pgState.rows.filter(function(r){ return r.sf; });
+  if (!rows.length) { box.innerHTML = 'Choose the survey numbers this Patta lists.'; return; }
+
+  var pno = (document.getElementById('pgPatta')||{}).value || pgState.patta;
+  var pattaTot = 0, docTot = 0, diff = [], moved = [], dupes = [], seen = {};
+  rows.forEach(function(r){
+    if (seen[r.sf]) dupes.push(r.sf); seen[r.sf] = 1;
+    var rec = DATA.survey.filter(function(x){ return x.company_slug===pgState.company && x.sf_no===r.sf; })[0] || {};
+    var pe = n(r.ext), de = n(rec.document_extent_ac);
+    pattaTot += pe; docTot += de;
+    if (pe && de && Math.abs(pe - de) > 0.005) diff.push(r.sf);
+    var cur = String(rec.patta_no||'').trim();
+    if (cur && pno && cur !== String(pno).trim()) moved.push(r.sf+' (now '+cur+')');
+  });
+
+  box.innerHTML = '<b>'+rows.length+'</b> survey number'+(rows.length===1?'':'s')
+    + ' \u00b7 <b>'+f2(pattaTot)+' Ac</b> as per Patta'
+    + ' \u00b7 <b>'+f2(docTot)+' Ac</b> as per documents'
+    + (diff.length ? '<br><span class="pgwarn">\u26a0 '+diff.length+' differ between Patta and document extent: '
+        + esc(diff.slice(0,8).join(', ')) + (diff.length>8?'\u2026':'') + '</span>' : '')
+    + (moved.length ? '<br><span class="pgwarn">\u26a0 already under another Patta \u2014 saving will reassign: '
+        + esc(moved.slice(0,6).join(', ')) + (moved.length>6?'\u2026':'') + '</span>' : '')
+    + (dupes.length ? '<br><span class="pgwarn">\u26a0 listed twice: '+esc(dupes.join(', '))+'</span>' : '');
+}
+
+function readPattaRows(){
+  var out = [];
+  Array.prototype.forEach.call(document.querySelectorAll('#pgRows .pgrow'), function(el){
+    out.push({ sf:(el.querySelector('[data-pgrow=sf]')||{}).value || '',
+               ext:(el.querySelector('[data-pgrow=ext]')||{}).value || '' });
+  });
+  if (out.length) pgState.rows = out;
+  var pe = document.getElementById('pgPatta');
+  if (pe) pgState.patta = pe.value;
+}
+
+function addPattaRow(){
+  readPattaRows();
+  pgState.rows.push({sf:'',ext:''});
+  render();
+}
+function delPattaRow(i){
+  readPattaRows();
+  pgState.rows.splice(i,1);
+  if (!pgState.rows.length) pgState.rows = [{sf:'',ext:''}];
+  render();
+}
+function loadPatta(key){
+  pgState.patta = key;
+  pgState.rows = DATA.survey
+    .filter(function(r){ return r.company_slug===pgState.company && String(r.patta_no||'').trim()===key; })
+    .sort(function(a,b){ return (a.sf_no||'').localeCompare(b.sf_no||'',undefined,{numeric:true}); })
+    .map(function(r){ return {sf:r.sf_no, ext:String(r.patta_extent_ac||'')}; });
+  if (!pgState.rows.length) pgState.rows = [{sf:'',ext:''}];
+  render();
+}
+function clearPatta(){ pgState.patta=''; pgState.rows=[{sf:'',ext:''}]; render(); }
+
+function savePatta(){
+  readPattaRows();
+  var noteEl = document.getElementById('pgNote');
+  var pno = String(pgState.patta||'').trim();
+  var rows = pgState.rows.filter(function(r){ return r.sf; });
+  if (!pno) { note(noteEl,'Enter the Patta number.',false); return; }
+  if (!rows.length) { note(noteEl,'Choose at least one survey number.',false); return; }
+
+  var fileEl = document.getElementById('pgFile');
+  var file = fileEl && fileEl.files && fileEl.files[0];
+  if (file && file.size > 8*1024*1024) {
+    note(noteEl,'File is larger than 8 MB \u2014 add it to the Drive folder directly.',false); return; }
+
+  note(noteEl,'Saving\u2026',true);
+  call({action:'savePattaGroup', data:{ company_slug:pgState.company, patta_no:pno,
+        rows: rows.map(function(r){ return {sf_no:r.sf, patta_extent_ac:r.ext}; }) }})
+    .then(function(r){
+      if (!r.ok) throw new Error(r.error);
+      var msg = 'Patta '+pno+' recorded against '+r.updated+' survey number'+(r.updated===1?'':'s')+'.';
+      if (r.missing && r.missing.length) msg += ' Not found: '+r.missing.join(', ')+'.';
+      if (!file) { toast(msg); return reload(true); }
+      return uploadPattaFile(file, pno).then(function(){
+        toast(msg+' Document filed against the Patta.'); return reload(true); });
+    })
+    .then(function(){ var f = document.getElementById('pgFile'); if (f) f.value=''; })
+    .catch(function(err){ note(noteEl,'Could not save: '+err.message,false); toast('Save failed.',true); });
+}
+
+function uploadPattaFile(file, pno){
+  return new Promise(function(resolve, reject){
+    var fr = new FileReader();
+    fr.onerror = function(){ reject(new Error('Could not read that file.')); };
+    fr.onload = function(){
+      call({action:'uploadDoc', company_slug:pgState.company, sf_no:'', category:'patta',
+        scope:'patta', scope_key:pno, file_name:file.name,
+        mime_type:file.type||'application/octet-stream', file_base64:String(fr.result).split(',')[1]})
+        .then(function(r){ r.ok ? resolve(r) : reject(new Error(r.error)); }, reject);
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+var udState = {company:'', cat:'primary_docs', sf:'', scope:'', key:''};
+
+var SCOPE_OPTS = [
+  ['sf',      'This survey number only'],
+  ['block',   'All subdivisions of a survey number'],
+  ['patta',   'All survey numbers under a Patta'],
+  ['company', 'The whole entity']
+];
+/* the applies-to in force: what you last chose, else the category's default */
+function udScope(cat){
+  if (udState.scope) return udState.scope;
+  return cat.def || (cat.scope === 'company' ? 'company' : 'sf');
+}
 
 function uploadSections(){
   return sectionsFor('company_profile', true).filter(function(x){ return isTrue(x.allow_upload); });
@@ -1626,19 +1919,51 @@ function mDocs(){
   var cat = anyCat(udState.cat) || DOC_CATS[0];
   var sfList = sfNosFor(udState.company);
 
-  var sfField = cat.scope === 'sf'
-    ? '<div class="field"><label>Survey number <span style="color:var(--sold);">*</span></label>'
-      + '<select id="udSf">' + '<option value="">Choose a survey number…</option>'
-      + sfList.map(function(x){ return '<option value="'+esc(x)+'"'+(udState.sf===x?' selected':'')+'>SF '+esc(x)+'</option>'; }).join('')
+  var sc = udScope(cat);
+  var pgs = pattasFor(udState.company), blks = blocksFor(udState.company);
+
+  var scopeField = '<div class="field"><label>Applies to</label><select id="udScope">'
+    + SCOPE_OPTS.map(function(o){
+        return '<option value="'+o[0]+'"'+(sc===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')
+    + '</select><div class="hint">Filed once and shown under every survey number it covers.</div></div>';
+
+  var keyField;
+  if (sc === 'sf') {
+    keyField = '<div class="field"><label>Survey number <span style="color:var(--sold);">*</span></label>'
+      + '<select id="udKey"><option value="">Choose a survey number…</option>'
+      + sfList.map(function(x){ return '<option value="'+esc(x)+'"'+(udState.key===x?' selected':'')+'>SF '+esc(x)+'</option>'; }).join('')
       + '</select>'
       + (sfList.length ? '' : '<div class="hint" style="color:var(--sold);">This entity has no survey numbers yet.</div>')
-      + '</div>'
-    : '<div class="field"><label>Survey number</label>'
-      + '<input value="Not required — this is a company-level document" disabled style="color:var(--muted);"></div>';
+      + '</div>';
+  } else if (sc === 'block') {
+    keyField = '<div class="field"><label>Survey number (parent) <span style="color:var(--sold);">*</span></label>'
+      + '<select id="udKey"><option value="">Choose a survey number…</option>'
+      + blks.map(function(b){
+          return '<option value="'+esc(b.key)+'"'+(udState.key===b.key?' selected':'')+'>'
+            + esc(b.key)+' \u2014 '+b.sf.length+' subdivision'+(b.sf.length===1?'':'s')+'</option>'; }).join('')
+      + '</select>'
+      + (blks.length ? '<div class="hint">Reaches every subdivision you hold under it.</div>'
+                     : '<div class="hint" style="color:var(--sold);">This entity has no survey numbers yet.</div>')
+      + '</div>';
+  } else if (sc === 'patta') {
+    keyField = '<div class="field"><label>Patta number <span style="color:var(--sold);">*</span></label>'
+      + '<select id="udKey"><option value="">Choose a Patta…</option>'
+      + pgs.map(function(g){
+          return '<option value="'+esc(g.key)+'"'+(udState.key===g.key?' selected':'')+'>Patta '
+            + esc(g.key)+' \u2014 '+g.sf.length+' SF</option>'; }).join('')
+      + '</select>'
+      + (pgs.length ? '' : '<div class="hint" style="color:var(--sold);">No Patta numbers recorded for this entity yet '
+          + '\u2014 register one under the Patta tab first.</div>')
+      + '</div>';
+  } else {
+    keyField = '<div class="field"><label>Survey number</label>'
+      + '<input value="Not required \u2014 this covers the whole entity" disabled style="color:var(--muted);"></div>';
+  }
+  var sfField = scopeField + keyField;
 
   var form = '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:18px;">'
     + '<h3 style="font-size:16px;margin-bottom:12px;">Upload a document</h3>'
-    + '<div class="row3">'
+    + '<div class="row2">'
     +   '<div class="field"><label>Entity</label><select id="udCompany">'
     +     DATA.companies.map(function(c){ return '<option value="'+esc(c.company_slug)+'"'+(udState.company===c.company_slug?' selected':'')+'>'+esc(c.company)+'</option>'; }).join('')
     +   '</select></div>'
@@ -1650,6 +1975,7 @@ function mDocs(){
           + '</optgroup>'
         : '')
     +   '</select></div>'
+    + '</div><div class="row2">'
     +   sfField
     + '</div>'
     + '<div class="field"><label>File</label><input type="file" id="udFile"></div>'
@@ -1687,16 +2013,43 @@ function docLibrary(editable, onlySlug){
       if (files.length) blocks.push(docBlock(sec.title, files, editable));
     });
 
-    // survey-number categories, grouped by SF
-    var bySf = {};
-    mine.filter(function(d){ var k = catById(d.category); return k && k.scope === 'sf'; })
-        .forEach(function(d){ (bySf[d.sf_no || '(no SF)'] = bySf[d.sf_no || '(no SF)'] || []).push(d); });
-    Object.keys(bySf).sort(function(a,b){ return a.localeCompare(b,undefined,{numeric:true}); })
-      .forEach(function(sf){
+    // documents covering a group of survey numbers -- one Patta, or one parent
+    // survey number. Filed once and managed here; they appear under every
+    // survey number they reach, further down.
+    var groups = {};
+    mine.filter(function(d){ var sc = docScope(d); return sc === 'patta' || sc === 'block'; })
+        .forEach(function(d){ var g = docScope(d)+':'+docKey(d);
+                              (groups[g] = groups[g] || []).push(d); });
+    Object.keys(groups).sort(function(a,b){ return a.localeCompare(b,undefined,{numeric:true}); })
+      .forEach(function(g){
+        var files = groups[g];
+        var sc = g.slice(0, g.indexOf(':')), key = g.slice(g.indexOf(':')+1);
+        var reach = sfCoveredBy(files[0]);
         var inner = DOC_CATS.filter(function(k){ return k.scope === 'sf'; }).map(function(k){
-          var files = bySf[sf].filter(function(d){ return d.category === k.id; });
-          return files.length ? docBlock(k.label, files, editable, true) : '';
+          var f = files.filter(function(d){ return d.category === k.id; });
+          return f.length ? docBlock(k.label, f, editable, true) : '';
         }).join('');
+        blocks.push('<div class="dgroup"><div class="dgroup-h">'+esc(scopeLabel(sc, key))
+          + '<span class="dgroup-n">'
+          + (reach.length ? reach.length+' survey number'+(reach.length===1?'':'s')+' \u00b7 '
+              + esc(reach.slice(0,10).join(', ')) + (reach.length>10 ? ' \u2026' : '')
+              : 'no survey numbers carry this yet')
+          + '</span></div>'+inner+'</div>');
+      });
+
+    // then survey number by survey number: its own documents and the group
+    // ones that reach it, tagged so it is clear where they come from
+    var sfSet = {};
+    mine.forEach(function(d){ sfCoveredBy(d).forEach(function(x){ sfSet[x] = 1; }); });
+    Object.keys(sfSet).sort(function(a,b){ return a.localeCompare(b,undefined,{numeric:true}); })
+      .forEach(function(sf){
+        var forSf = docsForSf(c.company_slug, sf);
+        var own = forSf.filter(function(d){ return docScope(d) === 'sf'; }).length;
+        var inner = DOC_CATS.filter(function(k){ return k.scope === 'sf'; }).map(function(k){
+          var files = forSf.filter(function(d){ return d.category === k.id; });
+          return files.length ? docBlock(k.label, files, editable, true, true) : '';
+        }).join('');
+        if (!inner) return;
         blocks.push('<div style="margin:14px 0 4px;"><div style="font-family:\'Lora\',serif;font-weight:700;color:var(--navy);font-size:14.5px;margin-bottom:7px;border-bottom:1px solid var(--line);padding-bottom:5px;">SF '+esc(sf)+'</div>'+inner+'</div>');
       });
 
@@ -1713,16 +2066,25 @@ function docLibrary(editable, onlySlug){
   }).join('') || '<div class="card empty">No documents uploaded yet.</div>';
 }
 
-function docBlock(label, files, editable, small){
+function docBlock(label, files, editable, small, showVia){
   return '<div style="margin-bottom:'+(small?'9':'13')+'px;">'
     + '<div style="font-size:'+(small?'11':'11.5')+'px;text-transform:uppercase;letter-spacing:.05em;color:var(--brass);font-weight:700;margin-bottom:5px;">'+esc(label)+'</div>'
     + files.map(function(d){
+        var sc = docScope(d);
         return '<div class="docrow">'
-          + '<span class="docname">&#128196; '+esc(d.file_name)+'</span>'
+          + '<span class="docname">&#128196; '+esc(d.file_name)
+          + (showVia && sc !== 'sf' && sc !== 'company'
+              ? '<span class="viatag">via '+esc(sc==='patta' ? 'Patta '+docKey(d) : 'survey no. '+docKey(d))+'</span>'
+              : '')
+          + '</span>'
           + '<span class="docacts">'
           +   '<button class="btn outline sm" data-view="'+esc(d.doc_id)+'">View</button>'
           +   '<a class="btn outline sm" href="'+esc(d.file_url)+'" target="_blank" rel="noopener">Open</a>'
-          +   (editable ? '<button class="btn danger sm" data-deld="'+esc(d.doc_id)+'">Delete</button>' : '')
+          // in a per-survey-number listing only the SF's own documents can be
+          // deleted here; an inherited one is removed at its group, so a
+          // single click cannot strip a Patta from eighteen other SF
+          +   ((editable && (!showVia || sc === 'sf'))
+                ? '<button class="btn danger sm" data-deld="'+esc(d.doc_id)+'">Delete</button>' : '')
           + '</span></div>';
       }).join('')
     + '</div>';
@@ -1970,6 +2332,11 @@ document.addEventListener('click', function(e){
   if (t.id === 'ncAdd') { addEntity(); return; }
   if (t.id === 'nsAdd') { addSurvey(); return; }
   if (t.id === 'udBtn') { uploadDoc(); return; }
+  if (t.id === 'pgAdd') { addPattaRow(); return; }
+  if (t.id === 'pgSave') { savePatta(); return; }
+  if (t.id === 'pgClear') { clearPatta(); return; }
+  if ((el = t.closest('[data-pgdel]'))) { delPattaRow(parseInt(el.getAttribute('data-pgdel'),10)); return; }
+  if ((el = t.closest('[data-pgload]'))) { loadPatta(el.getAttribute('data-pgload')); return; }
   if (t.id === 'nsecAdd') { addSection(); return; }
   if (t.id === 'secSaveAll') { saveAllSections(); return; }
   if ((el = t.closest('[data-delsec]'))) { deleteSection(el.getAttribute('data-delsec')); return; }
@@ -1983,11 +2350,19 @@ document.addEventListener('click', function(e){
   if (!t.closest('.searchwrap')) closeSearch();
 });
 
+document.addEventListener('input', function(e){
+  if (e.target.id === 'pgPatta' || (e.target.dataset && e.target.dataset.pgrow === 'ext')) {
+    readPattaRows(); renderPattaSummary();
+  }
+});
 document.addEventListener('change', function(e){
   if (e.target.id === 'sFilter') { mFilter = e.target.value; openKey = null; render(); }
-  if (e.target.id === 'udCompany') { udState.company = e.target.value; udState.sf = ''; render(); }
-  if (e.target.id === 'udCat')     { udState.cat = e.target.value; udState.sf = ''; render(); }
-  if (e.target.id === 'udSf')      { udState.sf = e.target.value; }
+  if (e.target.id === 'udCompany') { udState.company = e.target.value; udState.key = ''; render(); }
+  if (e.target.id === 'udCat')     { udState.cat = e.target.value; udState.scope = ''; udState.key = ''; render(); }
+  if (e.target.id === 'udScope')   { udState.scope = e.target.value; udState.key = ''; render(); }
+  if (e.target.id === 'udKey')     { udState.key = e.target.value; }
+  if (e.target.id === 'pgCompany') { pgState.company = e.target.value; pgState.rows = [{sf:'',ext:''}]; render(); }
+  if (e.target.dataset && e.target.dataset.pgrow !== undefined) { readPattaRows(); renderPattaSummary(); }
 });
 document.addEventListener('keydown', function(e){
   var panel = document.getElementById('qPanel');
@@ -2187,24 +2562,35 @@ function uploadDoc(){
   var fileEl = document.getElementById('udFile');
   var noteEl = document.getElementById('udNote');
   var cat = anyCat(udState.cat) || DOC_CATS[0];
-  var sfEl = document.getElementById('udSf');
-  var sf = (cat.scope === 'sf' && sfEl) ? sfEl.value : '';
+  var sc = udScope(cat);
+  var keyEl = document.getElementById('udKey');
+  var key = (sc !== 'company' && keyEl) ? keyEl.value : '';
   var file = fileEl && fileEl.files && fileEl.files[0];
 
-  if (cat.scope === 'sf' && !sf) { note(noteEl,'Choose a survey number for a '+cat.label+'.',false); return; }
+  if (sc !== 'company' && !key) {
+    note(noteEl, sc === 'patta' ? 'Choose the Patta this document belongs to.'
+       : sc === 'block' ? 'Choose the survey number this document covers.'
+       : 'Choose a survey number for a '+cat.label+'.', false); return;
+  }
   if (!file) { note(noteEl,'Choose a file first.',false); return; }
-  if (file.size > 8*1024*1024) { note(noteEl,'File is larger than 8 MB — add it to the Drive folder directly.',false); return; }
+  if (file.size > 8*1024*1024) { note(noteEl,'File is larger than 8 MB \u2014 add it to the Drive folder directly.',false); return; }
 
-  note(noteEl,'Uploading…',true);
+  var reach = sc === 'sf' || sc === 'company' ? 0
+    : (sc === 'patta' ? (pattasFor(udState.company).filter(function(g){ return g.key===key; })[0]||{sf:[]})
+                      : (blocksFor(udState.company).filter(function(g){ return g.key===key; })[0]||{sf:[]})).sf.length;
+
+  note(noteEl,'Uploading\u2026',true);
   var fr = new FileReader();
   fr.onerror = function(){ note(noteEl,'Could not read that file.',false); };
   fr.onload = function(){
     var b64 = String(fr.result).split(',')[1];
-    call({action:'uploadDoc', company_slug:udState.company, sf_no:sf, category:cat.id,
+    call({action:'uploadDoc', company_slug:udState.company,
+      sf_no: sc === 'sf' ? key : '', category:cat.id, scope:sc, scope_key:key,
       file_name:file.name, mime_type:file.type||'application/octet-stream', file_base64:b64})
       .then(function(r){ if(!r.ok) throw new Error(r.error);
-        fileEl.value=''; udState.sf=''; openKey = 'd:'+udState.company;
-        toast('Document uploaded.'); return reload(true); })
+        fileEl.value=''; udState.key=''; openKey = 'd:'+udState.company;
+        toast(reach ? 'Uploaded \u2014 now showing under '+reach+' survey numbers.' : 'Document uploaded.');
+        return reload(true); })
       .catch(function(err){ note(noteEl,'Upload failed: '+err.message,false); toast('Upload failed.',true); });
   };
   fr.readAsDataURL(file);

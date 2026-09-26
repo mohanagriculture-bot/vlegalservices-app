@@ -115,6 +115,59 @@
   td.notecell{color:var(--muted);font-size:12px;line-height:1.45;max-width:300px;min-width:180px;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   td.entcell{font-weight:600;min-width:150px;}
+
+  /* ---- phones: one card per record --------------------------------
+     Eight columns in a horizontal scroll loses the SF number the moment
+     you swipe right, and on site that is the one thing that must stay on
+     screen. So each row re-lays itself out as a small card headed by its
+     identifier. Screen only -- print keeps real tables. */
+  @media screen and (max-width:720px){
+    .tablewrap{overflow-x:visible;background:none;border:none;border-radius:0;}
+    .tablewrap table,.tablewrap tbody{display:block;width:100%;}
+    .tablewrap thead{display:none;}
+    .acc-body>.tablewrap{padding:11px;}
+
+    .tablewrap tbody tr{display:flex;flex-direction:column;background:var(--surface);
+      border:1px solid var(--line);border-left:3px solid var(--brass);
+      border-radius:var(--radius);padding:11px 13px 9px;margin-bottom:10px;}
+    .tablewrap tbody tr:last-child{margin-bottom:0;}
+
+    .tablewrap tbody td{display:flex;align-items:baseline;justify-content:space-between;
+      gap:14px;padding:6px 0;border:none;border-top:1px dotted var(--line);
+      text-align:left;white-space:normal;max-width:none;min-width:0;font-size:13.5px;}
+    .tablewrap tbody td:before{content:attr(data-label);flex:0 0 auto;color:var(--muted);
+      font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;line-height:1.75;}
+    .tablewrap tbody td:not([data-label]):before{content:none;}
+    .tablewrap tbody td:empty{display:none;}
+    .tablewrap tbody td.num{font-variant-numeric:tabular-nums;font-size:14.5px;font-weight:600;}
+
+    /* the identifier -- SF number, entity or deed -- heads the card */
+    .tablewrap tbody td.cardhead{order:-1;display:block;padding:0 0 8px;margin-bottom:2px;
+      border-top:none;border-bottom:1px solid var(--line);
+      font-family:'Lora',Georgia,serif;font-size:18px;font-weight:700;color:var(--navy);}
+    .tablewrap tbody td.cardhead:before{display:block;font-size:9.5px;color:var(--brass);
+      margin-bottom:1px;line-height:1.4;}
+    .tablewrap tbody td.cardhead+td{border-top:none;}
+    .tablewrap tbody td.cardkick{order:-2;display:block;padding:0 0 4px;border:none;
+      font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--brass);}
+    .tablewrap tbody td.cardkick:before{content:none;}
+
+    /* notes get the full width and the full text */
+    .tablewrap tbody td.notecell{display:block;-webkit-line-clamp:unset;overflow:visible;font-size:12.5px;}
+    .tablewrap tbody td.notecell:before{display:block;margin-bottom:2px;}
+
+    /* the totals line reads as a closing card */
+    .tablewrap tbody tr.sumrow{background:#EFEBE0;border-left-color:var(--navy);}
+    .tablewrap tbody tr.sumrow td{border-top-color:#D9D2BF;}
+    .tablewrap tbody tr.sumrow td.cardhead{border-bottom-color:#D9D2BF;font-size:15px;}
+
+    /* the two-column detail table on the Overview tab stacks instead */
+    table.kv,table.kv tbody,table.kv tr,table.kv td{display:block;width:auto;}
+    table.kv tr{padding:9px 0;border-bottom:1px solid var(--line);}
+    table.kv tr:last-child{border-bottom:none;}
+    table.kv td{padding:0 !important;width:auto !important;border:none;}
+    table.kv td:first-child{margin-bottom:3px;}
+  }
   .notehint{font-size:11.5px;color:var(--muted);margin:0 0 10px;}
   .searchwrap{position:relative;margin-bottom:18px;}
   .searchbox{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);
@@ -489,11 +542,47 @@ function docsOf(slug){ return DATA.documents.filter(function(d){ return d.compan
 /* ---------------------------- views ---------------------------- */
 var panel = document.getElementById('panel');
 
+/* ---------------------- phone card layout ----------------------
+   Under 720px the CSS above re-flows each table row into a card. The
+   cells then carry no column heading of their own, so stamp every cell
+   with its heading and mark which cell heads the card. Idempotent. */
+function cardify(root){
+  if (!root) return;
+  var tables = root.querySelectorAll('table');
+  for (var t = 0; t < tables.length; t++) {
+    var ths = tables[t].querySelectorAll('thead th');
+    if (!ths.length) continue;
+    var labels = [], headIdx = -1, sfIdx = -1, i;
+    for (i = 0; i < ths.length; i++) {
+      labels.push(ths[i].textContent.trim());
+      if (headIdx < 0 && !ths[i].classList.contains('num')) headIdx = i;
+      if (sfIdx  < 0 && /^sf no\.?$/i.test(labels[i]))      sfIdx  = i;
+    }
+    if (headIdx < 0) headIdx = 0;
+    if (sfIdx > -1) headIdx = sfIdx;
+    var rows = tables[t].querySelectorAll('tbody tr');
+    for (var r = 0; r < rows.length; r++) {
+      var sum = /EFEBE0/i.test(rows[r].getAttribute('style') || '');
+      if (sum) rows[r].classList.add('sumrow');
+      var cells = rows[r].children, ci = 0;
+      for (i = 0; i < cells.length; i++) {
+        var span = cells[i].colSpan || 1;
+        if (span === 1 && labels[ci] !== undefined && !(sum && ci === headIdx))
+          cells[i].setAttribute('data-label', labels[ci]);
+        if (ci === headIdx) cells[i].classList.add('cardhead');
+        else if (ci < headIdx) cells[i].classList.add('cardkick');
+        ci += span;
+      }
+    }
+  }
+}
+
 function render(){
   if (tab === 'dash') renderDash();
   else if (tab === 'profiles') renderProfiles();
   else if (tab === 'reports') renderReports();
   else renderMaster();
+  cardify(panel);
 }
 
 function tile(cls, value, label, kind, slug){
@@ -685,7 +774,7 @@ function profileOverview(c, slug){
   if (c.notes) rows.push(['Notes', esc(c.notes)]);
 
   return (rows.length
-      ? '<div class="card" style="margin-bottom:18px;"><table><tbody>' + rows.map(function(r){
+      ? '<div class="card" style="margin-bottom:18px;"><table class="kv"><tbody>' + rows.map(function(r){
           return '<tr><td style="width:190px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;">'+r[0]+'</td><td>'+r[1]+'</td></tr>';
         }).join('') + '</tbody></table></div>'
       : '<div class="card empty" style="margin-bottom:18px;">No entity details recorded yet — add them under Master Data.</div>')
@@ -874,6 +963,7 @@ function openReport(kind, slug){
   document.getElementById('repBody').innerHTML =
     (hasNote && b.rows.length ? '<p class="notehint">Notes are shortened here — hover to read one in full, or download the Excel file for the complete text.</p>' : '')
     + reportTable(b);
+  cardify(document.getElementById('repBody'));
   document.getElementById('repModal').removeAttribute('hidden');
   document.body.style.overflow = 'hidden';
 }

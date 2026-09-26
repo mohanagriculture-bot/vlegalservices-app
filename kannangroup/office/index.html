@@ -103,6 +103,21 @@
   .fname{font-size:13.5px;word-break:break-word;}
 
   .login{max-width:410px;margin:44px auto;}
+  #vdrop{border:2px dashed var(--line);border-radius:10px;background:#FBF9F3;padding:26px 18px;
+    text-align:center;color:var(--muted);font-size:14px;cursor:pointer;transition:.15s;}
+  #vdrop.on{border-color:var(--brass);background:#F7F1E4;color:var(--navy);}
+  #vdrop b{display:block;font-family:'Lora',Georgia,serif;font-size:16px;color:var(--navy);margin-bottom:4px;}
+  .stage{border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:12px;background:#fff;}
+  .stage .fn{font-size:12px;color:var(--muted);margin-bottom:8px;word-break:break-all;}
+  .catgrp{margin-top:22px;}
+  .catgrp h4{font-family:'Lora',Georgia,serif;font-size:15px;color:var(--navy);margin:0 0 9px;
+    padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .vrow{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;
+    padding:10px 0;border-bottom:1px dotted var(--line);}
+  .vrow:last-child{border-bottom:0;}
+  .vrow .nm{font-weight:600;color:var(--navy);font-size:14.5px;}
+  .vrow .rk{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .vrow .mt{font-size:11.5px;color:var(--muted);margin-top:3px;}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;
     padding:11px 18px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 24px rgba(22,35,58,.28);z-index:60;}
   .toast.bad{background:var(--bad);}
@@ -130,7 +145,8 @@
   <div id="loginView" class="login">
     <div class="card">
       <h3 style="font-family:'Lora',Georgia,serif;font-size:19px;color:var(--navy);margin:0 0 4px;">Sign in</h3>
-      <p style="font-size:13.5px;color:var(--muted);margin:0 0 16px;">Office password.</p>
+      <p style="font-size:13.5px;color:var(--muted);margin:0 0 16px;">Your name and the office password.</p>
+      <div class="field"><label>Your name</label><input id="uname" autocomplete="name" placeholder="e.g. Suresh"></div>
       <div class="field"><label>Password</label><input id="pw" type="password" autocomplete="current-password"></div>
       <div class="btnrow"><button class="btn brass" id="loginBtn">Sign in</button>
         <span class="msg" id="loginMsg"></span></div>
@@ -156,18 +172,24 @@
    =========================================================== */
 var API = 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec';
 
-var token = null, ROLE = '';
-var D = { parties:[], services:[], requests:[], files:[], messages:[], statuses:[] };
+var token = null, ROLE = '', USERNAME = '';
+var D = { parties:[], services:[], requests:[], files:[], messages:[], statuses:[],
+          partyFiles:[], docCats:[] };
 var tab = 'requests', openReq = null, filter = 'open', editParty = null;
+var openParty = null;      // whose vault is on screen
+var vqueue = [];           // files picked but not yet saved
+var CATS = ['Registered Documents','Revenue Records','ECs','Other Documents'];
 
 var panel = document.getElementById('panel');
 var tabbar = document.getElementById('tabbar');
 document.getElementById('yr').textContent = new Date().getFullYear();
-try { token = sessionStorage.getItem('kg_desk') || null; } catch(e) {}
+try { token = sessionStorage.getItem('kg_desk') || null;
+      USERNAME = sessionStorage.getItem('kg_who') || ''; } catch(e) {}
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-function call(p){ p.token = token; p.who = ROLE === 'advocate' ? 'Advocate' : 'Kannan Group office';
+function call(p){ p.token = token;
+  p.who = USERNAME || (ROLE === 'advocate' ? 'Advocate' : 'Kannan Group office');
   return fetch(API,{method:'POST',redirect:'follow',
     headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)})
     .then(function(r){ return r.json(); }); }
@@ -194,7 +216,10 @@ function isOpen(r){ return r.status !== 'Completed' && r.status !== 'Closed'; }
 
 function signIn(){
   var el=document.getElementById('pw'), m=document.getElementById('loginMsg');
+  var nm=document.getElementById('uname');
+  if(!nm.value.trim()){ note(m,'Enter your name.',false); nm.focus(); return; }
   if(!el.value){ note(m,'Enter the password.',false); return; }
+  USERNAME = nm.value.trim();
   var b=document.getElementById('loginBtn');
   b.disabled=true; b.innerHTML='<span class="spin"></span> Checking…'; note(m,'',true);
   fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -202,12 +227,15 @@ function signIn(){
     .then(function(r){ return r.json(); })
     .then(function(r){ if(!r.ok) throw new Error(r.error);
       token=r.token; ROLE=r.role;
-      try{ sessionStorage.setItem('kg_desk', token); }catch(e){}
+      try{ sessionStorage.setItem('kg_desk', token);
+           sessionStorage.setItem('kg_who', USERNAME); }catch(e){}
       el.value=''; showApp(); return reload(); })
     .catch(function(err){ note(m, err.message, false); })
     .then(function(){ b.disabled=false; b.textContent='Sign in'; });
 }
 function signOut(){
+  USERNAME=''; openParty=null; vqueue=[];
+  try{ sessionStorage.removeItem('kg_who'); }catch(e){}
   token=null; ROLE=''; openReq=null;
   try{ sessionStorage.removeItem('kg_desk'); }catch(e){}
   document.getElementById('appView').classList.add('hidden');
@@ -218,18 +246,29 @@ function showApp(){
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('appView').classList.remove('hidden');
   document.getElementById('outBtn').classList.remove('hidden');
+  if (USERNAME) {
+    document.querySelector('.hero h1').innerHTML =
+      'Welcome ' + esc(USERNAME) + '<span style="display:block;font-size:.5em;font-weight:500;'
+      + 'letter-spacing:.01em;color:var(--brass);margin-top:6px;">'
+      + 'to the V Legal Services Service Portal</span>';
+    document.getElementById('heroSub').textContent =
+      'Your clients and their documents, and any service you need from us.';
+  }
 }
 function reload(){
   return call({action:'deskLoad'}).then(function(r){
     if(!r.ok) throw new Error(r.error);
     ROLE=r.role;
     D={parties:r.parties||[],services:r.services||[],requests:r.requests||[],
-       files:r.files||[],messages:r.messages||[],statuses:r.statuses||[]};
+       files:r.files||[],messages:r.messages||[],statuses:r.statuses||[],
+       partyFiles:r.partyFiles||[],docCats:r.docCats||CATS};
     document.getElementById('kicker').textContent =
       ROLE==='advocate' ? 'Advocate view' : 'Kannan Group · Internal';
-    document.getElementById('heroSub').textContent = ROLE==='advocate'
-      ? 'Every request raised by the office, with its thread and attachments.'
-      : "Raise a request, track what's in progress, and ask a clarification on any job.";
+    document.getElementById('heroSub').textContent = USERNAME
+      ? 'Your clients and their documents, and any service you need from us.'
+      : ROLE==='advocate'
+        ? 'Every request raised by the office, with its thread and attachments.'
+        : "Raise a request, track what's in progress, and ask a clarification on any job.";
     render();
   }).catch(function(err){ toast(err.message,true);
     if(/sign(ed)? in/i.test(err.message)) signOut(); });
@@ -244,12 +283,186 @@ function render(){
     + (ROLE==='advocate'
         ? '<button class="tab'+(tab==='services'?' active':'')+'" data-tab="services">Services</button>' : '');
   panel.innerHTML = openReq ? requestDetail()
+    : (tab==='clients' && openParty) ? partyVault()
     : tab==='clients' ? clientsView()
     : tab==='services' ? servicesView()
     : requestsView();
 }
 
 /* ---- requests ---- */
+
+/* ------------------------- client document vault --------------------- */
+
+function cats(){ return (D.docCats && D.docCats.length) ? D.docCats : CATS; }
+
+function catOptions(sel){
+  return cats().map(function(c){
+    return '<option'+(c===sel?' selected':'')+'>'+esc(c)+'</option>'; }).join('');
+}
+
+/* One staged file: the file itself is fixed, the rest is yours to set. */
+function stageRow(f, i){
+  return '<div class="stage">'
+    + '<div class="fn">'+esc(f.file.name)+' · '+Math.round(f.file.size/1024)+' KB</div>'
+    + '<div class="row2">'
+    +   '<div class="field"><label>Document name</label>'
+    +     '<input data-sname="'+i+'" value="'+esc(f.doc_name)+'"></div>'
+    +   '<div class="field"><label>Category</label>'
+    +     '<select data-scat="'+i+'">'+catOptions(f.category)+'</select></div>'
+    + '</div>'
+    + '<div class="field"><label>Remark</label>'
+    +   '<input data-srem="'+i+'" value="'+esc(f.remark)+'" placeholder="optional"></div>'
+    + '<div class="btnrow"><button class="btn outline sm" data-sdel="'+i+'">Remove</button></div></div>';
+}
+
+function vaultRows(pid){
+  var mine = D.partyFiles.filter(function(f){ return f.party_id===pid; });
+  if(!mine.length) return '<div class="card empty">No documents saved yet.</div>';
+  return cats().map(function(c){
+    var inCat = mine.filter(function(f){ return f.category===c; })
+      .sort(function(a,b){ return String(b.uploaded_at||'').localeCompare(String(a.uploaded_at||'')); });
+    if(!inCat.length) return '';
+    return '<div class="catgrp"><h4>'+esc(c)
+      + ' <span style="font-weight:400;color:var(--muted);">('+inCat.length+')</span></h4>'
+      + inCat.map(function(f){
+          var dl = 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(f.file_id);
+          return '<div class="vrow"><span>'
+            + '<div class="nm">'+esc(f.doc_name || f.file_name)+'</div>'
+            + (f.remark ? '<div class="rk">'+esc(f.remark)+'</div>' : '')
+            + '<div class="mt">'+esc(f.file_name)+' · added by '+esc(f.uploaded_by||'—')
+            +   ' · '+esc(when(f.uploaded_at))+'</div></span>'
+            + '<span class="btnrow">'
+            + '<a class="btn outline sm" href="'+esc(f.file_url)+'" target="_blank" rel="noopener">View</a>'
+            + '<a class="btn outline sm" href="'+esc(dl)+'" target="_blank" rel="noopener">Download</a>'
+            + '<button class="btn outline sm" data-vcopy="'+esc(f.file_url)+'">Copy link</button>'
+            + '<button class="btn outline sm" data-vedit="'+esc(f.pf_id)+'">Edit</button>'
+            + (ROLE==='advocate'
+                ? '<button class="btn danger sm" data-vdel="'+esc(f.pf_id)+'">Delete</button>' : '')
+            + '</span></div>';
+        }).join('')
+      + '</div>';
+  }).join('');
+}
+
+function partyVault(){
+  var p = D.parties.filter(function(x){ return x.party_id===openParty; })[0];
+  if(!p){ openParty=null; return clientsView(); }
+  var reqs = D.requests.filter(function(r){ return r.party_id===p.party_id; });
+
+  return '<button class="btn outline sm" id="backBtn" style="margin-bottom:16px;">← All clients</button>'
+    + '<div class="sec-head"><div class="idx">Document vault</div>'
+    +   '<h2>'+esc(p.name)+'</h2>'
+    +   '<p>'+([p.phone,p.email,p.address].filter(Boolean).map(esc).join(' · ') || 'No contact details on file')
+    +   (reqs.length ? ' · '+reqs.length+' service request'+(reqs.length===1?'':'s') : '')
+    +   '</p></div>'
+    + '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;">'
+    +   '<h3 style="font-family:Lora,Georgia,serif;font-size:17px;color:var(--navy);margin:0 0 13px;">'
+    +     'Add documents</h3>'
+    +   '<div id="vdrop"><b>Drag documents here</b>or tap to choose files — several at once is fine.</div>'
+    +   '<input type="file" id="vfile" multiple style="display:none;">'
+    +   (vqueue.length
+        ? vqueue.map(stageRow).join('')
+          + '<div class="btnrow" style="margin-top:14px;">'
+          + '<button class="btn brass" id="vSave">Save '+vqueue.length+' document'
+          +   (vqueue.length===1?'':'s')+'</button>'
+          + '<button class="btn outline" id="vClear">Clear</button>'
+          + '<span class="msg" id="vMsg"></span></div>'
+        : '<p style="font-size:12.5px;color:var(--muted);margin:12px 0 0;">'
+          + 'Each file gets its own name, category and remark. Up to 8 MB each.</p>')
+    + '</div>'
+    + '<div style="margin-top:26px;">' + vaultRows(p.party_id) + '</div>';
+}
+
+function stageFiles(list){
+  var over = 0;
+  for(var i=0;i<list.length;i++){
+    var f=list[i];
+    if(f.size > 8*1024*1024){ over++; continue; }
+    vqueue.push({ file:f, doc_name:f.name.replace(/\.[^.]+$/,''),
+                  category:cats()[0], remark:'' });
+  }
+  if(over) toast(over+' file'+(over===1?' was':'s were')+' over 8 MB and left out.', true);
+  render();
+}
+
+/* Read the inputs back before anything re-renders and loses them. */
+function collectStage(){
+  vqueue.forEach(function(f,i){
+    var n=document.querySelector('[data-sname="'+i+'"]');
+    var c=document.querySelector('[data-scat="'+i+'"]');
+    var r=document.querySelector('[data-srem="'+i+'"]');
+    if(n) f.doc_name=n.value;
+    if(c) f.category=c.value;
+    if(r) f.remark=r.value;
+  });
+}
+
+/* Sent one at a time. If a batch fails halfway, what went up stays up and
+   the rest remain on screen to retry — nothing disappears quietly. */
+function saveVault(){
+  collectStage();
+  if(!vqueue.length) return;
+  var m=document.getElementById('vMsg'), btn=document.getElementById('vSave');
+  btn.disabled=true;
+  var done=0, total=vqueue.length;
+
+  function next(){
+    if(!vqueue.length){
+      toast(done+' document'+(done===1?'':'s')+' saved.');
+      return reload();
+    }
+    var item=vqueue[0];
+    note(m,'Uploading '+(done+1)+' of '+total+'…',true);
+    var fr=new FileReader();
+    fr.onerror=function(){ note(m,'Could not read '+item.file.name+'.',false); btn.disabled=false; };
+    fr.onload=function(){
+      call({action:'deskPartyUpload', party_id:openParty,
+            file_name:item.file.name, mime_type:item.file.type||'application/octet-stream',
+            file_base64:String(fr.result).split(',')[1],
+            doc_name:item.doc_name, category:item.category, remark:item.remark})
+        .then(function(r){ if(!r.ok) throw new Error(r.error);
+          vqueue.shift(); done++; next(); })
+        .catch(function(err){
+          note(m, 'Stopped at "'+item.file.name+'": '+err.message
+                + (done ? ' · '+done+' already saved.' : ''), false);
+          btn.disabled=false; });
+    };
+    fr.readAsDataURL(item.file);
+  }
+  next();
+}
+
+function editVaultDoc(id){
+  var f = D.partyFiles.filter(function(x){ return x.pf_id===id; })[0];
+  if(!f) return;
+  var nm = window.prompt('Document name', f.doc_name || f.file_name);
+  if(nm===null) return;
+  var rk = window.prompt('Remark', f.remark || '');
+  if(rk===null) return;
+  var ct = window.prompt('Category — type one of:\n\n' + cats().join('\n'), f.category);
+  if(ct===null) return;
+  if(cats().indexOf(ct) < 0){ toast('That is not one of the categories.', true); return; }
+  call({action:'deskPartyFileEdit', data:{ pf_id:id, doc_name:nm, remark:rk, category:ct }})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Updated.'); return reload(); })
+    .catch(function(err){ toast(err.message, true); });
+}
+
+function deleteVaultDoc(id){
+  var f = D.partyFiles.filter(function(x){ return x.pf_id===id; })[0];
+  if(!f) return;
+  if(!window.confirm('Remove "'+(f.doc_name||f.file_name)+'" from the vault?\n\n'
+    + 'The file goes to the Drive bin.')) return;
+  call({action:'deskPartyFileDelete', pf_id:id})
+    .then(function(r){ if(!r.ok) throw new Error(r.error); toast('Removed.'); return reload(); })
+    .catch(function(err){ toast(err.message, true); });
+}
+
+function copyLink(u){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(u).then(function(){ toast('Link copied.'); },
+      function(){ window.prompt('Copy this link', u); });
+  } else { window.prompt('Copy this link', u); }
+}
 
 function newRequestForm(){
   var act = D.services.filter(function(s){ return String(s.active).toUpperCase()!=='FALSE'; })
@@ -407,12 +620,16 @@ function clientsView(){
   var rows = D.parties.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); })
     .map(function(p){
       var n = D.requests.filter(function(r){ return r.party_id===p.party_id; }).length;
+      var nd = D.partyFiles.filter(function(f){ return f.party_id===p.party_id; }).length;
       return '<div class="filerow">'
         + '<span><span style="font-family:\'Lora\',Georgia,serif;font-weight:700;color:var(--navy);">'
         +   esc(p.name)+'</span><span style="font-size:12px;color:var(--muted);"> · '
         +   [p.phone,p.email].filter(Boolean).map(esc).join(' · ')
-        +   (n ? ' · '+n+' request'+(n===1?'':'s') : ' · no requests yet') + '</span></span>'
-        + '<span class="btnrow"><button class="btn outline sm" data-pedit="'+esc(p.party_id)+'">Edit</button>'
+        +   (n ? ' · '+n+' request'+(n===1?'':'s') : ' · no requests yet')
+        +   ' · ' + (nd ? nd+' document'+(nd===1?'':'s') : 'vault empty') + '</span></span>'
+        + '<span class="btnrow">'
+        + '<button class="btn brass sm" data-popen="'+esc(p.party_id)+'">Document vault</button>'
+        + '<button class="btn outline sm" data-pedit="'+esc(p.party_id)+'">Edit</button>'
         + '<button class="btn danger sm" data-pdel="'+esc(p.party_id)+'">Delete</button></span></div>';
     }).join('');
 
@@ -536,11 +753,22 @@ document.addEventListener('click', function(e){
   var t=e.target, el;
   if(t.id==='loginBtn'){ signIn(); return; }
   if(t.id==='outBtn'){ signOut(); return; }
-  if((el=t.closest('[data-tab]'))){ tab=el.getAttribute('data-tab'); openReq=null; editParty=null; render(); return; }
+  if((el=t.closest('[data-tab]'))){ tab=el.getAttribute('data-tab');
+    openReq=null; editParty=null; openParty=null; vqueue=[]; render(); return; }
   if((el=t.closest('[data-filter]'))){ filter=el.getAttribute('data-filter'); render(); return; }
   if(t.id==='nrSave'){ saveRequest(); return; }
   if((el=t.closest('[data-open]'))){ openReq=el.getAttribute('data-open'); render(); window.scrollTo(0,0); return; }
-  if(t.id==='backBtn'){ openReq=null; render(); return; }
+  if(t.id==='backBtn'){ openReq=null; openParty=null; vqueue=[]; render(); return; }
+  if((el=t.closest('[data-popen]'))){ openParty=el.getAttribute('data-popen');
+    vqueue=[]; editParty=null; render(); window.scrollTo(0,0); return; }
+  if(t.id==='vdrop'){ document.getElementById('vfile').click(); return; }
+  if(t.id==='vSave'){ saveVault(); return; }
+  if(t.id==='vClear'){ vqueue=[]; render(); return; }
+  if((el=t.closest('[data-sdel]'))){ collectStage();
+    vqueue.splice(Number(el.getAttribute('data-sdel')),1); render(); return; }
+  if((el=t.closest('[data-vedit]'))){ editVaultDoc(el.getAttribute('data-vedit')); return; }
+  if((el=t.closest('[data-vdel]'))){ deleteVaultDoc(el.getAttribute('data-vdel')); return; }
+  if((el=t.closest('[data-vcopy]'))){ copyLink(el.getAttribute('data-vcopy')); return; }
   if(t.id==='msgBtn'){ sendMessage(); return; }
   if(t.id==='stBtn'){ setStatus(); return; }
   if(t.id==='upBtn'){ uploadFile(); return; }
@@ -551,8 +779,36 @@ document.addEventListener('click', function(e){
   if(t.id==='svAdd'){ addService(); return; }
   if((el=t.closest('[data-stog]'))){ toggleService(el.getAttribute('data-stog')); return; }
 });
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id==='vfile' && e.target.files && e.target.files.length){
+    stageFiles(e.target.files); e.target.value='';
+  }
+});
+/* drag and drop onto the vault */
+document.addEventListener('dragover', function(e){
+  var z = e.target.closest ? e.target.closest('#vdrop') : null;
+  if(!z) return;
+  e.preventDefault(); z.classList.add('on');
+});
+document.addEventListener('dragleave', function(e){
+  var z = e.target.closest ? e.target.closest('#vdrop') : null;
+  if(z) z.classList.remove('on');
+});
+document.addEventListener('drop', function(e){
+  var z = e.target.closest ? e.target.closest('#vdrop') : null;
+  if(!z) return;
+  e.preventDefault(); z.classList.remove('on');
+  if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+    collectStage(); stageFiles(e.dataTransfer.files);
+  }
+});
+/* a file dropped anywhere else must not navigate the page away */
+window.addEventListener('dragover', function(e){ e.preventDefault(); });
+window.addEventListener('drop', function(e){ e.preventDefault(); });
+
 document.addEventListener('keydown', function(e){
-  if(e.key==='Enter' && document.activeElement && document.activeElement.id==='pw') signIn();
+  if(e.key==='Enter' && document.activeElement &&
+     (document.activeElement.id==='pw' || document.activeElement.id==='uname')) signIn();
 });
 
 if (token) { showApp(); reload(); }

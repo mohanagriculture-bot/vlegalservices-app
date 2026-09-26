@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/assets/idle.js"></script>
+
 <script src="/assets/lock.js"></script>
 
 <meta charset="UTF-8">
@@ -3010,8 +3012,7 @@ if (token) {
   showApp();
   reload(false).catch(function(){ signOut(); });
 } else {
-  var owner = false; try { owner = !!localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token'); } catch(e) {}
-  if (!owner) location.replace('/login/?as=client&next=' + encodeURIComponent(location.pathname));
+  location.replace('/login/?as=client&next=' + encodeURIComponent(location.pathname));
 }
 })();
 </script>

@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/assets/idle.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>Client Portal | V Legal Services</title>
 <script>
 /* No direct entry: signed-in clients, or someone arriving from their email link */
-(function(){var ok=false;try{ok=!!localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token')||/access_token=|type=(invite|recovery)|error_code=/.test(location.hash);}catch(e){}
+(function(){var ok=false;try{ok=!!sessionStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token')||/access_token=|type=(invite|recovery)|error_code=/.test(location.hash);}catch(e){}
 if(!ok){location.replace('/login/?as=client');}})();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -106,7 +108,7 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:0 
 </main>
 
 <script>
-var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm');
+var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm', { auth: { storage: window.sessionStorage } });
 var SERVICES = ['Presence-less registration – first sale','Bank MOD registration','Discharge / Deed of Receipt','SRO registration','Legal opinion','Document drafting','Other'];
 var S = { acct:null, tab:'requests', reqs:[], docs:[], open:null, newForm:false };
 var $ = function(id){ return document.getElementById(id); };

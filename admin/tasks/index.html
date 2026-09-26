@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script src="/assets/idle.js"></script>
+
 <script>
 /* No direct entry: only signed-in users stay on this page */
-(function(){var ok=false;try{ok=!!localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token');}catch(e){}
+(function(){var ok=false;try{ok=!!sessionStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token');}catch(e){}
 if(!ok){location.replace('/login/');}})();
 </script>
 <script src="/assets/lock.js"></script>

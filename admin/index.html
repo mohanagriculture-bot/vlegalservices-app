@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/assets/idle.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
@@ -66,7 +68,7 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
 </div>
 
 <script>
-var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm');
+var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm', { auth: { storage: window.sessionStorage } });
 
 function show(t){
   document.querySelectorAll('.tabs button').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.t===t ? 'true':'false'); });

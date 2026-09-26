@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/assets/idle.js"></script>
+
 <script>
 /* Signed-in Kannan Group users only; everyone else goes to the Login Portal */
-(function(){var t=null;try{t=sessionStorage.getItem('pk_token')||sessionStorage.getItem('kg_desk')||localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token');}catch(e){}
+(function(){var t=null;try{t=sessionStorage.getItem('pk_token')||sessionStorage.getItem('kg_desk');}catch(e){}
 if(!t){location.replace('/login/?as=client&next='+encodeURIComponent(location.pathname));}})();
 </script>
 

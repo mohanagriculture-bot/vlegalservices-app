@@ -129,8 +129,10 @@ var CLIENTS = {
   }
 };
 
-var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm');
+var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm', { auth: { storage: window.sessionStorage } });
 var kind = 'internal';
+try { localStorage.removeItem('sb-tjvvqoomaptxscgiziks-auth-token'); } catch(e){}   // older sign-ins were kept on the device
+function fresh(){ try { sessionStorage.setItem('vls_last_active', String(Date.now())); } catch(e){} }
 var $ = function(id){ return document.getElementById(id); };
 
 function setKind(k){
@@ -164,7 +166,7 @@ async function internalLogin(id, pw){
     if(/invalid login credentials/i.test(r.error.message)) throw wrong();
     throw new Error(r.error.message);
   }
-  VLSLock.reset();
+  VLSLock.reset(); fresh();
   var user = r.data.user;
   var owner = false;
   try {
@@ -183,7 +185,7 @@ async function externalLogin(id, pw){
     body: JSON.stringify({ action:c.action, password:pw }) });
   var r = await res.json();
   if(!r.ok || !r.token) throw wrong();
-  VLSLock.reset();
+  VLSLock.reset(); fresh();
   try { sessionStorage.setItem(c.tokenKey, r.token); } catch(e){}
   var next = new URLSearchParams(location.search).get('next') || '';
   window.location.href = (next.indexOf(c.area) === 0 && next.indexOf('//') === -1) ? next : c.dest;
@@ -199,7 +201,7 @@ async function accountLogin(id, pw){
   if(!res.ok || !r.ok || !r.session) { if(res.status === 401) throw wrong(); throw new Error(r.error || 'Could not sign in. Please try again.'); }
   var s = await sb.auth.setSession(r.session);
   if(s.error) throw new Error('Could not sign in. Please try again.');
-  VLSLock.reset();
+  VLSLock.reset(); fresh();
   window.location.href = '/client/';
 }
 
@@ -238,6 +240,7 @@ $('f').addEventListener('submit', async function(e){
 document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ setKind(b.dataset.k); }); });
 $('show').addEventListener('click', function(){ var p=$('p'); var h=p.type==='password'; p.type=h?'text':'password'; this.textContent=h?'Hide':'Show'; });
 if(new URLSearchParams(location.search).get('as')==='client') setKind('external'); else setKind('internal');
+if(new URLSearchParams(location.search).get('timeout')==='1' && !VLSLock.locked()) err('You were signed out after 10 minutes of inactivity. Please sign in again.', true);
 </script>
 </body>
 </html>

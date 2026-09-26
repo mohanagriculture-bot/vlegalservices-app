@@ -120,7 +120,8 @@ var CLIENTS = {
     api: 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec',
     action: 'login',
     tokenKey: 'pk_token',
-    dest: '/kannangroup/theni/'
+    dest: '/kannangroup/theni/',
+    area: '/kannangroup/'
   }
 };
 
@@ -164,7 +165,8 @@ async function externalLogin(id, pw){
   var r = await res.json();
   if(!r.ok || !r.token) throw new Error('User ID or password is incorrect.');
   try { sessionStorage.setItem(c.tokenKey, r.token); } catch(e){}
-  window.location.href = c.dest;
+  var next = new URLSearchParams(location.search).get('next') || '';
+  window.location.href = (next.indexOf(c.area) === 0 && next.indexOf('//') === -1) ? next : c.dest;
 }
 
 $('f').addEventListener('submit', async function(e){

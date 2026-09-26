@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* Signed-in Kannan Group users only; everyone else goes to the Login Portal */
+(function(){var t=null;try{t=sessionStorage.getItem('pk_token')||sessionStorage.getItem('kg_desk');}catch(e){}
+if(!t){location.replace('/login/?as=client&next='+encodeURIComponent(location.pathname));}})();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kannan Group | V Legal Services</title>

@@ -2977,6 +2977,7 @@ function signOut(){
   document.getElementById('outBtn').classList.add('hidden');
   document.getElementById('loginView').classList.remove('hidden');
   document.getElementById('pw').value = '';
+  location.replace('/login/?as=client');
 }
 
 document.getElementById('loginForm').addEventListener('submit', function(e){
@@ -3004,6 +3005,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e){
 if (token) {
   showApp();
   reload(false).catch(function(){ signOut(); });
+} else {
+  location.replace('/login/?as=client&next=' + encodeURIComponent(location.pathname));
 }
 })();
 </script>

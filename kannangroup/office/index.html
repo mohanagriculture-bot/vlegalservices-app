@@ -1,0 +1,560 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Service Desk | Kannan Group · V Legal Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EC; --surface:#FFFFFF; --ink:#1E2430; --muted:#6B7280;
+    --navy:#16233A; --navy2:#22354F; --brass:#A9762F; --brass-light:#C99A4B;
+    --line:#E1DDD0; --radius:10px;
+    --ok:#2F6B4F; --warn:#9C4B1F; --bad:#A13D3D;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;}
+  a{color:var(--navy);}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px;}
+  header{background:var(--bg);border-bottom:1px solid var(--line);}
+  .hbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit;}
+  .mark{width:38px;height:38px;border-radius:50%;border:2px solid var(--brass);color:var(--brass);
+    display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-weight:700;font-size:13px;flex:none;}
+  .bname{font-family:'Lora',Georgia,serif;font-weight:700;font-size:17px;color:var(--navy);line-height:1.2;}
+  .btag{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);}
+  .hero{background:var(--navy);color:#fff;padding:34px 0 38px;}
+  .hero .kicker{display:inline-block;border:1px solid rgba(242,196,109,.5);color:#F2C46D;
+    border-radius:30px;padding:4px 13px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;margin-bottom:13px;}
+  .hero h1{font-family:'Lora',Georgia,serif;font-size:clamp(24px,4vw,34px);margin:0 0 9px;font-weight:700;}
+  .hero p{color:#C9D2E0;margin:0;font-size:15px;max-width:620px;}
+  main{padding:26px 0 60px;}
+  footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;color:var(--muted);}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--navy);
+    background:var(--navy);color:#fff;padding:10px 16px;border-radius:7px;font-size:14px;font-weight:600;
+    text-decoration:none;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .btn:hover{background:var(--navy2);}
+  .btn.brass{background:var(--brass);border-color:var(--brass);}
+  .btn.brass:hover{background:var(--brass-light);}
+  .btn.outline{background:transparent;color:var(--navy);}
+  .btn.outline:hover{background:#EFEBE0;}
+  .btn.danger{background:var(--bad);border-color:var(--bad);}
+  .btn.sm{padding:6px 11px;font-size:12.5px;}
+  .btnrow{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+  .card.empty{color:var(--muted);text-align:center;padding:26px;}
+  .field{margin-bottom:13px;}
+  .field label,label.lbl{display:block;font-size:12px;font-weight:600;color:var(--navy);margin-bottom:5px;}
+  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:7px;padding:10px 12px;
+    font:inherit;font-size:14px;background:var(--surface);color:var(--ink);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px rgba(169,118,47,.13);}
+  textarea{min-height:95px;resize:vertical;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media(max-width:700px){.row2,.row3{grid-template-columns:1fr;}}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:5px;}
+  .msg{font-size:12.5px;margin-left:4px;}
+  .msg.bad{color:var(--bad);} .msg.good{color:var(--ok);}
+
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--line);}
+  .tab{background:none;border:none;font:inherit;font-weight:600;font-size:14.5px;color:var(--muted);
+    padding:10px 14px;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;}
+  .tab.active{color:var(--navy);border-bottom-color:var(--brass);}
+
+  .sec-head{margin-bottom:16px;}
+  .sec-head .idx{font-size:10.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--brass);font-weight:700;}
+  .sec-head h2{font-family:'Lora',Georgia,serif;font-size:21px;color:var(--navy);margin:4px 0 0;font-weight:700;}
+  .sec-head p{color:var(--muted);margin:5px 0 0;font-size:13.5px;max-width:660px;}
+
+  .pill{display:inline-block;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;
+    padding:3px 9px;border-radius:20px;background:#EFEBE0;color:var(--muted);}
+  .pill.new{background:#E7EDF6;color:var(--navy);}
+  .pill.ack{background:#FBF1DE;color:#8a5a12;}
+  .pill.prog{background:#FBF1DE;color:#8a5a12;}
+  .pill.wait{background:#FBE9DC;color:var(--warn);}
+  .pill.done{background:#E4EFE8;color:var(--ok);}
+  .pill.closed{background:#EFEBE0;color:var(--muted);}
+
+  .rq{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--brass);
+    border-radius:var(--radius);padding:15px 17px;margin-bottom:11px;cursor:pointer;transition:.14s;}
+  .rq:hover{border-color:var(--brass);box-shadow:0 4px 14px rgba(22,35,58,.08);}
+  .rq-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+  .rq-t{font-family:'Lora',Georgia,serif;font-weight:700;font-size:16px;color:var(--navy);}
+  .rq-m{font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .rq-foot{font-size:11.5px;color:var(--muted);margin-top:9px;display:flex;gap:13px;flex-wrap:wrap;}
+
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;}
+  .fchip{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:5px 13px;
+    font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;}
+  .fchip.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+  .thread{margin-top:16px;}
+  .bub{border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:9px;background:var(--surface);}
+  .bub.mine{background:#FBF9F3;border-color:#E6DCC6;}
+  .bub-h{font-size:11.5px;color:var(--muted);margin-bottom:4px;}
+  .bub-h b{color:var(--navy);}
+  .bub-b{white-space:pre-wrap;font-size:14px;}
+  .filerow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-bottom:7px;background:var(--surface);}
+  .fname{font-size:13.5px;word-break:break-word;}
+
+  .login{max-width:410px;margin:44px auto;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;
+    padding:11px 18px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 24px rgba(22,35,58,.28);z-index:60;}
+  .toast.bad{background:var(--bad);}
+  .hidden{display:none !important;}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);
+    border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+</style></head><body>
+
+<header><div class="wrap hbar">
+  <a class="brand" href="/kannangroup/">
+    <span class="mark">VL</span>
+    <span><span class="bname">V Legal Services</span><br><span class="btag">Service Desk · Kannan Group</span></span>
+  </a>
+  <button class="btn outline sm hidden" id="outBtn">Sign out</button>
+</div></header>
+
+<section class="hero"><div class="wrap">
+  <span class="kicker" id="kicker">Kannan Group · Internal</span>
+  <h1>Service Desk</h1>
+  <p id="heroSub">Raise a request, track what's in progress, and ask a clarification on any job.</p>
+</div></section>
+
+<main class="wrap">
+  <div id="loginView" class="login">
+    <div class="card">
+      <h3 style="font-family:'Lora',Georgia,serif;font-size:19px;color:var(--navy);margin:0 0 4px;">Sign in</h3>
+      <p style="font-size:13.5px;color:var(--muted);margin:0 0 16px;">Office password.</p>
+      <div class="field"><label>Password</label><input id="pw" type="password" autocomplete="current-password"></div>
+      <div class="btnrow"><button class="btn brass" id="loginBtn">Sign in</button>
+        <span class="msg" id="loginMsg"></span></div>
+    </div>
+  </div>
+  <div id="appView" class="hidden">
+    <div id="tabbar" class="tabs"></div>
+    <div id="panel"></div>
+  </div>
+</main>
+
+<footer><div class="wrap">
+  © <span id="yr"></span> V Legal Services and Documentation, Coimbatore ·
+  Mohan Kumar Rajavel, B.Sc.(Agri), LL.B., Advocate · 6379588507
+</div></footer>
+
+<script>
+/* ===========================================================
+   Kannan Group service desk.
+   Rides on the same Apps Script as the property portal but on
+   its own tabs and its own password: an office token reaches
+   the desk actions only, never the survey data.
+   =========================================================== */
+var API = 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec';
+
+var token = null, ROLE = '';
+var D = { parties:[], services:[], requests:[], files:[], messages:[], statuses:[] };
+var tab = 'requests', openReq = null, filter = 'open', editParty = null;
+
+var panel = document.getElementById('panel');
+var tabbar = document.getElementById('tabbar');
+document.getElementById('yr').textContent = new Date().getFullYear();
+try { token = sessionStorage.getItem('kg_desk') || null; } catch(e) {}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function call(p){ p.token = token; p.who = ROLE === 'advocate' ? 'Advocate' : 'Kannan Group office';
+  return fetch(API,{method:'POST',redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)})
+    .then(function(r){ return r.json(); }); }
+function toast(m,bad){ var t=document.createElement('div');
+  t.className='toast'+(bad?' bad':''); t.textContent=m; document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); },3200); }
+function note(el,m,good){ if(!el) return; el.textContent=m;
+  el.className='msg'+(m?(good?' good':' bad'):''); }
+function when(s){ if(!s) return '';
+  var d=new Date(s); if(isNaN(d.getTime())) return String(s);
+  var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear(); }
+function svcName(id){ var s=D.services.filter(function(x){return x.service_id===id;})[0];
+  return s? s.name : (id||'—'); }
+function partyName(id){ if(!id) return '';
+  var p=D.parties.filter(function(x){return x.party_id===id;})[0]; return p? p.name : id; }
+function statusPill(s){
+  var k={'New':'new','Acknowledged':'ack','In progress':'prog','Awaiting information':'wait',
+         'Completed':'done','Closed':'closed'}[s]||'';
+  return '<span class="pill '+k+'">'+esc(s||'—')+'</span>'; }
+function isOpen(r){ return r.status !== 'Completed' && r.status !== 'Closed'; }
+
+/* ------------------------------ session ------------------------------ */
+
+function signIn(){
+  var el=document.getElementById('pw'), m=document.getElementById('loginMsg');
+  if(!el.value){ note(m,'Enter the password.',false); return; }
+  var b=document.getElementById('loginBtn');
+  b.disabled=true; b.innerHTML='<span class="spin"></span> Checking…'; note(m,'',true);
+  fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'deskLogin', password:el.value})})
+    .then(function(r){ return r.json(); })
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      token=r.token; ROLE=r.role;
+      try{ sessionStorage.setItem('kg_desk', token); }catch(e){}
+      el.value=''; showApp(); return reload(); })
+    .catch(function(err){ note(m, err.message, false); })
+    .then(function(){ b.disabled=false; b.textContent='Sign in'; });
+}
+function signOut(){
+  token=null; ROLE=''; openReq=null;
+  try{ sessionStorage.removeItem('kg_desk'); }catch(e){}
+  document.getElementById('appView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('outBtn').classList.add('hidden');
+}
+function showApp(){
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+  document.getElementById('outBtn').classList.remove('hidden');
+}
+function reload(){
+  return call({action:'deskLoad'}).then(function(r){
+    if(!r.ok) throw new Error(r.error);
+    ROLE=r.role;
+    D={parties:r.parties||[],services:r.services||[],requests:r.requests||[],
+       files:r.files||[],messages:r.messages||[],statuses:r.statuses||[]};
+    document.getElementById('kicker').textContent =
+      ROLE==='advocate' ? 'Advocate view' : 'Kannan Group · Internal';
+    document.getElementById('heroSub').textContent = ROLE==='advocate'
+      ? 'Every request raised by the office, with its thread and attachments.'
+      : "Raise a request, track what's in progress, and ask a clarification on any job.";
+    render();
+  }).catch(function(err){ toast(err.message,true);
+    if(/sign(ed)? in/i.test(err.message)) signOut(); });
+}
+
+/* ------------------------------- render ------------------------------ */
+
+function render(){
+  tabbar.innerHTML =
+      '<button class="tab'+(tab==='requests'?' active':'')+'" data-tab="requests">Requests</button>'
+    + '<button class="tab'+(tab==='clients'?' active':'')+'" data-tab="clients">Clients</button>'
+    + (ROLE==='advocate'
+        ? '<button class="tab'+(tab==='services'?' active':'')+'" data-tab="services">Services</button>' : '');
+  panel.innerHTML = openReq ? requestDetail()
+    : tab==='clients' ? clientsView()
+    : tab==='services' ? servicesView()
+    : requestsView();
+}
+
+/* ---- requests ---- */
+
+function newRequestForm(){
+  var act = D.services.filter(function(s){ return String(s.active).toUpperCase()!=='FALSE'; })
+    .sort(function(a,b){ return (parseFloat(a.sort_order)||0)-(parseFloat(b.sort_order)||0); });
+  return '<details class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:20px;" id="nrBox">'
+    + '<summary style="cursor:pointer;font-family:\'Lora\',Georgia,serif;font-weight:700;font-size:17px;color:var(--navy);">'
+    +   'Raise a new request</summary>'
+    + '<div style="margin-top:14px;">'
+    + '<div class="row2">'
+    +   '<div class="field"><label>Service</label><select id="nrSvc">'
+    +     '<option value="">Choose the service…</option>'
+    +     act.map(function(s){ return '<option value="'+esc(s.service_id)+'">'+esc(s.name)+'</option>'; }).join('')
+    +   '</select></div>'
+    +   '<div class="field"><label>Client (optional)</label><select id="nrParty">'
+    +     '<option value="">Not for a specific client</option>'
+    +     D.parties.map(function(p){ return '<option value="'+esc(p.party_id)+'">'+esc(p.name)+'</option>'; }).join('')
+    +   '</select><div class="hint">Add clients under the Clients tab.</div></div>'
+    + '</div>'
+    + '<div class="field"><label>Subject</label><input id="nrSubject" placeholder="e.g. EC for SF 237/3, Palakombai"></div>'
+    + '<div class="row3">'
+    +   '<div class="field"><label>Property reference</label><input id="nrRef"></div>'
+    +   '<div class="field"><label>Village / Taluk</label><input id="nrVillage"></div>'
+    +   '<div class="field"><label>Survey numbers</label><input id="nrSf"></div>'
+    + '</div>'
+    + '<div class="field"><label>Details</label><textarea id="nrDetails" '
+    +   'placeholder="What is needed, by when, and anything the advocate should know."></textarea></div>'
+    + '<div class="btnrow"><button class="btn brass" id="nrSave">Raise request</button>'
+    +   '<span class="msg" id="nrMsg"></span></div>'
+    + '<div class="hint">You can attach documents once it is raised.</div>'
+    + '</div></details>';
+}
+
+function requestsView(){
+  var counts = {open:0, all:D.requests.length};
+  D.requests.forEach(function(r){ if(isOpen(r)) counts.open++; });
+  var chips = [['open','Open ('+counts.open+')'],['all','All ('+counts.all+')']]
+    .concat((D.statuses||[]).map(function(s){
+      return [s, s+' ('+D.requests.filter(function(r){return r.status===s;}).length+')']; }));
+
+  var list = D.requests.slice()
+    .filter(function(r){ return filter==='all' ? true : filter==='open' ? isOpen(r) : r.status===filter; })
+    .sort(function(a,b){ return String(b.updated_at||'').localeCompare(String(a.updated_at||'')); });
+
+  return '<div class="sec-head"><div class="idx">Requests</div>'
+    + '<h2>'+counts.open+' open · '+counts.all+' in total</h2>'
+    + '<p>Newest activity first. Open one to read the thread, add documents or ask a clarification.</p></div>'
+    + newRequestForm()
+    + '<div class="filters">' + chips.map(function(c){
+        return '<button class="fchip'+(filter===c[0]?' on':'')+'" data-filter="'+esc(c[0])+'">'+esc(c[1])+'</button>';
+      }).join('') + '</div>'
+    + (list.length ? list.map(reqCard).join('')
+        : '<div class="card empty">Nothing here.</div>');
+}
+
+function reqCard(r){
+  var nMsg = D.messages.filter(function(m){ return m.request_id===r.request_id; }).length;
+  var nFile = D.files.filter(function(f){ return f.request_id===r.request_id; }).length;
+  var who = partyName(r.party_id);
+  return '<div class="rq" data-open="'+esc(r.request_id)+'">'
+    + '<div class="rq-top"><div>'
+    +   '<div class="rq-t">'+esc(r.subject)+'</div>'
+    +   '<div class="rq-m">'+esc(svcName(r.service_id))+(who?' · '+esc(who):'')
+    +     ([r.property_ref, r.sf_nos ? 'SF '+r.sf_nos : ''].filter(Boolean).length
+          ? ' · '+esc([r.property_ref, r.sf_nos ? 'SF '+r.sf_nos : ''].filter(Boolean).join(' · ')) : '')
+    +   '</div></div>' + statusPill(r.status) + '</div>'
+    + '<div class="rq-foot"><span>Raised '+esc(when(r.created_at))+'</span>'
+    +   (nMsg?'<span>'+nMsg+' message'+(nMsg===1?'':'s')+'</span>':'')
+    +   (nFile?'<span>'+nFile+' file'+(nFile===1?'':'s')+'</span>':'')
+    + '</div></div>';
+}
+
+function requestDetail(){
+  var r = D.requests.filter(function(x){ return x.request_id===openReq; })[0];
+  if(!r){ openReq=null; return requestsView(); }
+  var msgs = D.messages.filter(function(m){ return m.request_id===r.request_id; })
+    .sort(function(a,b){ return String(a.created_at||'').localeCompare(String(b.created_at||'')); });
+  var files = D.files.filter(function(f){ return f.request_id===r.request_id; });
+  var who = partyName(r.party_id);
+
+  var meta = [['Service', svcName(r.service_id)], ['Client', who],
+              ['Property', r.property_ref], ['Village', r.village],
+              ['Survey numbers', r.sf_nos], ['Raised by', r.created_by],
+              ['Raised', when(r.created_at)], ['Last activity', when(r.updated_at)]]
+    .filter(function(x){ return x[1]; });
+
+  return '<button class="btn outline sm" id="backBtn" style="margin-bottom:15px;">← All requests</button>'
+    + '<div class="sec-head"><div class="idx">'+esc(svcName(r.service_id))+'</div>'
+    + '<h2>'+esc(r.subject)+'</h2></div>'
+
+    + '<div class="card" style="margin-bottom:16px;">'
+    +   '<div class="btnrow" style="justify-content:space-between;margin-bottom:12px;">'
+    +     statusPill(r.status)
+    +     (ROLE==='advocate'
+        ? '<span class="btnrow"><select id="stSel" style="width:auto;">'
+          + (D.statuses||[]).map(function(s){
+              return '<option'+(r.status===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('')
+          + '</select><button class="btn outline sm" id="stBtn">Update status</button></span>'
+        : '')
+    +   '</div>'
+    +   '<div class="row2">' + meta.map(function(x){
+          return '<div style="margin-bottom:7px;"><div style="font-size:11px;text-transform:uppercase;'
+            + 'letter-spacing:.05em;color:var(--muted);font-weight:700;">'+esc(x[0])+'</div>'
+            + '<div style="font-size:14px;">'+esc(x[1])+'</div></div>'; }).join('') + '</div>'
+    +   (r.details ? '<div style="margin-top:12px;white-space:pre-wrap;font-size:14px;">'+esc(r.details)+'</div>' : '')
+    + '</div>'
+
+    + '<h3 style="font-family:\'Lora\',Georgia,serif;font-size:16px;color:var(--navy);margin:0 0 9px;">Documents</h3>'
+    + (files.length ? files.map(function(f){
+        return '<div class="filerow"><span class="fname">📄 '+esc(f.file_name)
+          + '<span style="color:var(--muted);font-size:11.5px;"> · '+esc(f.uploaded_by)+' · '+esc(when(f.uploaded_at))+'</span></span>'
+          + '<span class="btnrow"><a class="btn outline sm" href="'+esc(f.file_url)+'" target="_blank" rel="noopener">Open</a></span></div>';
+      }).join('') : '<div class="card empty" style="margin-bottom:10px;">No documents attached yet.</div>')
+    + '<div class="card" style="margin:10px 0 20px;">'
+    +   '<div class="field" style="margin:0;"><label>Attach a document</label><input type="file" id="upFile"></div>'
+    +   '<div class="btnrow" style="margin-top:10px;"><button class="btn outline sm" id="upBtn">Upload</button>'
+    +     '<span class="msg" id="upMsg"></span></div>'
+    +   '<div class="hint">Up to 8 MB.</div></div>'
+
+    + '<h3 style="font-family:\'Lora\',Georgia,serif;font-size:16px;color:var(--navy);margin:0 0 9px;">Clarifications</h3>'
+    + '<div class="thread">'
+    + (msgs.length ? msgs.map(function(m){
+        return '<div class="bub'+(m.author_role===ROLE?' mine':'')+'">'
+          + '<div class="bub-h"><b>'+esc(m.author_name)+'</b> · '+esc(when(m.created_at))+'</div>'
+          + '<div class="bub-b">'+esc(m.body)+'</div></div>';
+      }).join('') : '<div class="card empty">No clarifications yet.</div>')
+    + '</div>'
+    + '<div class="card" style="margin-top:12px;">'
+    +   '<div class="field" style="margin:0;"><label>Write a clarification</label>'
+    +     '<textarea id="msgBody" placeholder="Ask a question, or add something the other side should know."></textarea></div>'
+    +   '<div class="btnrow" style="margin-top:9px;"><button class="btn brass sm" id="msgBtn">Send</button>'
+    +     '<span class="msg" id="msgMsg"></span></div></div>';
+}
+
+/* ---- clients ---- */
+
+function clientsView(){
+  var e = editParty ? D.parties.filter(function(p){ return p.party_id===editParty; })[0] : null;
+  var v = e || {party_id:'',name:'',phone:'',email:'',address:'',notes:''};
+  var form = '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:20px;">'
+    + '<h3 style="font-family:\'Lora\',Georgia,serif;font-size:17px;color:var(--navy);margin:0 0 13px;">'
+    +   (e ? 'Edit client' : 'Add a client') + '</h3>'
+    + '<div class="row2">'
+    +   '<div class="field"><label>Name</label><input id="cpName" value="'+esc(v.name)+'"></div>'
+    +   '<div class="field"><label>Phone</label><input id="cpPhone" value="'+esc(v.phone)+'"></div>'
+    + '</div>'
+    + '<div class="row2">'
+    +   '<div class="field"><label>Email</label><input id="cpEmail" value="'+esc(v.email)+'"></div>'
+    +   '<div class="field"><label>Address</label><input id="cpAddress" value="'+esc(v.address)+'"></div>'
+    + '</div>'
+    + '<div class="field"><label>Notes</label><input id="cpNotes" value="'+esc(v.notes)+'"></div>'
+    + '<div class="btnrow"><button class="btn brass" id="cpSave">'+(e?'Save changes':'Add client')+'</button>'
+    +   (e?'<button class="btn outline" id="cpCancel">Cancel</button>':'')
+    +   '<span class="msg" id="cpMsg"></span></div></div>';
+
+  var rows = D.parties.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); })
+    .map(function(p){
+      var n = D.requests.filter(function(r){ return r.party_id===p.party_id; }).length;
+      return '<div class="filerow">'
+        + '<span><span style="font-family:\'Lora\',Georgia,serif;font-weight:700;color:var(--navy);">'
+        +   esc(p.name)+'</span><span style="font-size:12px;color:var(--muted);"> · '
+        +   [p.phone,p.email].filter(Boolean).map(esc).join(' · ')
+        +   (n ? ' · '+n+' request'+(n===1?'':'s') : ' · no requests yet') + '</span></span>'
+        + '<span class="btnrow"><button class="btn outline sm" data-pedit="'+esc(p.party_id)+'">Edit</button>'
+        + '<button class="btn danger sm" data-pdel="'+esc(p.party_id)+'">Delete</button></span></div>';
+    }).join('');
+
+  return '<div class="sec-head"><div class="idx">Clients</div><h2>'+D.parties.length+' on file</h2>'
+    + '<p>Your own clients. A request can be attached to one so the history stays together.</p></div>'
+    + form + (rows || '<div class="card empty">None yet.</div>');
+}
+
+/* ---- services (advocate only) ---- */
+
+function servicesView(){
+  var rows = D.services.slice()
+    .sort(function(a,b){ return (parseFloat(a.sort_order)||0)-(parseFloat(b.sort_order)||0); })
+    .map(function(s){
+      var on = String(s.active).toUpperCase() !== 'FALSE';
+      return '<div class="filerow">'
+        + '<span><span style="font-family:\'Lora\',Georgia,serif;font-weight:700;color:var(--navy);">'
+        +   esc(s.name)+'</span>'+(on?'':' <span class="pill">Retired</span>')+'</span>'
+        + '<span class="btnrow"><input value="'+esc(s.sort_order)+'" data-sord="'+esc(s.service_id)+'" '
+        +   'style="width:70px;" inputmode="numeric">'
+        + '<button class="btn outline sm" data-stog="'+esc(s.service_id)+'">'+(on?'Retire':'Restore')+'</button></span></div>';
+    }).join('');
+  return '<div class="sec-head"><div class="idx">Services</div><h2>What the office can ask for</h2>'
+    + '<p>Retiring one keeps past requests intact but takes it out of the list. The number is the running order.</p></div>'
+    + '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:20px;">'
+    +   '<div class="field"><label>Add a service</label><input id="svName" placeholder="e.g. Mutation follow-up"></div>'
+    +   '<div class="btnrow"><button class="btn brass sm" id="svAdd">Add</button>'
+    +     '<span class="msg" id="svMsg"></span></div></div>'
+    + (rows || '<div class="card empty">No services yet.</div>');
+}
+
+/* ------------------------------- actions ----------------------------- */
+
+function saveRequest(){
+  var m = document.getElementById('nrMsg');
+  var g = function(id){ var e=document.getElementById(id); return e?e.value:''; };
+  if(!g('nrSvc')){ note(m,'Choose the service.',false); return; }
+  if(!g('nrSubject').trim()){ note(m,'Give it a subject.',false); return; }
+  note(m,'Saving…',true);
+  call({action:'deskSaveRequest', data:{
+    service_id:g('nrSvc'), party_id:g('nrParty'), subject:g('nrSubject'),
+    property_ref:g('nrRef'), village:g('nrVillage'), sf_nos:g('nrSf'), details:g('nrDetails')}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      openReq = r.request_id; toast('Request raised.'); return reload(); })
+    .catch(function(err){ note(m,'Could not save: '+err.message,false); });
+}
+function sendMessage(){
+  var m=document.getElementById('msgMsg'), b=document.getElementById('msgBody');
+  if(!b.value.trim()){ note(m,'Write something first.',false); return; }
+  note(m,'Sending…',true);
+  call({action:'deskMessage', request_id:openReq, body:b.value})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      b.value=''; toast('Sent.'); return reload(); })
+    .catch(function(err){ note(m,err.message,false); });
+}
+function setStatus(){
+  var s=document.getElementById('stSel').value;
+  call({action:'deskSetStatus', request_id:openReq, status:s})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      toast('Status updated.'); return reload(); })
+    .catch(function(err){ toast(err.message,true); });
+}
+function uploadFile(){
+  var m=document.getElementById('upMsg'), el=document.getElementById('upFile');
+  var f=el&&el.files&&el.files[0];
+  if(!f){ note(m,'Choose a file first.',false); return; }
+  if(f.size>8*1024*1024){ note(m,'Larger than 8 MB — send it by email instead.',false); return; }
+  note(m,'Uploading…',true);
+  var fr=new FileReader();
+  fr.onerror=function(){ note(m,'Could not read that file.',false); };
+  fr.onload=function(){
+    call({action:'deskUpload', request_id:openReq, file_name:f.name,
+      mime_type:f.type||'application/octet-stream', file_base64:String(fr.result).split(',')[1]})
+      .then(function(r){ if(!r.ok) throw new Error(r.error);
+        el.value=''; toast('Document attached.'); return reload(); })
+      .catch(function(err){ note(m,'Upload failed: '+err.message,false); });
+  };
+  fr.readAsDataURL(f);
+}
+function saveParty(){
+  var m=document.getElementById('cpMsg');
+  var g=function(id){ var e=document.getElementById(id); return e?e.value:''; };
+  if(!g('cpName').trim()){ note(m,'Enter the name.',false); return; }
+  note(m,'Saving…',true);
+  call({action:'deskSaveParty', data:{ party_id:editParty||'', name:g('cpName'),
+    phone:g('cpPhone'), email:g('cpEmail'), address:g('cpAddress'), notes:g('cpNotes') }})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      editParty=null; toast('Saved.'); return reload(); })
+    .catch(function(err){ note(m,'Could not save: '+err.message,false); });
+}
+function deleteParty(id){
+  if(!confirm('Delete '+partyName(id)+'?')) return;
+  call({action:'deskDeleteParty', data:{party_id:id}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      toast('Deleted.'); return reload(); })
+    .catch(function(err){ toast(err.message,true); });
+}
+function addService(){
+  var m=document.getElementById('svMsg'), el=document.getElementById('svName');
+  if(!el.value.trim()){ note(m,'Name the service.',false); return; }
+  call({action:'deskSaveService', data:{name:el.value, sort_order:(D.services.length+1)*10}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      el.value=''; toast('Service added.'); return reload(); })
+    .catch(function(err){ note(m,err.message,false); });
+}
+function toggleService(id){
+  var s=D.services.filter(function(x){ return x.service_id===id; })[0];
+  if(!s) return;
+  var on=String(s.active).toUpperCase()!=='FALSE';
+  var ord=document.querySelector('[data-sord="'+id+'"]');
+  call({action:'deskSaveService', data:{service_id:id, name:s.name,
+    sort_order: ord?ord.value:s.sort_order, active: on?'FALSE':'TRUE', notes:s.notes}})
+    .then(function(r){ if(!r.ok) throw new Error(r.error);
+      toast(on?'Retired.':'Restored.'); return reload(); })
+    .catch(function(err){ toast(err.message,true); });
+}
+
+/* -------------------------------- events ----------------------------- */
+
+document.addEventListener('click', function(e){
+  var t=e.target, el;
+  if(t.id==='loginBtn'){ signIn(); return; }
+  if(t.id==='outBtn'){ signOut(); return; }
+  if((el=t.closest('[data-tab]'))){ tab=el.getAttribute('data-tab'); openReq=null; editParty=null; render(); return; }
+  if((el=t.closest('[data-filter]'))){ filter=el.getAttribute('data-filter'); render(); return; }
+  if(t.id==='nrSave'){ saveRequest(); return; }
+  if((el=t.closest('[data-open]'))){ openReq=el.getAttribute('data-open'); render(); window.scrollTo(0,0); return; }
+  if(t.id==='backBtn'){ openReq=null; render(); return; }
+  if(t.id==='msgBtn'){ sendMessage(); return; }
+  if(t.id==='stBtn'){ setStatus(); return; }
+  if(t.id==='upBtn'){ uploadFile(); return; }
+  if(t.id==='cpSave'){ saveParty(); return; }
+  if(t.id==='cpCancel'){ editParty=null; render(); return; }
+  if((el=t.closest('[data-pedit]'))){ editParty=el.getAttribute('data-pedit'); render(); window.scrollTo(0,0); return; }
+  if((el=t.closest('[data-pdel]'))){ deleteParty(el.getAttribute('data-pdel')); return; }
+  if(t.id==='svAdd'){ addService(); return; }
+  if((el=t.closest('[data-stog]'))){ toggleService(el.getAttribute('data-stog')); return; }
+});
+document.addEventListener('keydown', function(e){
+  if(e.key==='Enter' && document.activeElement && document.activeElement.id==='pw') signIn();
+});
+
+if (token) { showApp(); reload(); }
+</script>
+</body></html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Client Portal | V Legal Services</title>
+<script>
+/* No direct entry: signed-in clients, or someone arriving from their email link */
+(function(){var ok=false;try{ok=!!localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token')||/access_token=|type=(invite|recovery)|error_code=/.test(location.hash);}catch(e){}
+if(!ok){location.replace('/login/?as=client');}})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--ink:#0F1B2D;--navy:#16233A;--navy2:#22354F;--brass:#A9762F;--brass-lt:#D2A460;--brass-bg:#F6EEDF;--paper:#F7F5EF;--line:#E3DED1;--text:#1E2430;--muted:#5E6573;
+  --ok:#2F6B4F;--ok-bg:#E8F1EC;--bad:#A13D3D;--bad-bg:#F8EAE9;--info:#2E6FA3;--info-bg:#E9F1F8;--wait:#8A6516;--wait-bg:#FBF1DE;
+  --serif:'Source Serif 4',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);font-size:15px;color:var(--text);background:var(--paper)}
+h1,h2,h3{font-family:var(--serif);color:var(--navy);margin:0;font-weight:600}
+button,input,select,textarea{font:inherit}
+.top{background:var(--ink);color:#C4CBD7}
+.top .in{max-width:980px;margin:0 auto;padding:0 18px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+.seal{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--brass-lt);display:grid;place-items:center;font-family:var(--serif);font-weight:700;color:var(--brass-lt)}
+.brand b{font-family:var(--serif);font-weight:600;font-size:16px;display:block}
+.brand small{font-size:10.5px;letter-spacing:.12em;color:var(--brass-lt)}
+.out{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:7px;padding:7px 12px;cursor:pointer;font-size:13.5px}
+.hero{background:var(--ink);padding:10px 0 26px}
+.hero .in{max-width:980px;margin:0 auto;padding:0 18px}
+.hero h1{color:#fff;font-size:28px}
+.hero p{margin:4px 0 0;color:#AEB6C4;font-size:14px}
+.wrap{max-width:980px;margin:0 auto;padding:20px 18px 60px}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tabs button{background:#fff;border:1px solid var(--line);color:var(--navy);border-radius:30px;padding:8px 16px;cursor:pointer;font-weight:500}
+.tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;color:var(--navy);padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:500;font-size:14px}
+.btn.brass{background:var(--brass);border-color:var(--brass);color:#fff}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn:disabled{opacity:.6;cursor:wait}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.req{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;background:#fff}
+.req:hover{border-color:var(--navy2)}
+.req .t{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.req b{color:var(--navy)}
+.req small,.sm{color:var(--muted);font-size:12.5px}
+.pill{display:inline-block;font-size:12px;font-weight:600;border-radius:20px;padding:3px 9px;white-space:nowrap}
+.p-New{background:var(--info-bg);color:var(--info)}.p-Acknowledged,.p-In{background:var(--brass-bg);color:#7A531C}
+.p-Awaiting{background:var(--wait-bg);color:var(--wait)}.p-Completed{background:var(--ok-bg);color:var(--ok)}.p-Closed{background:#EEF0F3;color:var(--muted)}
+.msg{padding:10px 12px;border-radius:10px;margin:8px 0;max-width:85%;white-space:pre-wrap;word-wrap:break-word}
+.msg.client{background:var(--navy);color:#E7EAF0;margin-left:auto}
+.msg.firm{background:#fff;border:1px solid var(--line)}
+.msg small{display:block;font-size:11.5px;opacity:.7;margin-bottom:3px}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:0 0 5px}
+.f{margin-bottom:13px}
+.f input,.f select,.f textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px rgba(169,118,47,.13)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.note{font-size:13.5px;padding:10px 12px;border-radius:8px;margin:0 0 12px;display:none}
+.note.on{display:block}.note.ok{background:var(--ok-bg);color:var(--ok)}.note.bad{background:var(--bad-bg);color:var(--bad)}
+.empty{padding:34px 16px;color:var(--muted);text-align:center}
+.doc{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.doc:last-child{border-bottom:none}
+.doc b{color:var(--navy)}
+.center{max-width:420px;margin:40px auto}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,.2);border-top-color:currentColor;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px}
+@keyframes s{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+.help{margin-top:26px;text-align:center;color:var(--muted);font-size:13.5px}
+.help a{color:var(--brass);font-weight:600}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}.brand span{display:none}.hero h1{font-size:23px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <a class="brand" href="/" target="_blank" rel="noopener"><span class="seal">V</span><span><b>V Legal Services</b><small>CLIENT PORTAL</small></span></a>
+  <button class="out hidden" id="outBtn">Sign out</button>
+</div></header>
+<section class="hero"><div class="in"><h1 id="hi">Welcome</h1><p id="hiSub">Your requests and documents with V Legal Services.</p></div></section>
+
+<main class="wrap">
+  <div id="loading" class="empty"><span class="spin"></span></div>
+
+  <!-- Set password (from email link) -->
+  <div id="setPw" class="card center hidden">
+    <h2 style="font-size:21px;margin-bottom:4px">Set your password</h2>
+    <p class="sm" style="margin:0 0 16px">Choose a password you'll use to sign in from now on.</p>
+    <div class="note" id="pwNote"></div>
+    <form id="pwForm">
+      <div class="f"><label for="p1">New password</label><input id="p1" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required></div>
+      <div class="f"><label for="p2">Confirm password</label><input id="p2" type="password" autocomplete="new-password" required></div>
+      <button class="btn brass" style="width:100%;justify-content:center">Save password & continue</button>
+    </form>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+    <div class="tabs"><button data-tab="requests" class="on">Requests</button><button data-tab="documents">Documents</button></div>
+    <div id="pane"></div>
+    <p class="help">Need help? Call or WhatsApp <a href="tel:+917373735222">73737 35222</a></p>
+  </div>
+</main>
+
+<script>
+var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm');
+var SERVICES = ['Presence-less registration – first sale','Bank MOD registration','Discharge / Deed of Receipt','SRO registration','Legal opinion','Document drafting','Other'];
+var S = { acct:null, tab:'requests', reqs:[], docs:[], open:null, newForm:false };
+var $ = function(id){ return document.getElementById(id); };
+var fromEmail = /type=(invite|recovery)/.test(location.hash) || new URLSearchParams(location.search).get('setpw')==='1';
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function when(iso){ var d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+function pill(s){ return '<span class="pill p-'+esc(String(s).split(' ')[0])+'">'+esc(s)+'</span>'; }
+function note(el,t,ok){ el.textContent=t; el.className = t ? 'note on '+(ok?'ok':'bad') : 'note'; }
+function show(id){ ['loading','setPw','app'].forEach(function(x){ $(x).classList.toggle('hidden', x!==id); }); }
+function toLogin(){ location.replace('/login/?as=client'); }
+
+async function load(){
+  var r = await sb.from('client_requests').select('*').order('updated_at',{ascending:false});
+  S.reqs = r.data||[];
+  var d = await sb.from('client_shared_docs').select('*').order('created_at',{ascending:false});
+  S.docs = d.data||[];
+}
+function render(){
+  document.querySelectorAll('.tabs button').forEach(function(b){ b.classList.toggle('on', b.dataset.tab===S.tab); });
+  if(S.tab==='requests') S.open ? renderThread() : renderRequests(); else renderDocs();
+}
+function renderRequests(){
+  var h = '<div class="bar"><h2 style="font-size:20px">Your requests</h2><button class="btn brass" id="newReq">+ New request</button></div>';
+  if(S.newForm){
+    h += '<form class="card" id="reqForm" style="margin-bottom:16px"><div class="note" id="rqNote"></div>'+
+      '<div class="grid2"><div class="f"><label for="rqSvc">Service</label><select id="rqSvc">'+SERVICES.map(function(s){return '<option>'+esc(s)+'</option>';}).join('')+'</select></div>'+
+      '<div class="f"><label for="rqTitle">Subject</label><input id="rqTitle" required maxlength="150" placeholder="e.g. Plot 14 – first sale registration"></div></div>'+
+      '<div class="f"><label for="rqDet">Details</label><textarea id="rqDet" rows="4" maxlength="4000" placeholder="Property details, parties, preferred date, anything we should know"></textarea></div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" id="cancelReq">Cancel</button><button class="btn navy" id="sendReq">Send request</button></div></form>';
+  }
+  h += S.reqs.length ? S.reqs.map(function(r){
+    return '<div class="req" data-req="'+r.id+'"><div class="t"><div><b>'+esc(r.title)+'</b><br><small>'+esc(r.service||'General')+' · updated '+when(r.updated_at)+'</small></div>'+pill(r.status)+'</div></div>';
+  }).join('') : (S.newForm?'':'<div class="card empty">No requests yet. Click "New request" to send us your first one.</div>');
+  $('pane').innerHTML = h;
+}
+async function renderThread(){
+  var r = S.reqs.filter(function(x){return x.id===S.open;})[0];
+  $('pane').innerHTML = '<div class="empty"><span class="spin"></span></div>';
+  var m = await sb.from('client_request_messages').select('*').eq('request_id',r.id).order('created_at');
+  $('pane').innerHTML = '<button class="btn" id="back" style="margin-bottom:12px">← All requests</button>'+
+    '<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><h3 style="font-size:19px">'+esc(r.title)+'</h3>'+
+    '<small class="sm">'+esc(r.service||'General')+' · raised '+when(r.created_at)+'</small></div>'+pill(r.status)+'</div>'+
+    (r.details?'<div class="msg client" style="max-width:100%;margin-top:12px"><small>Your request</small>'+esc(r.details)+'</div>':'')+
+    (m.data||[]).map(function(x){ return '<div class="msg '+x.author_type+'"><small>'+esc(x.author_type==='firm'?'V Legal Services':(x.author_name||'You'))+' · '+when(x.created_at)+'</small>'+esc(x.body)+'</div>'; }).join('')+
+    (r.status==='Closed' ? '<p class="sm" style="margin-top:12px">This request is closed. Raise a new request if you need anything more.</p>' :
+    '<div class="f" style="margin-top:14px"><label for="reply">Add a message</label><textarea id="reply" rows="3" maxlength="4000" placeholder="Reply or add information"></textarea></div>'+
+    '<div class="note" id="thNote"></div><div style="text-align:right"><button class="btn navy" id="sendMsg">Send</button></div>')+'</div>';
+}
+function renderDocs(){
+  $('pane').innerHTML = '<div class="bar"><h2 style="font-size:20px">Documents</h2></div>'+
+    '<form class="card" id="upForm" style="margin-bottom:16px"><div class="note" id="upNote"></div>'+
+    '<div class="grid2"><div class="f"><label for="uTitle">Send us a document</label><input id="uTitle" required maxlength="150" placeholder="Title, e.g. Patta copy"></div>'+
+    '<div class="f"><label for="uFile">File (up to 25 MB)</label><input id="uFile" type="file" required></div></div>'+
+    '<div style="text-align:right"><button class="btn navy" id="upGo">Upload</button></div></form>'+
+    '<div class="card">'+(S.docs.length ? S.docs.map(function(d){
+      return '<div class="doc"><div><b>'+esc(d.title)+'</b><br><small class="sm">'+(d.uploaded_by==='firm'?'From V Legal Services':'Sent by you')+' · '+when(d.created_at)+'</small>'+(d.note?'<br><small>'+esc(d.note)+'</small>':'')+'</div>'+
+        '<button class="btn" data-dl="'+d.id+'">Download</button></div>';
+    }).join('') : '<div class="empty">No documents yet. Documents we share with you will appear here.</div>')+'</div>';
+}
+
+document.addEventListener('click', async function(e){
+  var q = e.target.closest('.req'); if(q){ S.open=q.dataset.req; renderThread(); return; }
+  var t = e.target.closest('button'); if(!t) return;
+  if(t.dataset.tab){ S.tab=t.dataset.tab; S.open=null; render(); return; }
+  if(t.id==='newReq'){ S.newForm=true; renderRequests(); $('rqTitle').focus(); return; }
+  if(t.id==='cancelReq'){ S.newForm=false; renderRequests(); return; }
+  if(t.id==='back'){ S.open=null; await load(); render(); return; }
+  if(t.id==='outBtn'){ await sb.auth.signOut(); toLogin(); return; }
+  if(t.id==='sendMsg'){
+    var body=$('reply').value.trim(); if(!body) return;
+    t.disabled=true;
+    var ins = await sb.from('client_request_messages').insert({ request_id:S.open, author_type:'client', author_name:S.acct.name, body:body });
+    t.disabled=false;
+    if(ins.error){ note($('thNote'),'Could not send: '+ins.error.message,false); return; }
+    renderThread(); return;
+  }
+  if(t.dataset.dl){
+    var d = S.docs.filter(function(x){return x.id===t.dataset.dl;})[0];
+    var s = await sb.storage.from('client-portal').createSignedUrl(d.file_path, 120, { download: d.file_name || true });
+    if(s.error){ alert('Could not open the file. Please try again.'); return; }
+    window.open(s.data.signedUrl,'_blank');
+  }
+});
+document.addEventListener('submit', async function(e){
+  if(e.target.id==='reqForm'){
+    e.preventDefault();
+    var b=$('sendReq'); b.disabled=true;
+    var ins = await sb.from('client_requests').insert({ client_account_id:S.acct.id, service:$('rqSvc').value, title:$('rqTitle').value.trim(), details:$('rqDet').value.trim()||null, created_by:S.acct.name });
+    b.disabled=false;
+    if(ins.error){ note($('rqNote'),'Could not send: '+ins.error.message,false); return; }
+    S.newForm=false; await load(); renderRequests(); return;
+  }
+  if(e.target.id==='upForm'){
+    e.preventDefault();
+    var f=$('uFile').files[0], b2=$('upGo'); if(!f) return;
+    if(f.size>25*1024*1024){ note($('upNote'),'File is larger than 25 MB.',false); return; }
+    b2.disabled=true; b2.innerHTML='<span class="spin"></span> Uploading…';
+    var path = S.acct.id+'/'+Date.now()+'-'+f.name.replace(/[^A-Za-z0-9._-]+/g,'_').slice(-80);
+    var u = await sb.storage.from('client-portal').upload(path, f, { contentType:f.type||'application/octet-stream' });
+    if(!u.error){
+      var ins2 = await sb.from('client_shared_docs').insert({ client_account_id:S.acct.id, title:$('uTitle').value.trim(), file_path:path, file_name:f.name, uploaded_by:'client' });
+      if(ins2.error) u.error = ins2.error;
+    }
+    if(u.error){ note($('upNote'),'Upload failed: '+u.error.message,false); b2.disabled=false; b2.textContent='Upload'; return; }
+    await load(); renderDocs(); return;
+  }
+  if(e.target.id==='pwForm'){
+    e.preventDefault();
+    var p1=$('p1').value, p2=$('p2').value;
+    if(p1.length<8){ note($('pwNote'),'Choose a password of at least 8 characters.',false); return; }
+    if(p1!==p2){ note($('pwNote'),'The two passwords do not match.',false); return; }
+    var up = await sb.auth.updateUser({ password:p1 });
+    if(up.error){ note($('pwNote'),'Could not save: '+up.error.message,false); return; }
+    history.replaceState(null,'',location.pathname);
+    try { localStorage.removeItem('vls_signin_lock'); } catch(x){}
+    start(false);
+  }
+});
+
+async function start(askPw){
+  var s = (await sb.auth.getSession()).data.session;
+  if(!s){ toLogin(); return; }
+  var a = await sb.from('client_accounts').select('*').eq('auth_user_id', s.user.id).maybeSingle();
+  if(!a.data){
+    var st = await sb.from('client_accounts').select('id').limit(1);   // firm users can read client rows; send them home
+    if(st.data && st.data.length){ location.replace('/admin/'); return; }
+    await sb.auth.signOut(); toLogin(); return;
+  }
+  S.acct = a.data;
+  $('hi').textContent = 'Welcome, ' + S.acct.name;
+  $('outBtn').classList.remove('hidden');
+  if(askPw){ show('setPw'); $('p1').focus(); return; }
+  await load(); show('app'); render();
+}
+sb.auth.onAuthStateChange(function(ev){ if(ev==='SIGNED_OUT') toLogin(); });
+start(fromEmail);
+</script>
+</body>
+</html>

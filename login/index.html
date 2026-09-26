@@ -177,7 +177,7 @@ async function internalLogin(id, pw){
 
 async function externalLogin(id, pw){
   var c = CLIENTS[id.toLowerCase()];
-  if(!c) throw wrong();
+  if(!c) return accountLogin(id, pw);
   var res = await fetch(c.api, { method:'POST', redirect:'follow',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({ action:c.action, password:pw }) });
@@ -187,6 +187,20 @@ async function externalLogin(id, pw){
   try { sessionStorage.setItem(c.tokenKey, r.token); } catch(e){}
   var next = new URLSearchParams(location.search).get('next') || '';
   window.location.href = (next.indexOf(c.area) === 0 && next.indexOf('//') === -1) ? next : c.dest;
+}
+
+/* Clients created from Admin → Clients: User ID checked by the client-accounts service */
+async function accountLogin(id, pw){
+  var res = await fetch('https://tjvvqoomaptxscgiziks.supabase.co/functions/v1/client-accounts', { method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey:'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm', Authorization:'Bearer sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm' },
+    body: JSON.stringify({ action:'login', login_id:id, password:pw }) });
+  var r = {}; try { r = await res.json(); } catch(e){}
+  if(res.status === 403 && r.blocked) throw new Error(r.error);
+  if(!res.ok || !r.ok || !r.session) { if(res.status === 401) throw wrong(); throw new Error(r.error || 'Could not sign in. Please try again.'); }
+  var s = await sb.auth.setSession(r.session);
+  if(s.error) throw new Error('Could not sign in. Please try again.');
+  VLSLock.reset();
+  window.location.href = '/client/';
 }
 
 /* Password reset for staff: sends Supabase's reset link to their email */

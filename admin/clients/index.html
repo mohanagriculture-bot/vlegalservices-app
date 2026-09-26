@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Clients | V Legal Services</title>
+<script>
+/* No direct entry: only signed-in firm users */
+(function(){var ok=false;try{ok=!!localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token');}catch(e){}if(!ok){location.replace('/login/');}})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--ink:#0F1B2D;--navy:#16233A;--navy2:#22354F;--brass:#A9762F;--brass-lt:#D2A460;--brass-bg:#F6EEDF;--paper:#F7F5EF;--surface:#fff;--line:#E3DED1;--text:#1E2430;--muted:#5E6573;
+  --ok:#2F6B4F;--ok-bg:#E8F1EC;--bad:#A13D3D;--bad-bg:#F8EAE9;--info:#2E6FA3;--info-bg:#E9F1F8;--wait:#8A6516;--wait-bg:#FBF1DE;
+  --serif:'Source Serif 4',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);font-size:14.5px;color:var(--text);background:var(--paper)}
+h1,h2,h3{font-family:var(--serif);color:var(--navy);margin:0;font-weight:600}
+button,input,select,textarea{font:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:22px 18px 60px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.bar h1{font-size:26px}
+.bar p{margin:2px 0 0;color:var(--muted);font-size:13.5px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--navy);padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:500;font-size:14px;text-decoration:none}
+.btn:hover{border-color:var(--navy2)}
+.btn.brass{background:var(--brass);border-color:var(--brass);color:#fff}
+.btn.brass:hover{background:#94661F}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.6;cursor:wait}
+.layout{display:grid;grid-template-columns:330px 1fr;gap:18px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.list{overflow:hidden}
+.search{padding:12px;border-bottom:1px solid var(--line)}
+.search input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px}
+.item{display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--line);padding:13px 14px;cursor:pointer;color:inherit}
+.item:hover{background:#FBFAF6}
+.item.on{background:var(--brass-bg);box-shadow:inset 3px 0 0 var(--brass)}
+.item b{display:block;font-size:15px;color:var(--navy)}
+.item small{color:var(--muted);font-size:12.5px}
+.item .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
+.count{background:var(--navy);color:#fff;font-size:11.5px;font-weight:600;border-radius:20px;padding:2px 8px}
+.item.static small{color:var(--brass)}
+.empty{padding:28px 18px;color:var(--muted);text-align:center;font-size:14px}
+.detail{min-height:420px}
+.dhead{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.dhead h2{font-size:22px}
+.dhead .meta{color:var(--muted);font-size:13px;margin-top:3px}
+.tabs{display:flex;gap:2px;padding:0 14px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:none;padding:12px 12px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--navy);border-bottom-color:var(--brass)}
+.pane{padding:18px 20px}
+.pill{display:inline-block;font-size:12px;font-weight:600;border-radius:20px;padding:3px 9px;white-space:nowrap}
+.p-New{background:var(--info-bg);color:var(--info)}.p-Acknowledged,.p-In{background:var(--brass-bg);color:#7A531C}
+.p-Awaiting{background:var(--wait-bg);color:var(--wait)}.p-Completed{background:var(--ok-bg);color:var(--ok)}.p-Closed{background:#EEF0F3;color:var(--muted)}
+.p-on{background:var(--ok-bg);color:var(--ok)}.p-off{background:var(--bad-bg);color:var(--bad)}
+.req{border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:10px;cursor:pointer;background:#fff}
+.req:hover{border-color:var(--navy2)}
+.req .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.req b{color:var(--navy)}
+.req small{color:var(--muted);font-size:12.5px}
+.thread{border:1px solid var(--line);border-radius:10px;padding:16px;background:#FDFCF9}
+.msg{padding:10px 12px;border-radius:10px;margin:8px 0;max-width:85%;white-space:pre-wrap;word-wrap:break-word}
+.msg.client{background:#fff;border:1px solid var(--line)}
+.msg.firm{background:var(--navy);color:#E7EAF0;margin-left:auto}
+.msg small{display:block;font-size:11.5px;opacity:.7;margin-bottom:3px}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:0 0 5px}
+.f{margin-bottom:13px}
+.f input,.f select,.f textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px rgba(169,118,47,.13)}
+.f .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.note{font-size:13.5px;padding:10px 12px;border-radius:8px;margin:0 0 12px;display:none}
+.note.on{display:block}.note.ok{background:var(--ok-bg);color:var(--ok)}.note.bad{background:var(--bad-bg);color:var(--bad)}
+.docs{width:100%;border-collapse:collapse}
+.docs td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.docs td:last-child{text-align:right;white-space:nowrap}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 12px;font-size:14px;margin-bottom:18px}
+.kv span:nth-child(odd){color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.modal{position:fixed;inset:0;background:rgba(6,12,22,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 14px;z-index:20;overflow:auto}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:14px;width:100%;max-width:560px;padding:24px}
+.modal h3{font-size:21px;margin-bottom:4px}
+.modal .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+.share{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:13.5px;white-space:pre-wrap;margin:10px 0}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.2);border-top-color:currentColor;border-radius:50%;animation:s .7s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.back{display:none}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  .layout.detail-open .list{display:none}
+  .layout:not(.detail-open) .detail{display:none}
+  .back{display:inline-flex;margin-bottom:10px}
+  .grid2{grid-template-columns:1fr}
+  .kv{grid-template-columns:1fr}
+  .kv span:nth-child(odd){margin-top:6px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div><h1>Clients</h1><p>Client logins, their requests and shared documents.</p></div>
+    <button class="btn brass" id="newBtn">+ New client</button>
+  </div>
+
+  <div class="layout" id="layout">
+    <aside class="card list">
+      <div class="search"><input id="q" placeholder="Search clients"></div>
+      <div id="clientList"><div class="empty"><span class="spin"></span></div></div>
+    </aside>
+    <section class="card detail" id="detail">
+      <div class="empty" style="padding:80px 20px">Select a client, or create a new one.</div>
+    </section>
+  </div>
+</div>
+
+<!-- New client -->
+<div class="modal" id="newModal" role="dialog" aria-modal="true" aria-labelledby="nmTitle">
+  <div class="box">
+    <h3 id="nmTitle">New client</h3>
+    <p class="sub">Creates the client's login and emails them a link to set their own password.</p>
+    <div class="note" id="nmNote"></div>
+    <form id="newForm" autocomplete="off">
+      <div class="f"><label for="nName">Client name</label><input id="nName" required maxlength="120" placeholder="e.g. Sri Balaji Builders"></div>
+      <div class="grid2">
+        <div class="f"><label for="nNature">Nature</label>
+          <select id="nNature">
+            <option>Builder / Promoter</option><option>Individual</option><option>Company</option>
+            <option>Bank / Financial institution</option><option>Firm / Partnership</option><option>Other</option>
+          </select></div>
+        <div class="f"><label for="nLogin">User ID</label><input id="nLogin" required maxlength="40" autocapitalize="none" spellcheck="false" placeholder="e.g. sribalaji">
+          <div class="hint">What the client types at Login → External.</div></div>
+      </div>
+      <div class="grid2">
+        <div class="f"><label for="nEmail">Email</label><input id="nEmail" type="email" required maxlength="160" placeholder="client@example.com"></div>
+        <div class="f"><label for="nPhone">Phone (optional)</label><input id="nPhone" maxlength="30" placeholder="WhatsApp number"></div>
+      </div>
+      <div class="f"><label for="nPass">Starting password (optional)</label><input id="nPass" type="text" minlength="8" maxlength="72" placeholder="Leave blank to let the client set it from the email">
+        <div class="hint">At least 8 characters. The client can change it from the email link.</div></div>
+      <div class="actions" style="justify-content:flex-end;margin-top:6px">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn brass" id="nGo">Create login</button>
+      </div>
+    </form>
+    <div id="nmDone" style="display:none">
+      <p style="margin:0 0 6px">Share these details with the client:</p>
+      <div class="share" id="shareText"></div>
+      <div class="actions" style="justify-content:flex-end">
+        <button class="btn" id="copyShare">Copy</button>
+        <a class="btn" id="waShare" target="_blank" rel="noopener">Send on WhatsApp</a>
+        <button class="btn brass" data-close>Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var SB_URL = 'https://tjvvqoomaptxscgiziks.supabase.co', SB_KEY = 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm';
+var sb = window.supabase.createClient(SB_URL, SB_KEY);
+var SITE = 'https://www.vlegalservices.in';
+var STATUSES = ['New','Acknowledged','In progress','Awaiting information','Completed','Closed'];
+var state = { me:null, clients:[], counts:{}, sel:null, tab:'requests', reqs:[], openReq:null, docs:[] };
+var $ = function(id){ return document.getElementById(id); };
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function when(iso){ if(!iso) return ''; var d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+function pill(s){ return '<span class="pill p-'+esc(String(s).split(' ')[0])+'">'+esc(s)+'</span>'; }
+function note(el,t,ok){ el.textContent=t; el.className='note on '+(ok?'ok':'bad'); if(!t) el.className='note'; }
+function isOpen(r){ return r.status!=='Completed' && r.status!=='Closed'; }
+
+async function callFn(body){
+  var s = (await sb.auth.getSession()).data.session;
+  var r = await fetch(SB_URL+'/functions/v1/client-accounts', { method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey:SB_KEY, Authorization:'Bearer '+(s?s.access_token:SB_KEY) },
+    body: JSON.stringify(body) });
+  var j = {}; try { j = await r.json(); } catch(e){}
+  if(!r.ok || j.error) throw new Error(j.error || ('Request failed ('+r.status+')'));
+  return j;
+}
+
+/* ---------------- list ---------------- */
+async function loadClients(){
+  var a = await sb.from('client_accounts').select('*').order('name');
+  if(a.error){ $('clientList').innerHTML='<div class="empty">Could not load clients: '+esc(a.error.message)+'</div>'; return; }
+  state.clients = a.data || [];
+  var r = await sb.from('client_requests').select('client_account_id,status');
+  state.counts = {};
+  (r.data||[]).forEach(function(x){ if(isOpen(x)) state.counts[x.client_account_id]=(state.counts[x.client_account_id]||0)+1; });
+  renderList();
+}
+function renderList(){
+  var q = $('q').value.trim().toLowerCase();
+  var rows = state.clients.filter(function(c){ return !q || (c.name+' '+c.login_id+' '+(c.nature||'')+' '+c.email).toLowerCase().indexOf(q)>-1; });
+  var h = rows.map(function(c){
+    var n = state.counts[c.id]||0;
+    return '<button class="item'+(state.sel&&state.sel.id===c.id?' on':'')+'" data-id="'+c.id+'"><b>'+esc(c.name)+'</b>'+
+      '<div class="row"><small>'+esc(c.nature||'Client')+' · '+esc(c.login_id)+'</small>'+
+      (n?'<span class="count" title="Open requests">'+n+'</span>':'')+(c.active?'':'<span class="pill p-off">Blocked</span>')+'</div></button>';
+  }).join('');
+  if(!q || 'kannan group kannangroup'.indexOf(q)>-1){
+    h += '<a class="item static" href="/kannangroup/theni/" target="_blank" rel="noopener"><b>Kannan Group</b><div class="row"><small>Separate property portal · kannangroup ↗</small></div></a>';
+  }
+  $('clientList').innerHTML = h || '<div class="empty">No clients match.</div>';
+}
+
+/* ---------------- detail ---------------- */
+async function openClient(id){
+  state.sel = state.clients.filter(function(c){return c.id===id;})[0]; state.openReq=null;
+  $('layout').classList.add('detail-open'); renderList();
+  await loadDetail(); renderDetail();
+}
+async function loadDetail(){
+  var id = state.sel.id;
+  var r = await sb.from('client_requests').select('*').eq('client_account_id',id).order('updated_at',{ascending:false});
+  state.reqs = r.data||[];
+  var d = await sb.from('client_shared_docs').select('*').eq('client_account_id',id).order('created_at',{ascending:false});
+  state.docs = d.data||[];
+}
+function renderDetail(){
+  var c = state.sel; if(!c) return;
+  var h = '<div style="padding:14px 20px 0"><button class="btn sm back" id="backBtn">← All clients</button></div>'+
+    '<div class="dhead"><div><h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.nature||'Client')+' · User ID <b class="mono">'+esc(c.login_id)+'</b> · '+esc(c.email)+'</div></div>'+
+    '<div>'+(c.active?pill('Active').replace('p-Active','p-on'):'<span class="pill p-off">Login blocked</span>')+'</div></div>'+
+    '<div class="tabs">'+['requests','documents','login'].map(function(t){
+      var lbl = t==='requests'?'Requests ('+state.reqs.length+')':t==='documents'?'Documents ('+state.docs.length+')':'Login';
+      return '<button data-tab="'+t+'" class="'+(state.tab===t?'on':'')+'">'+lbl+'</button>'; }).join('')+'</div>'+
+    '<div class="pane" id="pane"></div>';
+  $('detail').innerHTML = h;
+  if(state.tab==='requests') renderRequests(); else if(state.tab==='documents') renderDocs(); else renderLogin();
+}
+
+function renderRequests(){
+  var p = $('pane');
+  if(state.openReq){ return renderThread(); }
+  if(!state.reqs.length){ p.innerHTML='<div class="empty">No requests from this client yet. They raise requests from their portal.</div>'; return; }
+  p.innerHTML = state.reqs.map(function(r){
+    return '<div class="req" data-req="'+r.id+'"><div class="top"><div><b>'+esc(r.title)+'</b><br><small>'+esc(r.service||'General')+' · updated '+when(r.updated_at)+'</small></div>'+pill(r.status)+'</div></div>';
+  }).join('');
+}
+async function renderThread(){
+  var r = state.reqs.filter(function(x){return x.id===state.openReq;})[0];
+  var p = $('pane');
+  p.innerHTML = '<div class="empty"><span class="spin"></span></div>';
+  var m = await sb.from('client_request_messages').select('*').eq('request_id',r.id).order('created_at');
+  var msgs = m.data||[];
+  p.innerHTML = '<button class="btn sm" id="reqBack" style="margin-bottom:12px">← All requests</button>'+
+    '<div class="thread"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h3 style="font-size:19px">'+esc(r.title)+'</h3>'+
+    '<small style="color:var(--muted)">'+esc(r.service||'General')+' · raised '+when(r.created_at)+(r.created_by?' by '+esc(r.created_by):'')+'</small></div>'+
+    '<div class="f" style="margin:0;min-width:190px"><label for="stSel">Status</label><select id="stSel">'+STATUSES.map(function(s){return '<option'+(s===r.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div></div>'+
+    (r.details?'<div class="msg client" style="max-width:100%;margin-top:12px"><small>Request details</small>'+esc(r.details)+'</div>':'')+
+    msgs.map(function(x){ return '<div class="msg '+x.author_type+'"><small>'+esc(x.author_name||(x.author_type==='firm'?'V Legal Services':'Client'))+' · '+when(x.created_at)+'</small>'+esc(x.body)+'</div>'; }).join('')+
+    '<div class="f" style="margin-top:14px"><label for="replyTxt">Reply to client</label><textarea id="replyTxt" rows="3" maxlength="4000" placeholder="Write an update or ask for information"></textarea></div>'+
+    '<div class="note" id="thNote"></div><div class="actions" style="justify-content:flex-end"><button class="btn navy" id="sendReply">Send reply</button></div></div>';
+}
+
+function renderDocs(){
+  var p = $('pane');
+  p.innerHTML = '<form id="upForm" class="card" style="padding:14px;margin-bottom:16px;background:#FDFCF9">'+
+    '<div class="grid2"><div class="f"><label for="dTitle">Document title</label><input id="dTitle" required maxlength="150" placeholder="e.g. Legal opinion – Plot 12"></div>'+
+    '<div class="f"><label for="dFile">File (up to 25 MB)</label><input id="dFile" type="file" required></div></div>'+
+    '<div class="f"><label for="dNote">Note (optional)</label><input id="dNote" maxlength="300"></div>'+
+    '<div class="note" id="upNote"></div><div class="actions" style="justify-content:flex-end"><button class="btn navy" id="upGo">Share with client</button></div></form>'+
+    (state.docs.length ? '<table class="docs">'+state.docs.map(function(d){
+      return '<tr><td><b>'+esc(d.title)+'</b><br><small style="color:var(--muted)">'+esc(d.file_name||'')+' · '+(d.uploaded_by==='client'?'uploaded by client':'shared by you')+' · '+when(d.created_at)+'</small>'+(d.note?'<br><small>'+esc(d.note)+'</small>':'')+'</td>'+
+        '<td><button class="btn sm" data-dl="'+d.id+'">Download</button> <button class="btn sm danger" data-rm="'+d.id+'">Remove</button></td></tr>';
+    }).join('')+'</table>' : '<div class="empty">No documents shared yet.</div>');
+}
+
+function renderLogin(){
+  var c = state.sel;
+  $('pane').innerHTML = '<div class="kv"><span>Login page</span><span>'+SITE+'/login → External</span><span>User ID</span><span class="mono">'+esc(c.login_id)+'</span>'+
+    '<span>Email</span><span>'+esc(c.email)+'</span><span>Phone</span><span>'+esc(c.phone||'—')+'</span><span>Created</span><span>'+when(c.created_at)+'</span>'+
+    '<span>Status</span><span>'+(c.active?'Active':'Blocked')+'</span></div>'+
+    '<div class="note" id="lgNote"></div>'+
+    '<div class="actions" style="margin-bottom:18px"><button class="btn" id="resend">Email set-password link again</button>'+
+    '<button class="btn '+(c.active?'danger':'')+'" id="toggle">'+(c.active?'Block this login':'Unblock this login')+'</button></div>'+
+    '<form id="pwForm" class="card" style="padding:14px;background:#FDFCF9"><div class="f"><label for="newPw">Set a new password for this client</label><input id="newPw" type="text" minlength="8" maxlength="72" placeholder="At least 8 characters"></div>'+
+    '<div class="actions" style="justify-content:flex-end"><button class="btn navy">Set password</button></div></form>';
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener('click', async function(e){
+  var t = e.target.closest('button,a'); if(!t) return;
+  if(t.dataset.id){ openClient(t.dataset.id); return; }
+  if(t.id==='backBtn'){ $('layout').classList.remove('detail-open'); return; }
+  if(t.dataset.tab){ state.tab=t.dataset.tab; state.openReq=null; renderDetail(); return; }
+  if(t.id==='reqBack'){ state.openReq=null; await loadDetail(); renderDetail(); return; }
+  if(t.id==='newBtn'){ openNew(); return; }
+  if(t.hasAttribute('data-close')){ $('newModal').classList.remove('on'); return; }
+  if(t.id==='sendReply'){
+    var txt=$('replyTxt').value.trim(); if(!txt) return;
+    t.disabled=true;
+    var ins = await sb.from('client_request_messages').insert({ request_id:state.openReq, author_type:'firm', author_name:'V Legal Services', body:txt });
+    t.disabled=false;
+    if(ins.error){ note($('thNote'),ins.error.message,false); return; }
+    var r = state.reqs.filter(function(x){return x.id===state.openReq;})[0];
+    if(r && r.status==='New'){ await sb.from('client_requests').update({status:'Acknowledged'}).eq('id',r.id); r.status='Acknowledged'; }
+    renderThread(); return;
+  }
+  if(t.dataset.dl){
+    var d = state.docs.filter(function(x){return x.id===t.dataset.dl;})[0];
+    var s = await sb.storage.from('client-portal').createSignedUrl(d.file_path, 120, { download: d.file_name || true });
+    if(s.error){ alert('Could not open file: '+s.error.message); return; }
+    window.open(s.data.signedUrl, '_blank'); return;
+  }
+  if(t.dataset.rm){
+    var d2 = state.docs.filter(function(x){return x.id===t.dataset.rm;})[0];
+    if(!confirm('Remove "'+d2.title+'"? The client will no longer see it.')) return;
+    await sb.storage.from('client-portal').remove([d2.file_path]);
+    await sb.from('client_shared_docs').delete().eq('id',d2.id);
+    await loadDetail(); renderDetail(); return;
+  }
+  if(t.id==='resend'){
+    t.disabled=true;
+    try { await callFn({action:'resend', account_id:state.sel.id}); note($('lgNote'),'Set-password link emailed to '+state.sel.email+'.',true); }
+    catch(x){ note($('lgNote'),x.message,false); }
+    t.disabled=false; return;
+  }
+  if(t.id==='toggle'){
+    var to = !state.sel.active;
+    if(!to && !confirm('Block '+state.sel.name+'? They will not be able to sign in until you unblock them.')) return;
+    t.disabled=true;
+    try { await callFn({action:'set_active', account_id:state.sel.id, active:to}); state.sel.active=to; renderList(); renderDetail(); }
+    catch(x){ note($('lgNote'),x.message,false); t.disabled=false; }
+    return;
+  }
+});
+document.addEventListener('click', function(e){
+  var r = e.target.closest('.req'); if(r){ state.openReq=r.dataset.req; renderThread(); }
+});
+document.addEventListener('change', async function(e){
+  if(e.target.id==='stSel'){
+    var up = await sb.from('client_requests').update({status:e.target.value}).eq('id',state.openReq);
+    if(up.error){ alert(up.error.message); return; }
+    var r = state.reqs.filter(function(x){return x.id===state.openReq;})[0]; if(r) r.status=e.target.value;
+    loadClients();
+  }
+});
+document.addEventListener('submit', async function(e){
+  if(e.target.id==='upForm'){
+    e.preventDefault();
+    var f=$('dFile').files[0], b=$('upGo'); if(!f) return;
+    if(f.size>25*1024*1024){ note($('upNote'),'File is larger than 25 MB.',false); return; }
+    b.disabled=true; b.innerHTML='<span class="spin"></span> Uploading…';
+    var safe = f.name.replace(/[^A-Za-z0-9._-]+/g,'_').slice(-80);
+    var path = state.sel.id+'/'+Date.now()+'-'+safe;
+    var u = await sb.storage.from('client-portal').upload(path, f, { contentType: f.type||'application/octet-stream' });
+    if(u.error){ note($('upNote'),u.error.message,false); b.disabled=false; b.textContent='Share with client'; return; }
+    var ins = await sb.from('client_shared_docs').insert({ client_account_id:state.sel.id, title:$('dTitle').value.trim(), note:$('dNote').value.trim()||null, file_path:path, file_name:f.name, uploaded_by:'firm' });
+    if(ins.error){ await sb.storage.from('client-portal').remove([path]); note($('upNote'),ins.error.message,false); b.disabled=false; b.textContent='Share with client'; return; }
+    await loadDetail(); renderDetail(); return;
+  }
+  if(e.target.id==='pwForm'){
+    e.preventDefault();
+    var pw=$('newPw').value;
+    if(pw.length<8){ note($('lgNote'),'Password must be at least 8 characters.',false); return; }
+    try { await callFn({action:'set_password', account_id:state.sel.id, password:pw}); note($('lgNote'),'Password updated. Share it with the client privately.',true); $('newPw').value=''; }
+    catch(x){ note($('lgNote'),x.message,false); }
+  }
+});
+
+/* ---------------- new client ---------------- */
+function openNew(){
+  $('newForm').reset(); $('newForm').style.display=''; $('nmDone').style.display='none'; note($('nmNote'),'');
+  $('newModal').classList.add('on'); $('nName').focus();
+}
+$('nName').addEventListener('input', function(){
+  if($('nLogin').dataset.touched) return;
+  $('nLogin').value = this.value.toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,20);
+});
+$('nLogin').addEventListener('input', function(){ this.dataset.touched='1'; this.value=this.value.toLowerCase().replace(/[^a-z0-9._-]/g,''); });
+$('newForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var b=$('nGo'); b.disabled=true; b.innerHTML='<span class="spin"></span> Creating…'; note($('nmNote'),'');
+  var pw = $('nPass').value;
+  try {
+    var r = await callFn({ action:'create', name:$('nName').value, nature:$('nNature').value, login_id:$('nLogin').value,
+      email:$('nEmail').value, phone:$('nPhone').value, password:pw });
+    var a = r.account;
+    var msg = 'Dear '+a.name+',\n\nYour V Legal Services client login is ready.\n\nLogin: '+SITE+'/login  (choose External)\nUser ID: '+a.login_id+'\n'+
+      (r.email_sent ? 'We have emailed '+a.email+' a link to set your password.' : 'Password: shared separately.')+
+      '\n\nFor help: 73737 35222';
+    $('shareText').textContent = msg;
+    $('waShare').href = 'https://wa.me/'+(a.phone? a.phone.replace(/\D/g,'').replace(/^(\d{10})$/,'91$1') : '')+'?text='+encodeURIComponent(msg);
+    note($('nmNote'), r.email_sent ? 'Login created. An invitation email has been sent to '+a.email+'.' : 'Login created, but the email could not be sent. Share the User ID and starting password with the client yourself.', true);
+    $('newForm').style.display='none'; $('nmDone').style.display='';
+    await loadClients();
+  } catch(x){ note($('nmNote'), x.message, false); }
+  b.disabled=false; b.textContent='Create login';
+});
+$('copyShare').addEventListener('click', function(){
+  navigator.clipboard.writeText($('shareText').textContent).then(function(){ $('copyShare').textContent='Copied'; setTimeout(function(){ $('copyShare').textContent='Copy'; },1500); });
+});
+$('q').addEventListener('input', renderList);
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') $('newModal').classList.remove('on'); });
+
+(async function(){
+  var s = (await sb.auth.getSession()).data.session;
+  if(!s){ location.replace('/login/'); return; }
+  state.me = s.user;
+  loadClients();
+})();
+</script>
+</body>
+</html>

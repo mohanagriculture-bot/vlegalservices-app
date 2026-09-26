@@ -53,7 +53,7 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
   <nav class="tabs" role="tablist">
     <button role="tab" data-t="practice" aria-selected="true">Practice system</button>
     <button role="tab" data-t="tasks" aria-selected="false">Task board</button>
-    <button role="tab" data-t="clients" aria-selected="false">Client portals</button>
+    <button role="tab" data-t="clients" aria-selected="false">Clients</button>
   </nav>
   <span class="who" id="who"></span>
   <button class="out" id="out">Sign out</button>
@@ -62,20 +62,7 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
 <div class="stage">
   <iframe id="f-practice" title="Practice system" data-src="/portal/"></iframe>
   <iframe id="f-tasks" title="Task board" data-src="/admin/tasks/"></iframe>
-  <div class="pane" id="f-clients">
-    <div class="in">
-      <h2>Client portals</h2>
-      <p class="lede">Each client's own portal. Opens in a new tab.</p>
-      <div class="grid">
-        <div class="cl">
-          <h3>Kannan Group</h3><small>Client User ID: kannangroup</small>
-          <a href="/kannangroup/theni/" target="_blank" rel="noopener">Property portal (Palakombai, Theni) ↗</a>
-          <a href="/kannangroup/office/" target="_blank" rel="noopener">Office service desk ↗</a>
-          <a href="/kannangroup/" target="_blank" rel="noopener">Kannan Group home ↗</a>
-        </div>
-      </div>
-    </div>
-  </div>
+  <iframe id="f-clients" title="Clients" data-src="/admin/clients/"></iframe>
 </div>
 
 <script>

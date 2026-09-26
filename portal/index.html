@@ -1186,6 +1186,12 @@ async function initApp(){
   const { data:{ session } } = await sb.auth.getSession();
   currentUser = session ? session.user : null;
   if(!currentUser && !needsPasswordSetup){ location.replace('/login/'); return; }
+  if(currentUser){
+    try {
+      const ca = await sb.from('client_accounts').select('id').eq('auth_user_id', currentUser.id).maybeSingle();
+      if(ca.data){ location.replace('/client/' + (needsPasswordSetup ? '?setpw=1' : '')); return; }
+    } catch(e){}
+  }
   sb.auth.onAuthStateChange((event, session)=>{
     const wasLoggedIn = !!currentUser;
     currentUser = session ? session.user : null;

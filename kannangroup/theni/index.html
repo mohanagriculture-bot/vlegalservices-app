@@ -134,6 +134,49 @@
   .acc-id{display:flex;align-items:center;gap:10px;min-width:0;}
   .qleft{display:flex;align-items:center;gap:9px;min-width:0;}
 
+  /* ---- proportion bars ---------------------------------------------
+     Free hold / sold / encroached is a part-to-whole of one total, so
+     one stacked bar says in a glance what three tiles make you work
+     out. Brass, red and orange are the same three colours the tiles
+     already use, and each band opens the report behind it. */
+  .propcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 19px 14px;margin:0 0 22px;}
+  .prop-top{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+    margin-bottom:12px;flex-wrap:wrap;}
+  .prop-t{font-family:'Lora',Georgia,serif;font-size:15.5px;font-weight:700;color:var(--navy);}
+  .prop-sub{font-size:12px;color:var(--muted);}
+  .prop-sub b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;}
+  .bar{display:flex;gap:2px;height:34px;width:100%;}
+  .seg{position:relative;display:flex;align-items:center;justify-content:center;border:none;
+    padding:0;font:inherit;color:#fff;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;
+    cursor:pointer;transition:filter .13s;overflow:hidden;white-space:nowrap;min-width:0;}
+  .seg:hover,.seg:focus-visible{filter:brightness(1.13);outline:none;}
+  .seg:first-child{border-radius:5px 0 0 5px;}
+  .seg:last-child{border-radius:0 5px 5px 0;}
+  .seg.free{background:var(--brass);}
+  .seg.sold{background:var(--sold);}
+  .seg.enc{background:var(--enc);}
+  .legend{display:flex;gap:22px;margin-top:13px;flex-wrap:wrap;}
+  .lgd{display:flex;align-items:center;gap:8px;font-size:12.5px;}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none;}
+  .sw.free{background:var(--brass);}
+  .sw.sold{background:var(--sold);}
+  .sw.enc{background:var(--enc);}
+  .lgd-l{color:var(--muted);}
+  .lgd-v{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);}
+  .lgd-p{color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  /* the same bar, thin, so eight entities can be ranked at a glance */
+  .minibar{display:flex;gap:1.5px;height:7px;margin-top:13px;}
+  .minibar div:first-child{border-radius:4px 0 0 4px;}
+  .minibar div:last-child{border-radius:0 4px 4px 0;}
+  .mb-free{background:var(--brass);}
+  .mb-sold{background:var(--sold);}
+  .mb-enc{background:var(--enc);}
+  .minicap{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--muted);
+    margin-top:6px;font-variant-numeric:tabular-nums;}
+  .minicap b{color:var(--brass);font-weight:700;}
+
   /* ---- phones: one card per record --------------------------------
      Eight columns in a horizontal scroll loses the SF number the moment
      you swipe right, and on site that is the one thing that must stay on
@@ -332,6 +375,20 @@
     .emark { background:none !important; color:#000 !important; border:.6pt solid #000;
       box-shadow:none !important; width:17pt; height:17pt; border-radius:2.5pt; font-size:7pt; }
     .emark.lg { width:24pt; height:24pt; font-size:10pt; }
+    /* the bars are the one place worth spending ink: force the fill, and
+       outline each band so a printer that drops backgrounds still shows
+       the split. */
+    .propcard { border:.5pt solid #999 !important; box-shadow:none !important;
+      border-radius:0 !important; padding:8pt 10pt; margin-bottom:12px; }
+    .bar { height:15pt; }
+    .seg { border:.4pt solid #333; print-color-adjust:exact; -webkit-print-color-adjust:exact;
+      font-size:7.5pt; }
+    .minibar { height:5pt; }
+    .minibar div, .sw { border:.3pt solid #333; print-color-adjust:exact;
+      -webkit-print-color-adjust:exact; }
+    .legend { gap:14pt; margin-top:8pt; font-size:8pt; }
+    .lgd { font-size:8pt; }
+    .minicap { font-size:7pt; }
 
     /* printing with the report pop-up open prints the report itself */
     body.printing-report #panel,
@@ -606,6 +663,54 @@ function render(){
   cardify(panel);
 }
 
+/* --------------------------- proportion bars ---------------------------
+   b is an agg() bucket (or agg().grand). Widths come from the three parts
+   so the bands always sum to the full width; the figure shown as the
+   total is the tile's own, so bar and tile never disagree. */
+function propBar(b, slug){
+  var parts = [['free','Free hold',b.free],['sold','Sold',b.sold],['enc','Encroached',b.enc]];
+  var t = b.free + b.sold + b.enc;
+  if (!(t > 0.0001)) return '';
+  var pct = function(v){ return v / t * 100; };
+  return '<div class="propcard">'
+    + '<div class="prop-top">'
+    +   '<span class="prop-t">'+(slug ? 'Position' : 'Portfolio position')+'</span>'
+    +   '<span class="prop-sub"><b>'+f2(b.total)+'</b> acres across <b>'+b.sf+'</b> survey number'
+    +   (b.sf === 1 ? '' : 's')
+    +   (slug ? '' : ' \u00b7 ' + DATA.companies.length + ' entities')
+    +   '</span></div>'
+    + '<div class="bar">'
+    + parts.filter(function(p){ return p[2] > 0.0001; }).map(function(p){
+        var w = pct(p[2]);
+        return '<button class="seg '+p[0]+'" style="flex:'+w+'"'
+          + ' data-report="'+p[0]+'" data-slug="'+esc(slug||'')+'"'
+          + ' title="'+p[1]+': '+f2(p[2])+' Ac ('+w.toFixed(1)+'%) \u2014 tap for the survey numbers"'
+          + ' aria-label="'+p[1]+' '+f2(p[2])+' acres, '+w.toFixed(1)+' percent">'
+          + (w > 12 ? '<span>'+w.toFixed(1)+'%</span>' : '') + '</button>';
+      }).join('')
+    + '</div><div class="legend">'
+    + parts.map(function(p){
+        return '<span class="lgd"><span class="sw '+p[0]+'"></span>'
+          + '<span class="lgd-l">'+p[1]+'</span>'
+          + '<span class="lgd-v">'+f2(p[2])+' Ac</span>'
+          + '<span class="lgd-p">'+pct(p[2]).toFixed(1)+'%</span></span>';
+      }).join('')
+    + '</div></div>';
+}
+
+function miniBar(b){
+  var t = b.free + b.sold + b.enc;
+  if (!(t > 0.0001)) return '';
+  var seg = function(cls, v){
+    return v > 0.0001 ? '<div class="mb-'+cls+'" style="flex:'+(v/t*100)+'"></div>' : ''; };
+  return '<div class="minibar" title="Free hold '+f2(b.free)+' Ac \u00b7 sold '+f2(b.sold)
+    +   ' Ac \u00b7 encroached '+f2(b.enc)+' Ac">'
+    +   seg('free',b.free) + seg('sold',b.sold) + seg('enc',b.enc)
+    + '</div>'
+    + '<div class="minicap"><b>'+Math.round(b.free/t*100)+'% free hold</b>'
+    +   '<span>'+f2(b.total)+' Ac total</span></div>';
+}
+
 function tile(cls, value, label, kind, slug){
   return '<button class="tstat'+(cls?' '+cls:'')+'" data-report="'+kind+'" data-slug="'+esc(slug||'')+'">'
     + '<div class="tn">'+value+'</div><div class="tl">'+esc(label)+'</div>'
@@ -627,6 +732,7 @@ function renderDash(){
         + '<div class="ecard-top"><span class="ecard-id">'+emark(c.company_slug)
         +   '<span class="ecard-name">'+esc(c.company)+'</span></span>'
         + '<span class="pill'+(type==='Individual'?' ind':'')+'">'+esc(type)+'</span></div>'
+        + miniBar(b)
         + '<div class="ecard-metrics">'
         +   '<div class="em"><div class="em-n">'+b.sf+'</div><div class="em-l">Survey Nos.</div></div>'
         +   '<div class="em"><div class="em-n">'+f2(b.total)+'</div><div class="em-l">Total Ac</div></div>'
@@ -644,9 +750,10 @@ function renderDash(){
     + tile('sold', f2(a.grand.sold), 'Sold', 'sold', null)
     + tile('enc', f2(a.grand.enc), 'Encroached', 'enc', null)
     + '</div>'
-    + '<div style="font-size:12.5px;color:var(--muted);margin:-14px 0 22px;">'
-    +   nComp+' companies and '+nInd+' individual owners. Tap any figure above for the detail, with Excel and PDF download.'
+    + '<div style="font-size:12.5px;color:var(--muted);margin:-14px 0 15px;">'
+    +   nComp+' companies and '+nInd+' individual owners. Tap any figure or band for the detail, with Excel and PDF download.'
     + '</div>'
+    + propBar(a.grand, null)
     + '<div class="sec-head"><div class="idx">Companies</div><h2>'+nComp+' Compan'+(nComp===1?'y':'ies')+'</h2></div>'
     + cardsFor('Company')
     + '<div class="sec-head" style="margin-top:30px;"><div class="idx">Individuals</div><h2>'+nInd+' Individual Owner'+(nInd===1?'':'s')+'</h2></div>'
@@ -671,16 +778,18 @@ function renderProfiles(){
   if (viewSlug) return renderProfileDetail(viewSlug);
   panel.innerHTML = '<div class="sec-head"><div class="idx">Profiles</div><h2>Company Profiles</h2>'
     + '<p>Tap an entity for its nature, PAN, GST, address, partners, share holding and documents.</p></div>'
-    + '<div class="egrid">' + DATA.companies.map(function(c){
+    + '<div class="egrid">' + (function(){ var ag = agg(); return DATA.companies.map(function(c){
         var np = partnersOf(c.company_slug).length, nd = docsOf(c.company_slug).length;
+        var b = ag.by[c.company_slug] || {sf:0,total:0,free:0,sold:0,enc:0};
         return '<button class="ecard" data-open-profile="'+esc(c.company_slug)+'">'
           + '<div class="ecard-top"><span class="ecard-id">'+emark(c.company_slug)
           +   '<span class="ecard-name">'+esc(c.company)+'</span></span>'
           + '<span class="pill'+((c.type||'')==='Individual'?' ind':'')+'">'+esc(c.type||'Company')+'</span></div>'
-          + '<div style="font-size:12.5px;color:var(--muted);margin-top:9px;">'
+          + miniBar(b)
+          + '<div style="font-size:12.5px;color:var(--muted);margin-top:11px;">'
           + np + ' partner' + (np===1?'':'s') + ' · ' + nd + ' document' + (nd===1?'':'s')
           + '</div></button>';
-      }).join('') + '</div>';
+      }).join(''); })() + '</div>';
 }
 
 var pTab = 'overview';
@@ -720,6 +829,7 @@ function renderProfileDetail(slug){
     +   tile('sold', f2(a.sold), 'Sold', 'sold', slug)
     +   tile('enc', f2(a.enc), 'Encroached', 'enc', slug)
     + '</div>'
+    + propBar(a, slug)
     + '<div class="tabs" style="border-bottom:1px solid var(--line);">'
     + allTabs.map(function(t){
         var n = counts[t[0]];

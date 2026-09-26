@@ -149,6 +149,44 @@ footer a{color:#B9C1CE}
 
 .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;background:#1F7A4D;color:#fff;border-radius:40px;padding:12px 18px;font-weight:600;font-size:14.5px;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 
+/* Pricing */
+.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.price{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;display:flex;flex-direction:column}
+.price.feat{background:var(--ink);border-color:var(--ink);color:#C4CBD7}
+.price.feat h3{color:#fff}
+.price .badge{align-self:flex-start;font-size:12px;font-weight:600;background:var(--brass-bg);color:#7A531C;padding:4px 10px;border-radius:20px;margin-bottom:14px}
+.price .badge.alt{background:#E6ECF4;color:var(--navy2)}
+.price h3{font-size:21px;margin-bottom:6px}
+.price p{margin:0 0 18px;font-size:14.5px;color:inherit;opacity:.85}
+.price .amt{font-family:var(--serif);font-size:46px;font-weight:700;color:var(--navy);line-height:1;margin-top:auto}
+.price.feat .amt{color:var(--brass-lt)}
+.price .amt span{font-size:26px;vertical-align:top;margin-right:2px}
+.price small{display:block;margin-top:6px;font-size:13px;opacity:.8}
+
+/* Poster pop-up */
+.pop{position:fixed;inset:0;z-index:100;background:rgba(6,12,22,.72);display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.pop.show{display:flex;animation:fade .25s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(18px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.poster{position:relative;width:100%;max-width:420px;max-height:calc(100vh - 32px);overflow:auto;border-radius:22px;background:linear-gradient(160deg,#16233A 0%,#0B1424 70%);color:#fff;padding:30px 26px 24px;box-shadow:0 30px 80px rgba(0,0,0,.45);animation:rise .35s ease;border:1px solid rgba(210,164,96,.35)}
+.poster::before{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(210,164,96,.35),transparent 70%)}
+.poster .x{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:20px;line-height:1;cursor:pointer;z-index:2}
+.poster .kick{position:relative;display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;background:var(--brass);color:#fff;padding:5px 10px;border-radius:4px}
+.poster h2{position:relative;color:#fff;font-size:30px;line-height:1.1;margin:14px 0 6px;font-weight:700}
+.poster h2 em{color:var(--brass-lt);font-style:italic;font-weight:500}
+.poster .sub{position:relative;margin:0 0 18px;color:#AEB6C4;font-size:14px}
+.poster .rows{position:relative;border-top:1px solid rgba(255,255,255,.14)}
+.poster .row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.14)}
+.poster .row b{display:block;font-size:15px;font-weight:600}
+.poster .row small{color:#AEB6C4;font-size:12.5px}
+.poster .row .rs{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--brass-lt);white-space:nowrap}
+.poster .gov{position:relative;margin:12px 0 18px;font-size:12.5px;color:#AEB6C4}
+.poster .acts{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.poster .acts a{justify-content:center;padding:12px}
+.poster .wa{background:#1F9D5B;color:#fff}
+.poster .mail{position:relative;display:block;text-align:center;margin-top:14px;font-size:13px;color:#C4CBD7;text-decoration:none}
+@media (max-width:900px){.prices{grid-template-columns:1fr}}
+
 @media (max-width:900px){
   .hero-grid,.svc-grid,.two{grid-template-columns:1fr}
   .steps{grid-template-columns:1fr 1fr}
@@ -187,6 +225,7 @@ footer a{color:#B9C1CE}
       <a href="#process">How it works</a>
       <a href="#opinion">Legal Opinion</a>
       <a href="#drafting">Drafting</a>
+      <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
       <a class="btn brass" href="#contact">Contact</a>
     </nav>
@@ -202,7 +241,7 @@ footer a{color:#B9C1CE}
       <p class="lead">We handle presence-less online registration of Bank MODs, Discharges and first sale of plots and apartments, from title scrutiny and drafting to Aadhaar authentication, fee payment and delivery of the registered document.</p>
       <div class="ctas">
         <a class="btn brass" href="tel:+917373735222">Call 73737 35222</a>
-        <a class="btn ghost" href="https://wa.me/917373735222?text=Hello%2C%20I%20need%20help%20with%20presence-less%20registration." target="_blank" rel="noopener">WhatsApp us</a>
+        <a class="btn ghost" href="#pricing">See prices</a>
       </div>
     </div>
     <div class="hero-card">
@@ -219,7 +258,7 @@ footer a{color:#B9C1CE}
 
 <div class="strip"><div class="wrap">
   <span>All SROs in <b>Coimbatore</b>, <b>Tiruppur</b> &amp; <b>Erode</b> districts</span>
-  <span>Handled by an <b>Advocate</b></span>
+  <span><b>Transparent</b> fixed pricing</span>
   <span>Through the official <b>TNREGINET</b> portal</span>
 </div></div>
 
@@ -302,7 +341,7 @@ footer a{color:#B9C1CE}
     </div>
     <div class="steps">
       <div class="step"><h3>Share your documents</h3><p>Send copies of the title deeds, patta, EC, IDs and, for bank work, the sanction letter or closure letter.</p></div>
-      <div class="step"><h3>Title scrutiny</h3><p>An advocate reviews the documents and flags any gap in title or approvals before anything is filed.</p></div>
+      <div class="step"><h3>Title scrutiny</h3><p>Our team reviews the documents and flags any gap in title or approvals before anything is filed.</p></div>
       <div class="step"><h3>Drafting &amp; fee calculation</h3><p>We draft the document and calculate stamp duty, registration fee and other charges as per the Department's rules.</p></div>
       <div class="step"><h3>Aadhaar authentication</h3><p>Each executing party and witness is authenticated with a UIDAI-compliant fingerprint or iris device, by arrangement.</p></div>
       <div class="step"><h3>Online payment &amp; submission</h3><p>Fees are paid online and the document is submitted to the jurisdictional Sub-Registrar through TNREGINET.</p></div>
@@ -382,7 +421,7 @@ footer a{color:#B9C1CE}
     <div class="sec-head">
       <span class="eyebrow">Also from our office</span>
       <h2>Legal opinion and document drafting</h2>
-      <p>Every registration starts with sound title. The same advocate-led team also gives independent legal opinions and drafts property documents.</p>
+      <p>Every registration starts with sound title. Our team also gives independent legal opinions and drafts property documents.</p>
     </div>
     <div class="two">
       <div class="card">
@@ -402,6 +441,41 @@ footer a{color:#B9C1CE}
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Price list</span>
+      <h2>Genuine, fixed service charges</h2>
+      <p>No hidden charges. Government registration charges are extra, as applicable, and we tell you the exact amount before filing.</p>
+    </div>
+    <div class="prices">
+      <div class="price feat">
+        <span class="badge">Presence-less · Online</span>
+        <h3>First sale of plot / apartment</h3>
+        <p>Online registration through TNREGINET, no SRO visit</p>
+        <div class="amt"><span>₹</span>5,000</div>
+        <small>per document + govt charges</small>
+      </div>
+      <div class="price">
+        <span class="badge">Presence-less · Online</span>
+        <h3>Bank MOD registration</h3>
+        <p>Memorandum of Deposit of Title Deeds</p>
+        <div class="amt"><span>₹</span>4,000</div>
+        <small>per document + govt charges</small>
+      </div>
+      <div class="price">
+        <span class="badge alt">At Sub-Registrar Office</span>
+        <h3>SRO registration</h3>
+        <p>Regular registration of any document at the SRO</p>
+        <div class="amt"><span>₹</span>5,000</div>
+        <small>per document + govt charges</small>
+      </div>
+    </div>
+    <p class="note" style="background:var(--surface)">Government registration charges (stamp duty, registration fee and others) as applicable. For Discharge / Deed of Receipt and other documents, call or WhatsApp <a href="tel:+917373735222"><b>73737 35222</b></a>.</p>
   </div>
 </section>
 
@@ -446,16 +520,16 @@ footer a{color:#B9C1CE}
     </div>
     <div class="c-grid">
       <div class="c-box">
-        <span class="eyebrow">Registration desk</span>
+        <span class="eyebrow">Call or WhatsApp</span>
         <a class="big" href="tel:+917373735222">73737 35222</a>
         <p>Presence-less registration — MOD, discharge, first sale</p>
         <a class="btn brass" href="https://wa.me/917373735222?text=Hello%2C%20I%20need%20help%20with%20presence-less%20registration." target="_blank" rel="noopener">WhatsApp</a>
       </div>
       <div class="c-box">
-        <span class="eyebrow">Legal opinion &amp; drafting</span>
-        <a class="big" href="tel:+916379588507">63795 88507</a>
-        <p>Mohan Kumar Rajavel, B.Sc (Agri), LL.B, Advocate</p>
-        <a class="btn ghost" href="mailto:mohanagriculture@gmail.com">mohanagriculture@gmail.com</a>
+        <span class="eyebrow">Email</span>
+        <a class="big" href="mailto:vlegal2025@gmail.com">vlegal2025@gmail.com</a>
+        <p>Send your documents and we'll reply with what's needed</p>
+        <a class="btn ghost" href="mailto:vlegal2025@gmail.com">Write to us</a>
       </div>
       <div class="c-box">
         <span class="eyebrow">Office</span>
@@ -471,7 +545,7 @@ footer a{color:#B9C1CE}
 <footer>
   <div class="wrap row">
     <div class="disclaimer">
-      <strong style="color:#C9D0DB">Disclaimer.</strong> As per the rules of the Bar Council of India, advocates are not permitted to solicit work or advertise. This website provides general information about our services for those who seek it and is not an invitation or solicitation. Information here is not legal advice; no advocate–client relationship is created by visiting this site.
+      <strong style="color:#C9D0DB">Note.</strong> Prices shown are our service charges. Government stamp duty, registration fees and other statutory charges are extra, as applicable. Information on this site is general and not legal advice for any specific case.
     </div>
     <div>
       © <span id="yr"></span> V Legal Services and Documentation<br>
@@ -481,6 +555,26 @@ footer a{color:#B9C1CE}
 </footer>
 
 <a class="wa-float" href="https://wa.me/917373735222?text=Hello%2C%20I%20need%20help%20with%20presence-less%20registration." target="_blank" rel="noopener">WhatsApp</a>
+
+<div class="pop" id="pop" role="dialog" aria-modal="true" aria-label="Price list">
+  <div class="poster">
+    <button class="x" aria-label="Close" onclick="closePop()">×</button>
+    <span class="kick">Genuine price list</span>
+    <h2>Register online.<br><em>No SRO visit.</em></h2>
+    <p class="sub">Presence-less registration · Coimbatore · Tiruppur · Erode</p>
+    <div class="rows">
+      <div class="row"><div><b>First sale of plot / apartment</b><small>Presence-less online registration</small></div><div class="rs">₹5,000</div></div>
+      <div class="row"><div><b>Bank MOD registration</b><small>Presence-less online registration</small></div><div class="rs">₹4,000</div></div>
+      <div class="row"><div><b>SRO registration</b><small>Per document</small></div><div class="rs">₹5,000</div></div>
+    </div>
+    <p class="gov">+ Government registration charges as applicable</p>
+    <div class="acts">
+      <a class="btn brass" href="tel:+917373735222">Call now</a>
+      <a class="btn wa" href="https://wa.me/917373735222?text=Hello%2C%20I%20need%20help%20with%20presence-less%20registration." target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+    <a class="mail" href="mailto:vlegal2025@gmail.com">73737 35222 · vlegal2025@gmail.com</a>
+  </div>
+</div>
 
 <script>
 document.getElementById('yr').textContent=new Date().getFullYear();
@@ -492,6 +586,12 @@ document.querySelectorAll('.tabs button').forEach(function(b){
     document.getElementById(b.dataset.t).classList.add('on');
   });
 });
+
+var pop=document.getElementById('pop');
+function closePop(){pop.classList.remove('show');document.body.style.overflow='';}
+pop.addEventListener('click',function(e){if(e.target===pop)closePop();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closePop();});
+setTimeout(function(){pop.classList.add('show');document.body.style.overflow='hidden';},900);
 </script>
 </body>
 </html>

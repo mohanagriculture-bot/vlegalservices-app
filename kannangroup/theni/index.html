@@ -1020,12 +1020,9 @@ function profileOverview(c, slug){
         }).join('') + '</tbody></table></div>'
       : '<div class="card empty" style="margin-bottom:18px;">No entity details recorded yet — add them under Master Data.</div>')
     + (function(){
-        var mine = entityDocsOf(slug);
-        if (!mine.length) return '';
-        var blocks = entityCats().map(function(k){
-          var files = mine.filter(function(d){ return d.category === k.id; });
-          return files.length ? docBlock(k.label, files, false, true) : '';
-        }).join('');
+        var blocks = companyDocBlocks(
+          DATA.documents.filter(function(d){ return d.company_slug === slug; }), false, true);
+        if (!blocks) return '';
         return '<h3 style="font-size:17px;margin-bottom:9px;">Entity Documents</h3>'
           + '<div class="card" style="margin-bottom:18px;">'+blocks+'</div>';
       })()
@@ -1377,7 +1374,9 @@ var REPORTS = [
   ['patta','By Patta','Each Patta number, the survey numbers under it and their extent.'],
   ['sold','Sold / Partially Sold','Survey numbers with any extent sold, the buyer and the outgoing deed.'],
   ['encroached','Encroached','Survey numbers carrying a full or partial encroachment.'],
-  ['free','Free Hold','Clean, unsold, unencroached extent available for sale.']
+  ['free','Free Hold','Clean, unsold, unencroached extent available for sale.'],
+  ['opinion','Legal Opinion','Every legal opinion on file, entity by entity \u2014 upload here, download here, '
+    + 'and see at a glance which entities have none.']
 ];
 
 function companyOrder(){
@@ -1400,7 +1399,121 @@ function renderReports(){
     : rTab === 'patta'      ? reportGrouped('patta_no', 'Patta No.')
     : rTab === 'sold'       ? reportSold()
     : rTab === 'encroached' ? reportEnc()
+    : rTab === 'opinion'    ? reportOpinions()
     :                         reportFree();
+}
+
+/* ------------------------- legal opinions -------------------------
+   The opinion documents already in the library, gathered into one place.
+   Entities with none are listed too -- a missing opinion is the thing
+   worth spotting, and it does not show up anywhere else. */
+var loState = {company:'', scope:'company', key:''};
+
+function opinionsOf(slug){
+  return DATA.documents.filter(function(d){
+    return d.company_slug === slug && d.category === 'legal_opinion'; });
+}
+
+function reportOpinions(){
+  if (!loState.company && DATA.companies.length) loState.company = DATA.companies[0].company_slug;
+  var sfList = sfNosFor(loState.company);
+  var pgs = pattasFor(loState.company), blks = blocksFor(loState.company);
+  var sc = loState.scope || 'company';
+
+  var keyField;
+  if (sc === 'sf') {
+    keyField = '<select id="loKey"><option value="">Choose a survey number\u2026</option>'
+      + sfList.map(function(x){ return '<option value="'+esc(x)+'"'+(loState.key===x?' selected':'')+'>SF '+esc(x)+'</option>'; }).join('')
+      + '</select>';
+  } else if (sc === 'block') {
+    keyField = '<select id="loKey"><option value="">Choose a survey number\u2026</option>'
+      + blks.map(function(b){ return '<option value="'+esc(b.key)+'"'+(loState.key===b.key?' selected':'')+'>'
+          + esc(b.key)+' \u2014 '+b.sf.length+' subdivision'+(b.sf.length===1?'':'s')+'</option>'; }).join('')
+      + '</select>';
+  } else if (sc === 'patta') {
+    keyField = '<select id="loKey"><option value="">Choose a Patta\u2026</option>'
+      + pgs.map(function(g){ return '<option value="'+esc(g.key)+'"'+(loState.key===g.key?' selected':'')+'>Patta '
+          + esc(g.key)+' \u2014 '+g.sf.length+' SF</option>'; }).join('')
+      + '</select>';
+  } else {
+    keyField = '<input value="Covers the whole entity" disabled style="color:var(--muted);">';
+  }
+
+  var form = '<div class="card" style="border:1px dashed var(--brass);background:#FBF9F3;margin-bottom:20px;">'
+    + '<h3 style="font-size:16px;margin-bottom:12px;">Upload a legal opinion</h3>'
+    + '<div class="row3">'
+    +   '<div class="field"><label>Entity</label><select id="loCompany">'
+    +     DATA.companies.map(function(c){ return '<option value="'+esc(c.company_slug)+'"'
+            +(loState.company===c.company_slug?' selected':'')+'>'+esc(c.company)+'</option>'; }).join('')
+    +   '</select></div>'
+    +   '<div class="field"><label>Covers</label><select id="loScope">'
+    +     SCOPE_OPTS.map(function(o){ return '<option value="'+o[0]+'"'+(sc===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')
+    +   '</select></div>'
+    +   '<div class="field"><label>Which</label>'+keyField+'</div>'
+    + '</div>'
+    + '<div class="field"><label>File</label><input type="file" id="loFile"></div>'
+    + '<div class="btnrow"><button class="btn brass sm" id="loBtn">Upload opinion</button>'
+    +   '<span class="msg" id="loNote"></span></div>'
+    + '<div class="hint" style="margin-top:8px;">Filed under Legal Opinion Report, so it also appears in the '
+    +   'document library and under every survey number it covers.</div>'
+    + '</div>';
+
+  var withNone = 0;
+  var body = companyOrder().map(function(c){
+    var mine = opinionsOf(c.company_slug);
+    if (!mine.length) withNone++;
+    var inner = mine.length
+      ? '<div style="padding:11px 14px;">' + mine.map(function(d){
+          return '<div class="docrow"><span class="docname">&#128196; '+esc(d.file_name)
+            + '<span class="viatag">'+esc(scopeLabel(docScope(d), docKey(d)))+'</span></span>'
+            + '<span class="docacts">'
+            +   '<button class="btn outline sm" data-view="'+esc(d.doc_id)+'">View</button>'
+            +   '<a class="btn outline sm" href="'+esc(d.file_url)+'" target="_blank" rel="noopener">Download</a>'
+            +   '<button class="btn danger sm" data-deld="'+esc(d.doc_id)+'">Delete</button>'
+            + '</span></div>';
+        }).join('') + '</div>'
+      : '<div class="card empty" style="margin:11px 14px;">No legal opinion on file for this entity.</div>';
+    return coAcc(c.company,
+      mine.length ? mine.length + ' opinion' + (mine.length===1?'':'s') : 'none on file',
+      mine.length ? '' : '\u2014',
+      inner, 'lo:'+c.company_slug, c.company_slug);
+  }).join('');
+
+  var head = withNone
+    ? '<div class="pgsum" style="margin-top:0;"><span class="pgwarn">\u26a0 '+withNone+' of '
+      + DATA.companies.length + ' entities have no legal opinion on file.</span></div>'
+    : '<div class="pgsum" style="margin-top:0;">Every entity has at least one opinion on file.</div>';
+
+  return form + head + (body || '<div class="card empty">No entities yet.</div>');
+}
+
+function uploadOpinion(){
+  var noteEl = document.getElementById('loNote');
+  var fileEl = document.getElementById('loFile');
+  var keyEl  = document.getElementById('loKey');
+  var sc = loState.scope || 'company';
+  var key = (sc !== 'company' && keyEl) ? keyEl.value : '';
+  var file = fileEl && fileEl.files && fileEl.files[0];
+
+  if (sc !== 'company' && !key) { note(noteEl,'Choose what this opinion covers.',false); return; }
+  if (!file) { note(noteEl,'Choose a file first.',false); return; }
+  if (file.size > 8*1024*1024) {
+    note(noteEl,'File is larger than 8 MB \u2014 add it to the Drive folder directly.',false); return; }
+
+  note(noteEl,'Uploading\u2026',true);
+  var fr = new FileReader();
+  fr.onerror = function(){ note(noteEl,'Could not read that file.',false); };
+  fr.onload = function(){
+    call({action:'uploadDoc', company_slug:loState.company,
+      sf_no: sc === 'sf' ? key : '', category:'legal_opinion', scope:sc, scope_key:key,
+      file_name:file.name, mime_type:file.type||'application/octet-stream',
+      file_base64:String(fr.result).split(',')[1]})
+      .then(function(r){ if(!r.ok) throw new Error(r.error);
+        openKey = 'lo:'+loState.company; loState.key = '';
+        toast('Legal opinion uploaded.'); return reload(true); })
+      .catch(function(err){ note(noteEl,'Upload failed: '+err.message,false); toast('Upload failed.',true); });
+  };
+  fr.readAsDataURL(file);
 }
 
 function coAcc(name, count, extentLabel, inner, key, slug){
@@ -1642,6 +1755,25 @@ function entityCats(){
     .concat(uploadSections().map(function(sec){
       return {id:sec.section_id, label:sec.title, scope:'company'}; }));
 }
+/* Entity-wide documents grouped by the category they were actually filed
+   under -- including one filed entity-wide from a category that usually
+   belongs to a survey number, such as an opinion covering the whole
+   holding. Grouping by the category's usual scope would lose those. */
+function companyDocBlocks(docs, editable, small){
+  var mine = docs.filter(function(d){ return docScope(d) === 'company'; });
+  if (!mine.length) return '';
+  var order = DOC_CATS.map(function(k){ return k.id; })
+    .concat(sectionsFor('company_profile', true).map(function(x){ return x.section_id; }));
+  var present = {};
+  mine.forEach(function(d){ present[d.category] = 1; });
+  var ids = order.filter(function(id){ return present[id]; })
+    .concat(Object.keys(present).filter(function(id){ return order.indexOf(id) === -1; }));
+  return ids.map(function(id){
+    var files = mine.filter(function(d){ return d.category === id; });
+    return files.length ? docBlock(catLabel(id), files, editable, small) : '';
+  }).join('');
+}
+
 function entityDocsOf(slug){
   return DATA.documents.filter(function(d){
     return d.company_slug === slug && docScope(d) === 'company'; });
@@ -1649,11 +1781,8 @@ function entityDocsOf(slug){
 
 function entityDocs(slug){
   var cats = entityCats();
-  var mine = entityDocsOf(slug);
-  var listed = cats.map(function(k){
-    var files = mine.filter(function(d){ return d.category === k.id; });
-    return files.length ? docBlock(k.label, files, true, true) : '';
-  }).join('');
+  var listed = companyDocBlocks(
+    DATA.documents.filter(function(d){ return d.company_slug === slug; }), true, true);
 
   return '<div class="edocs">'
     + '<label style="margin-bottom:8px;">Entity documents</label>'
@@ -2086,15 +2215,9 @@ function docLibrary(editable, onlySlug){
 
     var blocks = [];
 
-    // company-level categories, including headings you added yourself
-    DOC_CATS.filter(function(k){ return k.scope === 'company'; }).forEach(function(k){
-      var files = mine.filter(function(d){ return d.category === k.id; });
-      if (files.length) blocks.push(docBlock(k.label, files, editable));
-    });
-    sectionsFor('company_profile', true).forEach(function(sec){
-      var files = mine.filter(function(d){ return d.category === sec.section_id; });
-      if (files.length) blocks.push(docBlock(sec.title, files, editable));
-    });
+    // entity-wide documents, whatever category they were filed under
+    var cb = companyDocBlocks(mine, editable, false);
+    if (cb) blocks.push(cb);
 
     // documents covering a group of survey numbers -- one Patta, or one parent
     // survey number. Filed once and managed here; they appear under every
@@ -2416,6 +2539,7 @@ document.addEventListener('click', function(e){
   if (t.id === 'nsAdd') { addSurvey(); return; }
   if (t.id === 'udBtn') { uploadDoc(); return; }
   if ((el = t.closest('[data-eup]'))) { uploadEntityDoc(el.getAttribute('data-eup')); return; }
+  if (t.id === 'loBtn') { uploadOpinion(); return; }
   if (t.id === 'pgAdd') { addPattaRow(); return; }
   if (t.id === 'pgSave') { savePatta(); return; }
   if (t.id === 'pgClear') { clearPatta(); return; }
@@ -2446,6 +2570,9 @@ document.addEventListener('change', function(e){
   if (e.target.id === 'udScope')   { udState.scope = e.target.value; udState.key = ''; render(); }
   if (e.target.id === 'udKey')     { udState.key = e.target.value; }
   if (e.target.id === 'pgCompany') { pgState.company = e.target.value; pgState.rows = [{sf:'',ext:''}]; render(); }
+  if (e.target.id === 'loCompany') { loState.company = e.target.value; loState.key = ''; render(); }
+  if (e.target.id === 'loScope')   { loState.scope = e.target.value; loState.key = ''; render(); }
+  if (e.target.id === 'loKey')     { loState.key = e.target.value; }
   if (e.target.dataset && e.target.dataset.pgrow !== undefined) { readPattaRows(); renderPattaSummary(); }
 });
 document.addEventListener('keydown', function(e){

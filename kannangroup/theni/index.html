@@ -116,6 +116,24 @@
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   td.entcell{font-weight:600;min-width:150px;}
 
+  /* ---- entity identity marks --------------------------------------
+     Eight entities in a list read as one grey block. Each carries a
+     small coloured square with its initials, used everywhere it is
+     named. The LETTERS are the identifier and the full name always
+     sits beside the mark, so nothing depends on telling two colours
+     apart -- the colour is a recognition cue, not an encoding. */
+  .emark{display:inline-flex;align-items:center;justify-content:center;flex:none;
+    width:29px;height:29px;border-radius:7px;color:#fff;font-weight:700;font-size:11px;
+    letter-spacing:.02em;line-height:1;vertical-align:middle;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);}
+  .emark.sm{width:21px;height:21px;border-radius:5px;font-size:8.5px;margin-right:7px;}
+  .emark.lg{width:42px;height:42px;border-radius:9px;font-size:15.5px;}
+  .ecard-id{display:flex;align-items:center;gap:10px;min-width:0;}
+  .ecard-top{align-items:center;}
+  .ent-head{display:flex;align-items:center;gap:13px;}
+  .acc-id{display:flex;align-items:center;gap:10px;min-width:0;}
+  .qleft{display:flex;align-items:center;gap:9px;min-width:0;}
+
   /* ---- phones: one card per record --------------------------------
      Eight columns in a horizontal scroll loses the SF number the moment
      you swipe right, and on site that is the one thing that must stay on
@@ -311,6 +329,9 @@
 
     /* status pills read as outlines, not blocks of ink */
     .pill { border:.5pt solid #555 !important; background:none !important; color:#000 !important; }
+    .emark { background:none !important; color:#000 !important; border:.6pt solid #000;
+      box-shadow:none !important; width:17pt; height:17pt; border-radius:2.5pt; font-size:7pt; }
+    .emark.lg { width:24pt; height:24pt; font-size:10pt; }
 
     /* printing with the report pop-up open prints the report itself */
     body.printing-report #panel,
@@ -603,7 +624,8 @@ function renderDash(){
     return '<div class="egrid">' + list.map(function(c){
       var b = a.by[c.company_slug] || {sf:0,total:0,free:0,sold:0};
       return '<button class="ecard" data-open-profile="'+esc(c.company_slug)+'">'
-        + '<div class="ecard-top"><span class="ecard-name">'+esc(c.company)+'</span>'
+        + '<div class="ecard-top"><span class="ecard-id">'+emark(c.company_slug)
+        +   '<span class="ecard-name">'+esc(c.company)+'</span></span>'
         + '<span class="pill'+(type==='Individual'?' ind':'')+'">'+esc(type)+'</span></div>'
         + '<div class="ecard-metrics">'
         +   '<div class="em"><div class="em-n">'+b.sf+'</div><div class="em-l">Survey Nos.</div></div>'
@@ -652,7 +674,8 @@ function renderProfiles(){
     + '<div class="egrid">' + DATA.companies.map(function(c){
         var np = partnersOf(c.company_slug).length, nd = docsOf(c.company_slug).length;
         return '<button class="ecard" data-open-profile="'+esc(c.company_slug)+'">'
-          + '<div class="ecard-top"><span class="ecard-name">'+esc(c.company)+'</span>'
+          + '<div class="ecard-top"><span class="ecard-id">'+emark(c.company_slug)
+          +   '<span class="ecard-name">'+esc(c.company)+'</span></span>'
           + '<span class="pill'+((c.type||'')==='Individual'?' ind':'')+'">'+esc(c.type||'Company')+'</span></div>'
           + '<div style="font-size:12.5px;color:var(--muted);margin-top:9px;">'
           + np + ' partner' + (np===1?'':'s') + ' · ' + nd + ' document' + (nd===1?'':'s')
@@ -688,7 +711,8 @@ function renderProfileDetail(slug){
   if (!allTabs.some(function(t){ return t[0] === pTab; })) pTab = 'overview';
 
   panel.innerHTML = '<button class="btn outline sm" data-back-profiles="1" style="margin-bottom:16px;">← All entities</button>'
-    + '<div class="sec-head"><div class="idx">'+esc(c.type||'Company')+'</div><h2>'+esc(c.company)+'</h2></div>'
+    + '<div class="sec-head"><div class="idx">'+esc(c.type||'Company')+'</div>'
+    +   '<div class="ent-head">'+emark(slug,'lg')+'<h2>'+esc(c.company)+'</h2></div></div>'
     + '<div class="totals" style="grid-template-columns:repeat(5,1fr);">'
     +   tile('', a.sf, 'Survey Numbers', 'all', slug)
     +   tile('', f2(a.total), 'Total Acres', 'all', slug)
@@ -816,6 +840,44 @@ function slugify(t){
   return 'sec_' + String(t).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40);
 }
 
+/* ---------------------- entity identity marks ----------------------
+   Colours are assigned once per load, in slug order, so an entity keeps
+   its colour wherever it appears and whatever is filtered out. Initials
+   come from the name, so entities added later get a mark with no
+   further work: two leading words, or a Tamil-style leading initial
+   plus the surname (V.R. Palanisamy -> VP). */
+var MARK_COLORS = ['#352679','#097FA9','#6E2B58','#8E710C',
+                   '#53499F','#443612','#AB5472','#645733'];
+var MARK_MAP = null;
+
+function markColor(slug){
+  if (!MARK_MAP) {
+    MARK_MAP = {};
+    DATA.companies.slice().sort(function(a,b){
+      return String(a.company_slug||'').localeCompare(String(b.company_slug||''));
+    }).forEach(function(c,i){ MARK_MAP[c.company_slug] = MARK_COLORS[i % MARK_COLORS.length]; });
+  }
+  return MARK_MAP[slug] || '#4A5568';
+}
+
+function initials(name){
+  var s = String(name || '').trim();
+  if (!s) return '--';
+  var lead = s.match(/^([A-Za-z])\./);
+  var words = s.replace(/[^A-Za-z ]+/g,' ').split(/\s+/)
+               .filter(function(w){ return w.length > 1; });
+  if (lead && words.length) return (lead[1] + words[words.length-1].charAt(0)).toUpperCase();
+  if (words.length >= 2)    return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+  if (words.length === 1)   return words[0].slice(0,2).toUpperCase();
+  return s.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase() || '--';
+}
+
+function emark(slug, cls){
+  var nm = companyName(slug);
+  return '<span class="emark'+(cls ? ' '+cls : '')+'" style="background:'+markColor(slug)+'"'
+    + ' title="'+esc(nm)+'" aria-hidden="true">'+esc(initials(nm))+'</span>';
+}
+
 function companyName(slug){
   var c = DATA.companies.filter(function(x){ return x.company_slug === slug; })[0];
   return c ? c.company : slug;
@@ -907,7 +969,7 @@ function buildReport(kind, slug){
     var c = classify(r);
     if (!def.keep(r,c)) return;
     var o = def.row(r,c);
-    if (!slug) o.company = companyName(r.company_slug);
+    if (!slug) { o.company = companyName(r.company_slug); o._slug = r.company_slug; }
     rows.push(o);
   });
 
@@ -937,7 +999,8 @@ function reportTable(b){
         return '<td><span class="pill" style="'+bg+'">'+esc(v)+'</span></td>';
       }
       if (c.k==='note') return '<td class="notecell" title="'+esc(v)+'">'+esc(v)+'</td>';
-      if (c.k==='company') return '<td class="entcell">'+esc(v)+'</td>';
+      if (c.k==='company') return '<td class="entcell">'
+        + (o._slug ? emark(o._slug,'sm') : '') + '<span>'+esc(v)+'</span></td>';
       if (c.k==='sf_no') return '<td><b>'+esc(v)+'</b></td>';
       return '<td>'+esc(String(v).slice(0,80))+'</td>';
     }).join('') + '</tr>';
@@ -1113,11 +1176,13 @@ function renderReports(){
     :                         reportFree();
 }
 
-function coAcc(name, count, extentLabel, inner, key){
+function coAcc(name, count, extentLabel, inner, key, slug){
   var open = openKey === key;
   return '<div class="acc'+(open?' open':'')+'">'
-    + '<button class="acc-head" data-toggle="'+esc(key)+'"><span><span class="acc-title" style="display:block;">'+esc(name)+'</span>'
-    + '<span class="acc-sub" style="display:block;">'+count+'</span></span>'
+    + '<button class="acc-head" data-toggle="'+esc(key)+'"><span class="acc-id">'
+    + (slug ? emark(slug) : '')
+    + '<span><span class="acc-title" style="display:block;">'+esc(name)+'</span>'
+    + '<span class="acc-sub" style="display:block;">'+count+'</span></span></span>'
     + '<span style="display:flex;align-items:center;gap:12px;"><b style="font-size:14px;color:var(--brass);">'+extentLabel+'</b>'
     + '<span class="chev">&#9656;</span></span></button>'
     + '<div class="acc-body" style="padding:0;">'+inner+'</div></div>';
@@ -1158,7 +1223,7 @@ function reportGrouped(field, label){
     return coAcc(c.company, keys.length + ' ' + label.toLowerCase() + (keys.length===1?'':'s') + ' · ' + recs.length + ' SF',
       f2(total)+' Ac',
       tbl('<th>'+label+'</th><th class="num">SF count</th><th>Survey numbers</th><th class="num">Extent (Ac)</th>', rows),
-      'r:'+field+':'+c.company_slug);
+      'r:'+field+':'+c.company_slug, c.company_slug);
   }).join('');
   return out || '<div class="card empty">No records.</div>';
 }
@@ -1175,7 +1240,7 @@ function reportFiltered(opts){
       + '<tr style="background:#EFEBE0;font-weight:700;"><td>Total</td><td class="num">'+f2(total)+'</td>'
       + '<td colspan="'+opts.extraCols+'"></td></tr>';
     return coAcc(c.company, recs.length + ' survey number' + (recs.length===1?'':'s'),
-      f2(total)+' Ac', tbl(opts.head, rows), 'r:'+opts.key+':'+c.company_slug);
+      f2(total)+' Ac', tbl(opts.head, rows), 'r:'+opts.key+':'+c.company_slug, c.company_slug);
   }).join('');
   return out || '<div class="card empty">Nothing recorded under this heading.</div>';
 }
@@ -1300,8 +1365,9 @@ function mEntities(){
     var ps = partnersOf(c.company_slug);
     if (!ps.length) ps = [{partner_name:'',designation:'',share_pct:''}];
     return '<div class="acc'+(open?' open':'')+'" data-acc="e:'+esc(c.company_slug)+'">'
-      + '<button class="acc-head" data-toggle="e:'+esc(c.company_slug)+'"><span><span class="acc-title">'+esc(c.company)+'</span>'
-      + '<span class="acc-sub">'+esc(c.type||'Company')+' · '+partnersOf(c.company_slug).length+' partners</span></span><span class="chev">▸</span></button>'
+      + '<button class="acc-head" data-toggle="e:'+esc(c.company_slug)+'"><span class="acc-id">'+emark(c.company_slug)
+      + '<span><span class="acc-title">'+esc(c.company)+'</span>'
+      + '<span class="acc-sub">'+esc(c.type||'Company')+' · '+partnersOf(c.company_slug).length+' partners</span></span></span><span class="chev">▸</span></button>'
       + '<div class="acc-body">'
       +   '<div class="row2">'
       +     '<div class="field"><label>Name</label><input data-cf="company" value="'+esc(c.company)+'"></div>'
@@ -1529,9 +1595,9 @@ function docLibrary(editable, onlySlug){
     var key = 'd:'+c.company_slug;
     var open = openKey === key;
     return '<div class="acc'+(open?' open':'')+'">'
-      + '<button class="acc-head" data-toggle="'+esc(key)+'"><span>'
-      + '<span class="acc-title" style="display:block;">'+esc(c.company)+'</span>'
-      + '<span class="acc-sub" style="display:block;">'+mine.length+' document'+(mine.length===1?'':'s')+'</span></span>'
+      + '<button class="acc-head" data-toggle="'+esc(key)+'"><span class="acc-id">'+emark(c.company_slug)
+      + '<span><span class="acc-title" style="display:block;">'+esc(c.company)+'</span>'
+      + '<span class="acc-sub" style="display:block;">'+mine.length+' document'+(mine.length===1?'':'s')+'</span></span></span>'
       + '<span class="chev">&#9656;</span></button>'
       + '<div class="acc-body">'+blocks.join('')+'</div></div>';
   }).join('') || '<div class="card empty">No documents uploaded yet.</div>';
@@ -1664,8 +1730,9 @@ function renderSearch(){
   qHits.forEach(function(h, i){
     if (h.group !== lastGroup) { html += '<div class="qgroup">' + esc(h.group) + '</div>'; lastGroup = h.group; }
     html += '<button class="qrow' + (i === qSel ? ' on' : '') + '" data-qhit="' + i + '">'
+      + '<span class="qleft">' + (h.slug ? emark(h.slug,'sm') : '')
       + '<span><span class="qmain">' + hl(h.main, q) + '</span>'
-      + (h.sub ? '<span class="qsub" style="display:block;">' + hl(h.sub, q) + '</span>' : '') + '</span>'
+      + (h.sub ? '<span class="qsub" style="display:block;">' + hl(h.sub, q) + '</span>' : '') + '</span></span>'
       + (h.meta ? '<span class="qmeta">' + esc(h.meta) + '</span>' : '')
       + '</button>';
   });
@@ -2064,6 +2131,7 @@ function reload(keepView){
     if (!r.ok) throw new Error(r.error);
     DATA = {companies:r.companies||[], partners:r.partners||[], survey:r.survey||[],
             documents:r.documents||[], sections:r.sections||[], seccontent:r.seccontent||[]};
+    MARK_MAP = null;
     if (!keepView) { tab='dash'; viewSlug=null; }
     render();
   });

@@ -177,32 +177,46 @@ async function internalLogin(id, pw){
   window.location.href = owner ? '/admin/' : '/portal/';
 }
 
+/* External sign-in. Every client User ID is checked by the client-accounts service first.
+   Older portals listed in CLIENTS sign in directly only until their profile is set up in Admin → Clients. */
 async function externalLogin(id, pw){
+  var r = await accountLogin(id, pw);
+  if(r !== 'legacy') return;
   var c = CLIENTS[id.toLowerCase()];
-  if(!c) return accountLogin(id, pw);
+  if(!c) throw wrong();
   var res = await fetch(c.api, { method:'POST', redirect:'follow',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({ action:c.action, password:pw }) });
-  var r = await res.json();
-  if(!r.ok || !r.token) throw wrong();
+  var j = await res.json();
+  if(!j.ok || !j.token) throw wrong();
   VLSLock.reset(); fresh();
-  try { sessionStorage.setItem(c.tokenKey, r.token); } catch(e){}
+  try { sessionStorage.setItem(c.tokenKey, j.token); } catch(e){}
+  goNext(c.area, c.dest);
+}
+function goNext(area, dest){
   var next = new URLSearchParams(location.search).get('next') || '';
-  window.location.href = (next.indexOf(c.area) === 0 && next.indexOf('//') === -1) ? next : c.dest;
+  window.location.href = (area && next.indexOf(area) === 0 && next.indexOf('//') === -1) ? next : dest;
 }
 
-/* Clients created from Admin → Clients: User ID checked by the client-accounts service */
 async function accountLogin(id, pw){
   var res = await fetch('https://tjvvqoomaptxscgiziks.supabase.co/functions/v1/client-accounts', { method:'POST',
     headers:{ 'Content-Type':'application/json', apikey:'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm', Authorization:'Bearer sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm' },
     body: JSON.stringify({ action:'login', login_id:id, password:pw }) });
   var r = {}; try { r = await res.json(); } catch(e){}
+  if(res.status === 404 && r.legacy) return 'legacy';
   if(res.status === 403 && r.blocked) throw new Error(r.error);
   if(!res.ok || !r.ok || !r.session) { if(res.status === 401) throw wrong(); throw new Error(r.error || 'Could not sign in. Please try again.'); }
   var s = await sb.auth.setSession(r.session);
   if(s.error) throw new Error('Could not sign in. Please try again.');
   VLSLock.reset(); fresh();
+  if(r.portal && r.portal.token){
+    try { sessionStorage.setItem(r.portal.token_key, r.portal.token); } catch(e){}
+    goNext(r.portal.area, r.portal.dest);
+    return 'ok';
+  }
+  if(r.portal && r.portal.error){ await sb.auth.signOut(); throw new Error(r.portal.error); }
   window.location.href = '/client/';
+  return 'ok';
 }
 
 /* Password reset for staff: sends Supabase's reset link to their email */

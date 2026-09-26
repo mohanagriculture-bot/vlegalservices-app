@@ -144,6 +144,8 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:0 
         <div class="f"><label for="nEmail">Email</label><input id="nEmail" type="email" required maxlength="160" placeholder="client@example.com"></div>
         <div class="f"><label for="nPhone">Phone (optional)</label><input id="nPhone" maxlength="30" placeholder="WhatsApp number"></div>
       </div>
+      <div class="f" id="nPortalWrap" style="display:none"><label for="nPortal">Property portal key</label><input id="nPortal" type="password" autocomplete="off" maxlength="200" placeholder="The password the Kannan Group portal uses today">
+        <div class="hint">Saved securely and used only by the system to open their property portal when they sign in. Nobody sees it again.</div></div>
       <div class="f"><label for="nPass">Starting password (optional)</label><input id="nPass" type="text" minlength="8" maxlength="72" placeholder="Leave blank to let the client set it from the email">
         <div class="hint">At least 8 characters. The client can change it from the email link.</div></div>
       <div class="actions" style="justify-content:flex-end;margin-top:6px">
@@ -167,6 +169,10 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:0 
 var SB_URL = 'https://tjvvqoomaptxscgiziks.supabase.co', SB_KEY = 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm';
 var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storage: window.sessionStorage } });
 var SITE = 'https://www.vlegalservices.in';
+var KANNAN = { login_id:'kannangroup', name:'Kannan Group', nature:'Builder / Promoter',
+  api_url:'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec',
+  dest:'/kannangroup/theni/', area:'/kannangroup/', pages:[['Property portal','/kannangroup/theni/'],['Office service desk','/kannangroup/office/'],['Kannan Group home','/kannangroup/']] };
+var setupMode = null;
 var STATUSES = ['New','Acknowledged','In progress','Awaiting information','Completed','Closed'];
 var state = { me:null, clients:[], counts:{}, sel:null, tab:'requests', reqs:[], openReq:null, docs:[] };
 var $ = function(id){ return document.getElementById(id); };
@@ -204,10 +210,11 @@ function renderList(){
     var n = state.counts[c.id]||0;
     return '<button class="item'+(state.sel&&state.sel.id===c.id?' on':'')+'" data-id="'+c.id+'"><b>'+esc(c.name)+'</b>'+
       '<div class="row"><small>'+esc(c.nature||'Client')+' · '+esc(c.login_id)+'</small>'+
-      (n?'<span class="count" title="Open requests">'+n+'</span>':'')+(c.active?'':'<span class="pill p-off">Blocked</span>')+'</div></button>';
+      (n?'<span class="count" title="Open requests">'+n+'</span>':'')+(c.active?'':'<span class="pill p-off">Frozen</span>')+'</div></button>';
   }).join('');
-  if(!q || 'kannan group kannangroup'.indexOf(q)>-1){
-    h += '<a class="item static" href="/kannangroup/theni/" target="_blank" rel="noopener"><b>Kannan Group</b><div class="row"><small>Separate property portal · kannangroup ↗</small></div></a>';
+  var hasKannan = state.clients.some(function(c){ return c.login_id===KANNAN.login_id; });
+  if(!hasKannan && (!q || 'kannan group kannangroup'.indexOf(q)>-1)){
+    h += '<button class="item static" id="setupKannan"><b>Kannan Group</b><div class="row"><small>Set up profile to manage login, reset and freeze →</small></div></button>';
   }
   $('clientList').innerHTML = h || '<div class="empty">No clients match.</div>';
 }
@@ -229,7 +236,7 @@ function renderDetail(){
   var c = state.sel; if(!c) return;
   var h = '<div style="padding:14px 20px 0"><button class="btn sm back" id="backBtn">← All clients</button></div>'+
     '<div class="dhead"><div><h2>'+esc(c.name)+'</h2><div class="meta">'+esc(c.nature||'Client')+' · User ID <b class="mono">'+esc(c.login_id)+'</b> · '+esc(c.email)+'</div></div>'+
-    '<div>'+(c.active?pill('Active').replace('p-Active','p-on'):'<span class="pill p-off">Login blocked</span>')+'</div></div>'+
+    '<div>'+(c.active?pill('Active').replace('p-Active','p-on'):'<span class="pill p-off">Access frozen</span>')+'</div></div>'+
     '<div class="tabs">'+['requests','documents','login'].map(function(t){
       var lbl = t==='requests'?'Requests ('+state.reqs.length+')':t==='documents'?'Documents ('+state.docs.length+')':'Login';
       return '<button data-tab="'+t+'" class="'+(state.tab===t?'on':'')+'">'+lbl+'</button>'; }).join('')+'</div>'+
@@ -279,12 +286,29 @@ function renderLogin(){
   var c = state.sel;
   $('pane').innerHTML = '<div class="kv"><span>Login page</span><span>'+SITE+'/login → External</span><span>User ID</span><span class="mono">'+esc(c.login_id)+'</span>'+
     '<span>Email</span><span>'+esc(c.email)+'</span><span>Phone</span><span>'+esc(c.phone||'—')+'</span><span>Created</span><span>'+when(c.created_at)+'</span>'+
-    '<span>Status</span><span>'+(c.active?'Active':'Blocked')+'</span></div>'+
+    '<span>Status</span><span>'+(c.active?'Active':'Frozen — cannot sign in')+'</span></div>'+
     '<div class="note" id="lgNote"></div>'+
     '<div class="actions" style="margin-bottom:18px"><button class="btn" id="resend">Email set-password link again</button>'+
-    '<button class="btn '+(c.active?'danger':'')+'" id="toggle">'+(c.active?'Block this login':'Unblock this login')+'</button></div>'+
+    '<button class="btn '+(c.active?'danger':'')+'" id="toggle">'+(c.active?'Freeze access':'Unfreeze access')+'</button></div>'+
     '<form id="pwForm" class="card" style="padding:14px;background:#FDFCF9"><div class="f"><label for="newPw">Set a new password for this client</label><input id="newPw" type="text" minlength="8" maxlength="72" placeholder="At least 8 characters"></div>'+
-    '<div class="actions" style="justify-content:flex-end"><button class="btn navy">Set password</button></div></form>';
+    '<div class="actions" style="justify-content:flex-end"><button class="btn navy">Set password</button></div></form>'+
+    '<div id="portalBox"></div>';
+  loadPortal();
+}
+async function loadPortal(){
+  var c = state.sel, box = $('portalBox'); if(!box) return;
+  var info = null;
+  try { info = (await callFn({action:'portal_info', account_id:c.id})).link; } catch(x){}
+  if(!info && c.login_id!==KANNAN.login_id) return;
+  var pages = c.login_id===KANNAN.login_id ? KANNAN.pages : (info ? [['Property portal', info.dest]] : []);
+  box.innerHTML = '<div class="card" style="padding:16px;margin-top:18px"><h3 style="font-size:18px;margin-bottom:4px">Linked property portal</h3>'+
+    '<p style="margin:0 0 12px;color:var(--muted);font-size:13.5px">When this client signs in, the system opens their property portal for them. Freezing access above also locks the portal.</p>'+
+    '<div class="kv"><span>Status</span><span>'+(info ? (info.has_key?'Key saved':'Key missing — client cannot open the portal') : 'Not linked yet')+'</span>'+
+    '<span>Pages</span><span>'+pages.map(function(p){ return '<a href="'+p[1]+'" target="_blank" rel="noopener">'+esc(p[0])+' ↗</a>'; }).join('<br>')+'</span></div>'+
+    '<div class="note" id="ptNote"></div>'+
+    '<form id="ptForm"><div class="f"><label for="ptKey">'+(info&&info.has_key?'Replace portal key':'Portal key')+'</label><input id="ptKey" type="password" autocomplete="off" maxlength="200" placeholder="The password their property portal uses">'+
+    '<div class="hint">If you change the password in their Google Sheet, enter the new one here.</div></div>'+
+    '<div class="actions" style="justify-content:flex-end">'+(info?'<button type="button" class="btn" id="ptTest">Test connection</button>':'')+'<button class="btn navy">Save key</button></div></form></div>';
 }
 
 /* ---------------- events ---------------- */
@@ -295,6 +319,13 @@ document.addEventListener('click', async function(e){
   if(t.dataset.tab){ state.tab=t.dataset.tab; state.openReq=null; renderDetail(); return; }
   if(t.id==='reqBack'){ state.openReq=null; await loadDetail(); renderDetail(); return; }
   if(t.id==='newBtn'){ openNew(); return; }
+  if(t.id==='setupKannan'){ openNew('kannan'); return; }
+  if(t.id==='ptTest'){
+    t.disabled=true;
+    try { var tr = await callFn({action:'test_portal', account_id:state.sel.id}); note($('ptNote'), tr.tested ? 'Connected: the portal accepts the saved key.' : 'The portal did not accept the key: '+tr.test_error, tr.tested); }
+    catch(x){ note($('ptNote'),x.message,false); }
+    t.disabled=false; return;
+  }
   if(t.hasAttribute('data-close')){ $('newModal').classList.remove('on'); return; }
   if(t.id==='sendReply'){
     var txt=$('replyTxt').value.trim(); if(!txt) return;
@@ -327,7 +358,7 @@ document.addEventListener('click', async function(e){
   }
   if(t.id==='toggle'){
     var to = !state.sel.active;
-    if(!to && !confirm('Block '+state.sel.name+'? They will not be able to sign in until you unblock them.')) return;
+    if(!to && !confirm('Freeze '+state.sel.name+'? They will not be able to sign in or open their portal until you unfreeze.')) return;
     t.disabled=true;
     try { await callFn({action:'set_active', account_id:state.sel.id, active:to}); state.sel.active=to; renderList(); renderDetail(); }
     catch(x){ note($('lgNote'),x.message,false); t.disabled=false; }
@@ -359,6 +390,21 @@ document.addEventListener('submit', async function(e){
     if(ins.error){ await sb.storage.from('client-portal').remove([path]); note($('upNote'),ins.error.message,false); b.disabled=false; b.textContent='Share with client'; return; }
     await loadDetail(); renderDetail(); return;
   }
+  if(e.target.id==='ptForm'){
+    e.preventDefault();
+    var key=$('ptKey').value, c=state.sel;
+    var base = c.login_id===KANNAN.login_id ? KANNAN : null;
+    var cur = null; try { cur = (await callFn({action:'portal_info', account_id:c.id})).link; } catch(x){}
+    var cfg = cur || base;
+    if(!cfg){ note($('ptNote'),'This client has no portal to link.',false); return; }
+    if(!key && !(cur&&cur.has_key)){ note($('ptNote'),'Enter the portal key.',false); return; }
+    try {
+      var lr = await callFn({action:'link_portal', account_id:c.id, api_url:cfg.api_url, dest:cfg.dest, area:cfg.area, portal_password:key||''});
+      note($('ptNote'), lr.tested ? 'Saved and tested: the portal opens with this key.' : 'Saved, but the portal did not accept it: '+lr.test_error, lr.tested);
+      $('ptKey').value='';
+    } catch(x){ note($('ptNote'),x.message,false); }
+    return;
+  }
   if(e.target.id==='pwForm'){
     e.preventDefault();
     var pw=$('newPw').value;
@@ -369,9 +415,16 @@ document.addEventListener('submit', async function(e){
 });
 
 /* ---------------- new client ---------------- */
-function openNew(){
+function openNew(mode){
+  setupMode = mode || null;
   $('newForm').reset(); $('newForm').style.display=''; $('nmDone').style.display='none'; note($('nmNote'),'');
-  $('newModal').classList.add('on'); $('nName').focus();
+  var k = setupMode==='kannan';
+  $('nmTitle').textContent = k ? 'Set up Kannan Group profile' : 'New client';
+  $('nPortalWrap').style.display = k ? '' : 'none';
+  $('nPortal').required = k;
+  $('nLogin').readOnly = k; $('nLogin').dataset.touched = k ? '1' : '';
+  if(k){ $('nName').value=KANNAN.name; $('nNature').value=KANNAN.nature; $('nLogin').value=KANNAN.login_id; }
+  $('newModal').classList.add('on'); (k ? $('nEmail') : $('nName')).focus();
 }
 $('nName').addEventListener('input', function(){
   if($('nLogin').dataset.touched) return;
@@ -386,11 +439,16 @@ $('newForm').addEventListener('submit', async function(e){
     var r = await callFn({ action:'create', name:$('nName').value, nature:$('nNature').value, login_id:$('nLogin').value,
       email:$('nEmail').value, phone:$('nPhone').value, password:pw });
     var a = r.account;
+    if(setupMode==='kannan'){
+      var lr = await callFn({action:'link_portal', account_id:a.id, api_url:KANNAN.api_url, dest:KANNAN.dest, area:KANNAN.area, portal_password:$('nPortal').value});
+      if(!lr.tested) r.portal_warn = 'Profile created, but the property portal did not accept that key ('+lr.test_error+'). Fix it on the Login tab.';
+    }
     var msg = 'Dear '+a.name+',\n\nYour V Legal Services client login is ready.\n\nLogin: '+SITE+'/login  (choose External)\nUser ID: '+a.login_id+'\n'+
       (r.email_sent ? 'We have emailed '+a.email+' a link to set your password.' : 'Password: shared separately.')+
       '\n\nFor help: 73737 35222';
     $('shareText').textContent = msg;
     $('waShare').href = 'https://wa.me/'+(a.phone? a.phone.replace(/\D/g,'').replace(/^(\d{10})$/,'91$1') : '')+'?text='+encodeURIComponent(msg);
+    if(r.portal_warn){ note($('nmNote'), r.portal_warn, false); } else
     note($('nmNote'), r.email_sent ? 'Login created. An invitation email has been sent to '+a.email+'.' : 'Login created, but the email could not be sent. Share the User ID and starting password with the client yourself.', true);
     $('newForm').style.display='none'; $('nmDone').style.display='';
     await loadClients();

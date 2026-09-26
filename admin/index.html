@@ -1,497 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>Task Board | V Legal Services</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Admin | V Legal Services</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-  :root{--navy:#16233A;--brass:#A9762F;--cream:#F5F3EC;--line:#E1DDD0;--muted:#6C6B62;
-        --bad:#A13D3D;--ok:#2F6B4F;--warn:#9C4B1F;}
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--cream);color:var(--navy);
-       font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.55;}
-  a{color:var(--brass);}
-  .wrap{max-width:1160px;margin:0 auto;padding:0 22px;}
-  header{background:#fff;border-bottom:1px solid var(--line);}
-  header .wrap{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px;}
-  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit;}
-  .mark{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--brass);color:var(--brass);
-        display:grid;place-items:center;font-family:'Lora',Georgia,serif;font-weight:700;font-size:14px;}
-  .bname{font-family:'Lora',Georgia,serif;font-weight:700;font-size:17px;}
-  .btag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
-  .hero{background:var(--navy);color:#fff;padding:34px 0 30px;}
-  .hero h1{font-family:'Lora',Georgia,serif;font-size:31px;margin:8px 0 6px;}
-  .hero p{margin:0;color:#C9D0DC;font-size:14.5px;}
-  .kicker{display:inline-block;border:1px solid rgba(242,196,109,.5);color:#F2C46D;border-radius:999px;
-          padding:3px 11px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;}
-  main{padding:26px 0 60px;}
-  .card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:18px;}
-  .empty{color:var(--muted);text-align:center;padding:26px;font-size:14px;}
-  .btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:9px 15px;font-size:13.5px;
-       font-weight:600;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer;
-       text-decoration:none;font-family:inherit;}
-  .btn.outline{background:#fff;color:var(--navy);}
-  .btn.brass{background:var(--brass);border-color:var(--brass);}
-  .btn.sm{padding:6px 11px;font-size:12.5px;}
-  .btn:disabled{opacity:.55;cursor:default;}
-  .btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-  .field{margin-bottom:13px;}
-  .field label{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
-               color:var(--muted);margin-bottom:5px;}
-  .field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);
-    border-radius:7px;font-family:inherit;font-size:14px;background:#fff;color:var(--navy);}
-  .field textarea{min-height:88px;resize:vertical;}
-  .msg{font-size:13px;color:var(--bad);}
-  .msg.ok{color:var(--muted);}
-  .login{max-width:400px;margin:44px auto;}
-  .hidden{display:none !important;}
-  .cols{display:grid;grid-template-columns:288px 1fr;gap:24px;align-items:start;}
-  .side{background:#fff;border:1px solid var(--line);border-radius:11px;padding:14px;position:sticky;top:16px;}
-  .org{font-family:'Lora',Georgia,serif;font-weight:700;font-size:15px;color:var(--navy);
-       padding:6px 0 8px;border-bottom:1px solid var(--line);margin-bottom:8px;
-       display:flex;justify-content:space-between;align-items:center;}
-  .org .n{font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;color:#fff;
-          background:var(--brass);border-radius:999px;padding:1px 8px;}
-  .cli{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;
-       background:none;border:0;text-align:left;padding:7px 9px;border-radius:7px;cursor:pointer;
-       font-family:inherit;font-size:13.5px;color:var(--navy);}
-  .cli:hover{background:var(--cream);}
-  .cli.on{background:var(--navy);color:#fff;}
-  .cli .c{font-size:11.5px;color:var(--muted);}
-  .cli.on .c{color:#C9D0DC;}
-  .sec-head{margin-bottom:16px;}
-  .sec-head .idx{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);}
-  .sec-head h2{font-family:'Lora',Georgia,serif;font-size:23px;margin:3px 0 4px;}
-  .sec-head p{margin:0;color:var(--muted);font-size:13.5px;}
-  .crumb{font-size:12px;color:var(--muted);margin-bottom:13px;}
-  .crumb b{color:var(--navy);}
-  .rq{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:9px;
-      padding:13px 15px;margin-bottom:10px;cursor:pointer;}
-  .rq:hover{border-color:var(--brass);}
-  .rq-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
-  .rq-t{font-family:'Lora',Georgia,serif;font-weight:700;font-size:15.5px;}
-  .rq-m{font-size:12.5px;color:var(--muted);margin-top:2px;}
-  .rq-foot{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin-top:8px;}
-  .pill{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-        border-radius:999px;padding:3px 10px;white-space:nowrap;}
-  .p-new{background:#F2E3C8;color:#7A5410;}
-  .p-ack{background:#DCE4F1;color:#2B3E63;}
-  .p-prog{background:#F3E0D2;color:var(--warn);}
-  .p-wait{background:#EFE7D6;color:#6C5A20;}
-  .p-done{background:#D9E9DF;color:var(--ok);}
-  .p-closed{background:#E6E4DC;color:var(--muted);}
-  .filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:15px;}
-  .fchip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;
-         font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--muted);}
-  .fchip.on{background:var(--navy);border-color:var(--navy);color:#fff;}
-  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:13px;margin:15px 0;}
-  .kv .k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-  .kv .v{font-size:14px;font-weight:600;}
-  h3.sub{font-family:'Lora',Georgia,serif;font-size:16px;margin:24px 0 11px;
-         padding-bottom:6px;border-bottom:1px solid var(--line);}
-  .filerow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
-           padding:8px 0;border-bottom:1px dotted var(--line);font-size:13.5px;}
-  .filerow:last-child{border-bottom:0;}
-  .bub{background:#fff;border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin-bottom:9px;}
-  .bub.mine{background:#FBF7EF;border-color:#EADFC8;}
-  .bub-h{font-size:11.5px;color:var(--muted);margin-bottom:4px;}
-  .bub-b{font-size:14px;white-space:pre-wrap;}
-  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;
-         padding:11px 18px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 24px rgba(22,35,58,.28);z-index:60;}
-  .toast.bad{background:var(--bad);}
-  .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);
-        border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;}
-  @keyframes sp{to{transform:rotate(360deg);}}
-  footer{border-top:1px solid var(--line);background:#fff;padding:20px 0;color:var(--muted);font-size:12.5px;}
-  @media (max-width:860px){
-    .cols{grid-template-columns:1fr;}
-    .side{position:static;}
-    .hero h1{font-size:25px;}
-  }
+:root{--ink:#0F1B2D;--navy:#16233A;--brass:#A9762F;--brass-lt:#D2A460;--paper:#F7F5EF;--line:#E3DED1;--muted:#8D96A6;
+  --serif:'Source Serif 4',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction:column}
+.top{background:var(--ink);color:#C4CBD7;display:flex;align-items:center;gap:18px;padding:0 18px;height:58px;flex:none;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;flex:none}
+.seal{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--brass-lt);display:grid;place-items:center;font-family:var(--serif);font-weight:700;color:var(--brass-lt);font-size:15px}
+.brand b{font-family:var(--serif);font-weight:600;font-size:16px}
+.brand small{display:block;font-size:10px;letter-spacing:.14em;color:var(--brass-lt)}
+.tabs{display:flex;gap:4px;height:100%;overflow-x:auto;flex:1}
+.tabs button{font:inherit;font-size:14px;font-weight:500;background:none;border:none;color:#AEB6C4;padding:0 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button:hover{color:#fff}
+.tabs button[aria-selected="true"]{color:#fff;border-bottom-color:var(--brass-lt)}
+.who{font-size:13px;white-space:nowrap}
+.out{font:inherit;font-size:13px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:7px;padding:7px 12px;cursor:pointer;flex:none}
+.out:hover{background:rgba(255,255,255,.14)}
+.stage{flex:1;position:relative}
+.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--paper)}
+.stage iframe.on{display:block}
+.pane{position:absolute;inset:0;overflow:auto;display:none;padding:34px 20px}
+.pane.on{display:block}
+.pane .in{max-width:880px;margin:0 auto}
+.pane h2{font-family:var(--serif);color:var(--navy);font-size:24px;margin:0 0 6px;font-weight:600}
+.pane p.lede{color:#5E6573;margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.cl{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+.cl h3{font-family:var(--serif);color:var(--navy);margin:0 0 4px;font-size:19px;font-weight:600}
+.cl small{color:#5E6573}
+.cl a{display:block;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;color:var(--navy);text-decoration:none;font-weight:500;font-size:14px}
+.cl a:hover{border-color:var(--brass);color:var(--brass)}
+.gate{position:fixed;inset:0;background:var(--paper);display:grid;place-items:center;color:#5E6573;z-index:5}
+@media (max-width:760px){.who,.brand span{display:none}.top{gap:10px;padding:0 10px}}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">Checking your sign-in…</div>
 
-<header><div class="wrap">
-  <a class="brand" href="/">
-    <span class="mark">VL</span>
-    <span><span class="bname">V Legal Services</span><br><span class="btag">Task Board · Advocate</span></span>
-  </a>
-  <button class="btn outline sm hidden" id="outBtn">Sign out</button>
-</div></header>
+<header class="top">
+  <a class="brand" href="/" target="_blank" rel="noopener"><span class="seal">V</span><span><b>V Legal Services</b><small>ADMIN</small></span></a>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-t="practice" aria-selected="true">Practice system</button>
+    <button role="tab" data-t="tasks" aria-selected="false">Task board</button>
+    <button role="tab" data-t="clients" aria-selected="false">Client portals</button>
+  </nav>
+  <span class="who" id="who"></span>
+  <button class="out" id="out">Sign out</button>
+</header>
 
-<section class="hero"><div class="wrap">
-  <span class="kicker">Advocate only</span>
-  <h1>Task Board</h1>
-  <p id="heroSub">Every service request from every client office, grouped by who raised it.</p>
-</div></section>
-
-<main class="wrap">
-  <div id="loginView" class="login">
-    <div class="card">
-      <h3 style="font-family:'Lora',Georgia,serif;font-size:19px;margin:0 0 4px;">Sign in</h3>
-      <p style="font-size:13.5px;color:var(--muted);margin:0 0 16px;">Your advocate password.</p>
-      <div class="field"><label>Password</label><input id="pw" type="password" autocomplete="current-password"></div>
-      <div class="btnrow"><button class="btn brass" id="loginBtn">Sign in</button>
-        <span class="msg" id="loginMsg"></span></div>
+<div class="stage">
+  <iframe id="f-practice" title="Practice system" data-src="/portal/"></iframe>
+  <iframe id="f-tasks" title="Task board" data-src="/admin/tasks/"></iframe>
+  <div class="pane" id="f-clients">
+    <div class="in">
+      <h2>Client portals</h2>
+      <p class="lede">Each client's own portal. Opens in a new tab.</p>
+      <div class="grid">
+        <div class="cl">
+          <h3>Kannan Group</h3><small>Client User ID: kannangroup</small>
+          <a href="/kannangroup/theni/" target="_blank" rel="noopener">Property portal (Palakombai, Theni) ↗</a>
+          <a href="/kannangroup/office/" target="_blank" rel="noopener">Office service desk ↗</a>
+          <a href="/kannangroup/" target="_blank" rel="noopener">Kannan Group home ↗</a>
+        </div>
+      </div>
     </div>
   </div>
-  <div id="appView" class="hidden">
-    <div class="cols">
-      <aside class="side" id="side"></aside>
-      <section id="panel"></section>
-    </div>
-  </div>
-</main>
-
-<footer><div class="wrap">
-  © <span id="yr"></span> V Legal Services and Documentation, Coimbatore ·
-  Mohan Kumar Rajavel, B.Sc.(Agri), LL.B., Advocate
-</div></footer>
+</div>
 
 <script>
-/* ===========================================================
-   Advocate task board.
-   Built around a registry of client offices rather than one
-   hard-coded office: adding the next client is a row in ORGS
-   plus its own Apps Script URL. Today there is one.
-   =========================================================== */
+var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm');
 
-var ORGS = [
-  { slug:'kannan', name:'Kannan Group',
-    api:'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec',
-    desk:'/kannangroup/office/' }
-];
-
-var PW = '';
-var ORG = {};                 // slug -> { token, data, error }
-var pick = null;              // { org, party }  — null means everything
-var openReq = null, openOrg = null, filter = 'open';
-
-var panel = document.getElementById('panel');
-var side  = document.getElementById('side');
-document.getElementById('yr').textContent = new Date().getFullYear();
-
-function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
-  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-
-function callOrg(slug, p){
-  var o = ORGS.filter(function(x){ return x.slug===slug; })[0];
-  p.token = (ORG[slug]||{}).token; p.who = 'Advocate';
-  return fetch(o.api,{method:'POST',redirect:'follow',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)})
-    .then(function(r){ return r.json(); });
-}
-function toast(m,bad){ var t=document.createElement('div');
-  t.className='toast'+(bad?' bad':''); t.textContent=m; document.body.appendChild(t);
-  setTimeout(function(){ t.remove(); }, 3200); }
-function note(el,m,ok){ if(!el) return; el.textContent=m; el.className='msg'+(ok?' ok':''); }
-function when(iso){ if(!iso) return '—';
-  var d=new Date(iso); if(isNaN(d)) return String(iso);
-  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
-
-function statusPill(s){
-  var c = s==='New'?'p-new': s==='Acknowledged'?'p-ack': s==='In progress'?'p-prog'
-        : s==='Awaiting information'?'p-wait': s==='Completed'?'p-done':'p-closed';
-  return '<span class="pill '+c+'">'+esc(s||'New')+'</span>';
-}
-function isOpen(r){ return r.status!=='Completed' && r.status!=='Closed'; }
-
-/* -------------------------------- data -------------------------------- */
-
-function signIn(){
-  var el=document.getElementById('pw'), m=document.getElementById('loginMsg');
-  if(!el.value){ note(m,'Enter the password.',false); return; }
-  PW = el.value;
-  var b=document.getElementById('loginBtn');
-  b.disabled=true; b.innerHTML='<span class="spin"></span> Checking…'; note(m,'',true);
-
-  Promise.all(ORGS.map(function(o){
-    return fetch(o.api,{method:'POST',redirect:'follow',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({action:'deskLogin', password:PW})})
-      .then(function(r){ return r.json(); })
-      .then(function(r){
-        if(!r.ok) return { slug:o.slug, error:r.error };
-        if(r.role !== 'advocate') return { slug:o.slug, error:'That is not the advocate password.' };
-        return { slug:o.slug, token:r.token };
-      })
-      .catch(function(err){ return { slug:o.slug, error:err.message }; });
-  })).then(function(res){
-    var good = res.filter(function(r){ return r.token; });
-    if(!good.length){
-      note(m, res[0] && res[0].error ? res[0].error : 'Could not sign in.', false);
-      return;
-    }
-    res.forEach(function(r){ ORG[r.slug] = { token:r.token, error:r.error, data:null }; });
-    el.value=''; PW='';
-    document.getElementById('loginView').classList.add('hidden');
-    document.getElementById('appView').classList.remove('hidden');
-    document.getElementById('outBtn').classList.remove('hidden');
-    return reload();
-  }).then(function(){ b.disabled=false; b.textContent='Sign in'; },
-          function(err){ note(m, err.message, false); b.disabled=false; b.textContent='Sign in'; });
-}
-
-function signOut(){ location.reload(); }
-
-function reload(){
-  return Promise.all(ORGS.filter(function(o){ return (ORG[o.slug]||{}).token; }).map(function(o){
-    return callOrg(o.slug, {action:'deskLoad'}).then(function(r){
-      if(!r.ok) throw new Error(r.error);
-      ORG[o.slug].data = { parties:r.parties||[], services:r.services||[], requests:r.requests||[],
-        files:r.files||[], messages:r.messages||[], statuses:r.statuses||[],
-        partyFiles:r.partyFiles||[] };
-    }).catch(function(err){ ORG[o.slug].error = err.message; });
-  })).then(render);
-}
-
-function orgsLive(){ return ORGS.filter(function(o){ return (ORG[o.slug]||{}).data; }); }
-function dataOf(slug){ return (ORG[slug]||{}).data ||
-  {parties:[],services:[],requests:[],files:[],messages:[],statuses:[],partyFiles:[]}; }
-function svcName(slug,id){ var s=dataOf(slug).services.filter(function(x){ return x.service_id===id; })[0];
-  return s?s.name:id; }
-function partyName(slug,id){ if(!id) return '';
-  var p=dataOf(slug).parties.filter(function(x){ return x.party_id===id; })[0]; return p?p.name:''; }
-
-/* ------------------------------ the tree ------------------------------ */
-
-function renderSide(){
-  var html = '';
-  html += '<button class="cli'+(pick===null?' on':'')+'" data-all="1">'
-        + '<span>Everything</span><span class="c">'
-        + orgsLive().reduce(function(n,o){ return n + dataOf(o.slug).requests.filter(isOpen).length; },0)
-        + ' open</span></button>';
-
-  orgsLive().forEach(function(o){
-    var d = dataOf(o.slug);
-    var openN = d.requests.filter(isOpen).length;
-    html += '<div class="org" style="margin-top:14px;"><span>'+esc(o.name)+'</span>'
-          + (openN ? '<span class="n">'+openN+'</span>' : '') + '</div>';
-
-    var byParty = {};
-    d.requests.forEach(function(r){
-      var k = r.party_id || '__none';
-      (byParty[k] = byParty[k] || []).push(r);
-    });
-    var keys = Object.keys(byParty).sort(function(a,b){
-      return (partyName(o.slug,a==='__none'?'':a)||'zzz').localeCompare(partyName(o.slug,b==='__none'?'':b)||'zzz'); });
-
-    if(!keys.length){
-      html += '<div style="font-size:12.5px;color:var(--muted);padding:4px 9px;">No requests yet.</div>';
-    }
-    keys.forEach(function(k){
-      var rs = byParty[k];
-      var on = pick && pick.org===o.slug && pick.party===k;
-      var nOpen = rs.filter(isOpen).length;
-      html += '<button class="cli'+(on?' on':'')+'" data-org="'+esc(o.slug)+'" data-party="'+esc(k)+'">'
-            + '<span>'+esc(k==='__none' ? 'Not against a client' : (partyName(o.slug,k)||'Unknown client'))+'</span>'
-            + '<span class="c">'+(nOpen?nOpen+' open':rs.length+' done')+'</span></button>';
-    });
-
-    /* clients with no requests at all still deserve a door to their vault */
-    var silent = d.parties.filter(function(p){
-      return !d.requests.some(function(r){ return r.party_id===p.party_id; }); });
-    silent.forEach(function(p){
-      var on = pick && pick.org===o.slug && pick.party===p.party_id;
-      var nd = d.partyFiles.filter(function(f){ return f.party_id===p.party_id; }).length;
-      html += '<button class="cli'+(on?' on':'')+'" data-org="'+esc(o.slug)+'" data-party="'+esc(p.party_id)+'">'
-            + '<span>'+esc(p.name)+'</span><span class="c">'+(nd?nd+' docs':'—')+'</span></button>';
-    });
-
-    if((ORG[o.slug]||{}).error){
-      html += '<div style="font-size:12px;color:var(--bad);padding:6px 9px;">'
-            + esc(ORG[o.slug].error)+'</div>';
-    }
+function show(t){
+  document.querySelectorAll('.tabs button').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.t===t ? 'true':'false'); });
+  document.querySelectorAll('.stage > *').forEach(function(el){
+    var on = el.id === 'f-'+t;
+    el.classList.toggle('on', on);
+    if(on && el.tagName==='IFRAME' && !el.src) el.src = el.dataset.src;
   });
-  side.innerHTML = html;
+  try { sessionStorage.setItem('adm_tab', t); } catch(e){}
 }
 
-/* ------------------------------- views -------------------------------- */
+(async function(){
+  var s = (await sb.auth.getSession()).data.session;
+  if(!s){ location.replace('/login/'); return; }
+  var owner = s.user.email === 'vlegal2025@gmail.com';
+  try {
+    var fs = await sb.from('firm_settings').select('owner_id').limit(1);
+    if(fs.data && fs.data[0] && fs.data[0].owner_id === s.user.id) owner = true;
+  } catch(e){}
+  if(!owner){ location.replace('/portal/'); return; }
+  document.getElementById('who').textContent = 'MKR · ' + s.user.email;
+  var t = 'practice'; try { t = sessionStorage.getItem('adm_tab') || 'practice'; } catch(e){}
+  show(t);
+  document.getElementById('gate').remove();
+})();
 
-function reqCard(slug, r){
-  var d = dataOf(slug);
-  var nMsg = d.messages.filter(function(m){ return m.request_id===r.request_id; }).length;
-  var nFile = d.files.filter(function(f){ return f.request_id===r.request_id; }).length;
-  var who = partyName(slug, r.party_id);
-  return '<div class="rq" data-open="'+esc(r.request_id)+'" data-oorg="'+esc(slug)+'">'
-    + '<div class="rq-top"><div>'
-    +   '<div class="rq-t">'+esc(r.subject)+'</div>'
-    +   '<div class="rq-m">'+esc(svcName(slug,r.service_id))+(who?' · '+esc(who):'')
-    +     (r.sf_nos?' · SF '+esc(r.sf_nos):'')+'</div>'
-    + '</div>' + statusPill(r.status) + '</div>'
-    + '<div class="rq-foot"><span>Raised '+esc(when(r.created_at))+' by '+esc(r.created_by||'—')+'</span>'
-    +   (nMsg?'<span>'+nMsg+' message'+(nMsg===1?'':'s')+'</span>':'')
-    +   (nFile?'<span>'+nFile+' file'+(nFile===1?'':'s')+'</span>':'')
-    + '</div></div>';
-}
-
-function boardView(){
-  var rows = [];
-  orgsLive().forEach(function(o){
-    dataOf(o.slug).requests.forEach(function(r){
-      if(pick && (pick.org!==o.slug || (r.party_id||'__none')!==pick.party)) return;
-      rows.push({ slug:o.slug, r:r });
-    });
-  });
-  rows = rows.filter(function(x){
-    return filter==='all' ? true : filter==='open' ? isOpen(x.r) : x.r.status===filter; })
-    .sort(function(a,b){ return String(b.r.updated_at||'').localeCompare(String(a.r.updated_at||'')); });
-
-  var allRows = [];
-  orgsLive().forEach(function(o){ dataOf(o.slug).requests.forEach(function(r){
-    if(pick && (pick.org!==o.slug || (r.party_id||'__none')!==pick.party)) return;
-    allRows.push(r); }); });
-
-  var statuses = (orgsLive()[0] ? dataOf(orgsLive()[0].slug).statuses : []) || [];
-  var chips = [['open','Open ('+allRows.filter(isOpen).length+')'],['all','All ('+allRows.length+')']]
-    .concat(statuses.map(function(s){
-      return [s, s+' ('+allRows.filter(function(r){return r.status===s;}).length+')']; }));
-
-  var title = 'Everything', sub = 'Across every client office.', crumb = '';
-  if(pick){
-    var o = ORGS.filter(function(x){ return x.slug===pick.org; })[0];
-    var nm = pick.party==='__none' ? 'Not against a client' : partyName(pick.org, pick.party);
-    title = nm || 'Unknown client';
-    crumb = '<div class="crumb"><b>'+esc(o.name)+'</b> → '+esc(title)+'</div>';
-    sub = 'Requests raised by '+esc(o.name)+' for this client.';
-  }
-
-  return crumb
-    + '<div class="sec-head"><div class="idx">Requests</div><h2>'+esc(title)+'</h2><p>'+sub+'</p></div>'
-    + '<div class="filters">' + chips.map(function(c){
-        return '<button class="fchip'+(filter===c[0]?' on':'')+'" data-filter="'+esc(c[0])+'">'
-             + esc(c[1])+'</button>'; }).join('') + '</div>'
-    + (rows.length ? rows.map(function(x){ return reqCard(x.slug, x.r); }).join('')
-        : '<div class="card empty">Nothing here.</div>')
-    + (pick && pick.party!=='__none' ? vaultBlock(pick.org, pick.party) : '');
-}
-
-/* the client's permanent documents, read-only on this page */
-function vaultBlock(slug, pid){
-  var docs = dataOf(slug).partyFiles.filter(function(f){ return f.party_id===pid; });
-  if(!docs.length) return '';
-  var cats = {};
-  docs.forEach(function(f){ (cats[f.category] = cats[f.category] || []).push(f); });
-  return '<h3 class="sub">Document vault · '+docs.length+' file'+(docs.length===1?'':'s')+'</h3>'
-    + Object.keys(cats).map(function(c){
-        return '<div style="margin-bottom:12px;"><div style="font-size:11px;letter-spacing:.1em;'
-          + 'text-transform:uppercase;color:var(--brass);margin-bottom:5px;">'+esc(c)+'</div>'
-          + cats[c].map(function(f){
-              return '<div class="filerow"><span>'+esc(f.doc_name||f.file_name)
-                + (f.remark?' <span style="color:var(--muted);">· '+esc(f.remark)+'</span>':'')+'</span>'
-                + '<a class="btn outline sm" href="'+esc(f.file_url)+'" target="_blank" rel="noopener">Open</a>'
-                + '</div>'; }).join('')
-          + '</div>';
-      }).join('');
-}
-
-function requestDetail(){
-  var slug = openOrg, d = dataOf(slug);
-  var r = d.requests.filter(function(x){ return x.request_id===openReq; })[0];
-  if(!r){ openReq=null; return boardView(); }
-  var o = ORGS.filter(function(x){ return x.slug===slug; })[0];
-  var files = d.files.filter(function(f){ return f.request_id===r.request_id; });
-  var msgs  = d.messages.filter(function(m){ return m.request_id===r.request_id; })
-    .sort(function(a,b){ return String(a.created_at||'').localeCompare(String(b.created_at||'')); });
-
-  return '<button class="btn outline sm" id="backBtn" style="margin-bottom:14px;">← Back</button>'
-    + '<div class="crumb"><b>'+esc(o.name)+'</b> → '+esc(partyName(slug,r.party_id)||'No client')+' → Request</div>'
-    + '<div class="sec-head"><div class="idx">'+esc(svcName(slug,r.service_id))+'</div>'
-    +   '<h2>'+esc(r.subject)+'</h2></div>'
-    + '<div>'+statusPill(r.status)+'</div>'
-    + '<div class="kv">'
-    +   kv('Client', partyName(slug,r.party_id) || '—')
-    +   kv('Property', r.property_ref || '—')
-    +   kv('Village', r.village || '—')
-    +   kv('Survey numbers', r.sf_nos || '—')
-    +   kv('Raised by', r.created_by || '—')
-    +   kv('Raised', when(r.created_at))
-    + '</div>'
-    + (r.details ? '<div class="card" style="white-space:pre-wrap;font-size:14px;">'
-        + esc(r.details)+'</div>' : '')
-
-    + '<h3 class="sub">Status</h3>'
-    + '<div class="btnrow"><select id="stSel" style="max-width:250px;padding:9px 11px;border:1px solid '
-    +   'var(--line);border-radius:7px;font-family:inherit;font-size:14px;">'
-    +   (d.statuses||[]).map(function(s){
-          return '<option'+(s===r.status?' selected':'')+'>'+esc(s)+'</option>'; }).join('')
-    +   '</select><button class="btn brass sm" id="stBtn">Update</button>'
-    +   '<span class="msg" id="stMsg"></span></div>'
-    + '<p style="font-size:12.5px;color:var(--muted);margin:8px 0 0;">'
-    +   'The office is emailed and their portal updates the moment you change this.</p>'
-
-    + '<h3 class="sub">Documents · '+files.length+'</h3>'
-    + (files.length ? files.map(function(f){
-        return '<div class="filerow"><span>'+esc(f.file_name)
-          + ' <span style="color:var(--muted);">· '+esc(f.uploaded_by||'—')+' · '+esc(when(f.uploaded_at))
-          + '</span></span><a class="btn outline sm" href="'+esc(f.file_url)
-          + '" target="_blank" rel="noopener">Open</a></div>'; }).join('')
-      : '<div class="card empty">Nothing attached.</div>')
-
-    + '<h3 class="sub">Clarifications</h3>'
-    + (msgs.length ? msgs.map(function(m){
-        return '<div class="bub'+(m.author_role==='advocate'?' mine':'')+'">'
-          + '<div class="bub-h"><b>'+esc(m.author_name)+'</b> · '+esc(when(m.created_at))+'</div>'
-          + '<div class="bub-b">'+esc(m.body)+'</div></div>'; }).join('')
-      : '<div class="card empty">Nothing yet.</div>')
-    + '<div class="field" style="margin-top:12px;"><label>Reply</label>'
-    +   '<textarea id="msgBody" placeholder="Write to the office…"></textarea></div>'
-    + '<div class="btnrow"><button class="btn brass" id="msgBtn">Send</button>'
-    +   '<span class="msg" id="msgMsg"></span></div>'
-    + vaultBlock(slug, r.party_id);
-}
-
-function kv(k,v){ return '<div><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>'; }
-
-function render(){
-  renderSide();
-  panel.innerHTML = openReq ? requestDetail() : boardView();
-}
-
-/* ------------------------------ actions ------------------------------- */
-
-function setStatus(){
-  var sel=document.getElementById('stSel'), m=document.getElementById('stMsg');
-  note(m,'Saving…',true);
-  callOrg(openOrg, {action:'deskSetStatus', request_id:openReq, status:sel.value})
-    .then(function(r){ if(!r.ok) throw new Error(r.error);
-      toast('Status updated — the office has been told.'); return reload(); })
-    .catch(function(err){ note(m, err.message, false); });
-}
-
-function sendMessage(){
-  var el=document.getElementById('msgBody'), m=document.getElementById('msgMsg');
-  if(!el.value.trim()){ note(m,'Write something first.',false); return; }
-  note(m,'Sending…',true);
-  callOrg(openOrg, {action:'deskMessage', request_id:openReq, body:el.value})
-    .then(function(r){ if(!r.ok) throw new Error(r.error);
-      el.value=''; toast('Sent.'); return reload(); })
-    .catch(function(err){ note(m, err.message, false); });
-}
-
-/* ------------------------------- events ------------------------------- */
-
-document.addEventListener('click', function(e){
-  var t=e.target, el;
-  if(t.id==='loginBtn'){ signIn(); return; }
-  if(t.id==='outBtn'){ signOut(); return; }
-  if((el=t.closest('[data-all]'))){ pick=null; openReq=null; render(); return; }
-  if((el=t.closest('[data-party]'))){
-    pick={ org:el.getAttribute('data-org'), party:el.getAttribute('data-party') };
-    openReq=null; render(); window.scrollTo(0,0); return; }
-  if((el=t.closest('[data-filter]'))){ filter=el.getAttribute('data-filter'); render(); return; }
-  if((el=t.closest('[data-open]'))){ openReq=el.getAttribute('data-open');
-    openOrg=el.getAttribute('data-oorg'); render(); window.scrollTo(0,0); return; }
-  if(t.id==='backBtn'){ openReq=null; render(); return; }
-  if(t.id==='stBtn'){ setStatus(); return; }
-  if(t.id==='msgBtn'){ sendMessage(); return; }
-});
-document.addEventListener('keydown', function(e){
-  if(e.key==='Enter' && document.activeElement && document.activeElement.id==='pw') signIn();
+document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.t); }); });
+document.getElementById('out').addEventListener('click', async function(){
+  await sb.auth.signOut();
+  try { sessionStorage.clear(); } catch(e){}
+  location.replace('/login/');
 });
 </script>
-</body></html>
+</body>
+</html>

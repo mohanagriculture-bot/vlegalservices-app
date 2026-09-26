@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Login Portal | V Legal Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--ink:#0F1B2D;--navy:#16233A;--brass:#A9762F;--brass-lt:#D2A460;--brass-bg:#F6EEDF;--paper:#F7F5EF;--line:#E3DED1;--muted:#5E6573;--danger:#A13D3D;--danger-bg:#F8EAE9;
+  --serif:'Source Serif 4',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:var(--sans);color:#1E2430;background:var(--ink);display:grid;grid-template-columns:1fr 1fr}
+.side{position:relative;overflow:hidden;padding:48px;display:flex;flex-direction:column;justify-content:space-between;color:#C4CBD7}
+.side::after{content:"";position:absolute;right:-140px;bottom:-140px;width:420px;height:420px;border-radius:50%;border:1px solid rgba(210,164,96,.2);box-shadow:0 0 0 70px rgba(210,164,96,.04),0 0 0 140px rgba(210,164,96,.03)}
+.brand{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none}
+.seal{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--brass-lt);display:grid;place-items:center;font-family:var(--serif);font-weight:700;color:var(--brass-lt);font-size:18px}
+.brand b{font-family:var(--serif);font-size:18px;font-weight:600;display:block}
+.brand small{font-size:11px;letter-spacing:.06em;color:#AEB6C4}
+.side h1{font-family:var(--serif);color:#fff;font-size:40px;line-height:1.15;margin:0 0 14px;font-weight:600;position:relative;z-index:1}
+.side h1 em{color:var(--brass-lt);font-weight:500}
+.side p{max-width:380px;margin:0;position:relative;z-index:1}
+.side .back{color:#AEB6C4;font-size:14px;text-decoration:none;position:relative;z-index:1}
+.side .back:hover{color:#fff}
+.main{background:var(--paper);display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.box{width:100%;max-width:400px}
+.box h2{font-family:var(--serif);color:var(--navy);font-size:28px;margin:0 0 6px;font-weight:600}
+.box .lede{color:var(--muted);margin:0 0 24px;font-size:14.5px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.seg button{font-family:var(--sans);text-align:left;padding:14px 16px;border-radius:12px;border:1.5px solid var(--line);background:#fff;cursor:pointer;color:var(--navy)}
+.seg button b{display:block;font-size:15.5px;font-weight:600}
+.seg button span{font-size:12.5px;color:var(--muted)}
+.seg button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:#fff}
+.seg button[aria-pressed="true"] span{color:#C4CBD7}
+label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px}
+input{width:100%;font:inherit;font-size:15px;padding:12px 13px;border:1.5px solid var(--line);border-radius:9px;background:#fff;color:#1E2430;outline:none}
+input:focus{border-color:var(--brass);box-shadow:0 0 0 3px rgba(169,118,47,.14)}
+.field{margin-bottom:15px}
+.pw{position:relative}
+.pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer;padding:6px}
+.go{width:100%;font:inherit;font-weight:600;font-size:15.5px;padding:13px;border:none;border-radius:9px;background:var(--brass);color:#fff;cursor:pointer;margin-top:4px}
+.go:hover{background:#94661F}
+.go:disabled{opacity:.7;cursor:wait}
+.msg{display:none;font-size:13.5px;padding:10px 12px;border-radius:8px;margin-bottom:14px;background:var(--danger-bg);color:var(--danger)}
+.msg.on{display:block}
+.help{margin-top:20px;font-size:13px;color:var(--muted);text-align:center}
+.help a{color:var(--brass);font-weight:600}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes s{to{transform:rotate(360deg)}}
+@media (max-width:860px){
+  body{grid-template-columns:1fr;grid-template-rows:auto 1fr;background:var(--paper)}
+  .side>div{display:none}
+  .side{padding:22px 20px;background:var(--ink)}
+  .side h1,.side p{display:none}
+  .side .back{position:absolute;right:20px;top:31px}
+  .main{align-items:flex-start;padding:30px 20px}
+}
+</style>
+</head>
+<body>
+<aside class="side">
+  <a class="brand" href="/"><span class="seal">V</span><span><b>V Legal Services</b><small>AND DOCUMENTATION</small></span></a>
+  <div>
+    <h1>One sign-in,<br><em>every portal.</em></h1>
+    <p>Staff reach the practice system. Clients reach their own property and service portal.</p>
+  </div>
+  <a class="back" href="/">← Back to website</a>
+</aside>
+
+<main class="main">
+  <form class="box" id="f" autocomplete="on" novalidate>
+    <h2>Login Portal</h2>
+    <p class="lede">Choose how you're signing in.</p>
+
+    <div class="seg" role="group" aria-label="Login type">
+      <button type="button" data-k="internal" aria-pressed="true"><b>Internal</b><span>V Legal staff</span></button>
+      <button type="button" data-k="external" aria-pressed="false"><b>External</b><span>Clients</span></button>
+    </div>
+
+    <div class="msg" id="msg" role="alert"></div>
+
+    <div class="field">
+      <label for="u">User ID</label>
+      <input id="u" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+    </div>
+    <div class="field">
+      <label for="p">Password</label>
+      <div class="pw"><input id="p" name="password" type="password" autocomplete="current-password" required>
+        <button type="button" id="show">Show</button></div>
+    </div>
+    <button class="go" id="go" type="submit">Sign in</button>
+
+    <p class="help" id="help">Forgot your password? <a href="/portal/">Reset it here</a></p>
+  </form>
+</main>
+
+<script>
+/* ============================================================
+   Login Portal — a front desk, not a lock.
+   No password is stored or compared in this page. Each password
+   goes to the system that owns it:
+     Internal  → Supabase Auth (the practice system)
+     External  → the client's own Apps Script
+   Only User IDs live here, to route people to the right place.
+   ============================================================ */
+
+/* Internal: User ID → login email in Supabase.
+   Staff can also sign in with their email directly. */
+var STAFF = {
+  'mkr': 'vlegal2025@gmail.com'
+};
+
+/* External: User ID → client portal. Add the next client as a row. */
+var CLIENTS = {
+  'kannangroup': {
+    name: 'Kannan Group',
+    api: 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec',
+    action: 'login',
+    tokenKey: 'pk_token',
+    dest: '/kannangroup/theni/'
+  }
+};
+
+var sb = window.supabase.createClient('https://tjvvqoomaptxscgiziks.supabase.co', 'sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm');
+var kind = 'internal';
+var $ = function(id){ return document.getElementById(id); };
+
+function setKind(k){
+  kind = k;
+  document.querySelectorAll('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.k===k ? 'true':'false'); });
+  $('u').placeholder = k==='internal' ? 'Your staff User ID or email' : 'Your client User ID';
+  $('help').innerHTML = k==='internal'
+    ? 'Forgot your password? <a href="/portal/">Reset it here</a>'
+    : 'Trouble signing in? Call or WhatsApp <a href="tel:+917373735222">73737 35222</a>';
+  err(''); $('u').focus();
+}
+function err(t){ var m=$('msg'); m.textContent=t; m.classList.toggle('on', !!t); }
+function busy(on){ var b=$('go'); b.disabled=on; b.innerHTML = on ? '<span class="spin"></span>Checking…' : 'Sign in'; }
+
+async function internalLogin(id, pw){
+  var email = id.indexOf('@') > -1 ? id : STAFF[id.toLowerCase()];
+  if(!email) throw new Error('This User ID is not set up yet. Check with the office.');
+  var r = await sb.auth.signInWithPassword({ email: email, password: pw });
+  if(r.error) throw new Error(r.error.message === 'Invalid login credentials' ? 'User ID or password is incorrect.' : r.error.message);
+  var user = r.data.user;
+  var owner = false;
+  try {
+    var fs = await sb.from('firm_settings').select('owner_id').limit(1);
+    owner = !!(fs.data && fs.data[0] && fs.data[0].owner_id === user.id);
+  } catch(e){}
+  if(!owner && user.email === 'vlegal2025@gmail.com') owner = true;
+  window.location.href = owner ? '/admin/' : '/portal/';
+}
+
+async function externalLogin(id, pw){
+  var c = CLIENTS[id.toLowerCase()];
+  if(!c) throw new Error('User ID or password is incorrect.');
+  var res = await fetch(c.api, { method:'POST', redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:c.action, password:pw }) });
+  var r = await res.json();
+  if(!r.ok || !r.token) throw new Error('User ID or password is incorrect.');
+  try { sessionStorage.setItem(c.tokenKey, r.token); } catch(e){}
+  window.location.href = c.dest;
+}
+
+$('f').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var id = $('u').value.trim(), pw = $('p').value;
+  if(!id || !pw){ err('Enter your User ID and password.'); return; }
+  err(''); busy(true);
+  try { kind==='internal' ? await internalLogin(id, pw) : await externalLogin(id, pw); }
+  catch(x){ busy(false); err(x.message || 'Could not sign in. Please try again.'); $('p').select(); }
+});
+document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ setKind(b.dataset.k); }); });
+$('show').addEventListener('click', function(){ var p=$('p'); var h=p.type==='password'; p.type=h?'text':'password'; this.textContent=h?'Hide':'Show'; });
+if(new URLSearchParams(location.search).get('as')==='client') setKind('external'); else setKind('internal');
+</script>
+</body>
+</html>

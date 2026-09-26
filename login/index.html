@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script>if(window.top!==window.self){window.top.location.replace(location.href);}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/lock.js"></script>
 <style>
 :root{--ink:#0F1B2D;--navy:#16233A;--brass:#A9762F;--brass-lt:#D2A460;--brass-bg:#F6EEDF;--paper:#F7F5EF;--line:#E3DED1;--muted:#5E6573;--danger:#A13D3D;--danger-bg:#F8EAE9;
   --serif:'Source Serif 4',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
@@ -43,9 +45,11 @@ input:focus{border-color:var(--brass);box-shadow:0 0 0 3px rgba(169,118,47,.14)}
 .pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer;padding:6px}
 .go{width:100%;font:inherit;font-weight:600;font-size:15.5px;padding:13px;border:none;border-radius:9px;background:var(--brass);color:#fff;cursor:pointer;margin-top:4px}
 .go:hover{background:#94661F}
-.go:disabled{opacity:.7;cursor:wait}
+.go:disabled{opacity:.7;cursor:not-allowed}
+input:disabled{background:#EFECE4;color:#8D96A6}
 .msg{display:none;font-size:13.5px;padding:10px 12px;border-radius:8px;margin-bottom:14px;background:var(--danger-bg);color:var(--danger)}
 .msg.on{display:block}
+.msg.ok{background:#E8F1EC;color:#2F6B4F}
 .help{margin-top:20px;font-size:13px;color:var(--muted);text-align:center}
 .help a{color:var(--brass);font-weight:600}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
@@ -134,18 +138,33 @@ function setKind(k){
   document.querySelectorAll('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.k===k ? 'true':'false'); });
   $('u').placeholder = k==='internal' ? 'Your staff User ID or email' : 'Your client User ID';
   $('help').innerHTML = k==='internal'
-    ? 'Forgot your password? <a href="/portal/">Reset it here</a>'
+    ? 'Forgot your password? <a href="#" id="forgot">Reset it</a>'
     : 'Trouble signing in? Call or WhatsApp <a href="tel:+917373735222">73737 35222</a>';
-  err(''); $('u').focus();
+  var fg = $('forgot'); if(fg) fg.addEventListener('click', forgot);
+  if(!lockCheck()){ err(''); $('u').focus(); }
 }
-function err(t){ var m=$('msg'); m.textContent=t; m.classList.toggle('on', !!t); }
+function err(t, ok){ var m=$('msg'); m.textContent=t; m.classList.toggle('on', !!t); m.classList.toggle('ok', !!ok); }
 function busy(on){ var b=$('go'); b.disabled=on; b.innerHTML = on ? '<span class="spin"></span>Checking…' : 'Sign in'; }
+function wrong(){ var e = new Error('wrong'); e.wrong = true; return e; }
+
+/* Blocks the form when 3 wrong attempts have been made on this device */
+function lockCheck(){
+  var on = VLSLock.locked();
+  ['u','p','go'].forEach(function(id){ $(id).disabled = on; });
+  document.querySelectorAll('.seg button').forEach(function(b){ b.disabled = on; });
+  if(on){ err(VLSLock.message); $('go').textContent = 'Sign-in blocked'; }
+  return on;
+}
 
 async function internalLogin(id, pw){
   var email = id.indexOf('@') > -1 ? id : STAFF[id.toLowerCase()];
-  if(!email) throw new Error('This User ID is not set up yet. Check with the office.');
+  if(!email) throw wrong();
   var r = await sb.auth.signInWithPassword({ email: email, password: pw });
-  if(r.error) throw new Error(r.error.message === 'Invalid login credentials' ? 'User ID or password is incorrect.' : r.error.message);
+  if(r.error){
+    if(/invalid login credentials/i.test(r.error.message)) throw wrong();
+    throw new Error(r.error.message);
+  }
+  VLSLock.reset();
   var user = r.data.user;
   var owner = false;
   try {
@@ -158,24 +177,49 @@ async function internalLogin(id, pw){
 
 async function externalLogin(id, pw){
   var c = CLIENTS[id.toLowerCase()];
-  if(!c) throw new Error('User ID or password is incorrect.');
+  if(!c) throw wrong();
   var res = await fetch(c.api, { method:'POST', redirect:'follow',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({ action:c.action, password:pw }) });
   var r = await res.json();
-  if(!r.ok || !r.token) throw new Error('User ID or password is incorrect.');
+  if(!r.ok || !r.token) throw wrong();
+  VLSLock.reset();
   try { sessionStorage.setItem(c.tokenKey, r.token); } catch(e){}
   var next = new URLSearchParams(location.search).get('next') || '';
   window.location.href = (next.indexOf(c.area) === 0 && next.indexOf('//') === -1) ? next : c.dest;
 }
 
+/* Password reset for staff: sends Supabase's reset link to their email */
+async function forgot(e){
+  e.preventDefault();
+  if(lockCheck()) return;
+  var id = $('u').value.trim();
+  if(!id){ err('Enter your User ID or email above, then click "Reset it".'); $('u').focus(); return; }
+  var email = id.indexOf('@') > -1 ? id : STAFF[id.toLowerCase()];
+  if(email){
+    await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/portal/' });
+  }
+  err('If that User ID is registered, a password reset link has been sent to its email. Check the inbox and spam folder.', true);
+}
+
 $('f').addEventListener('submit', async function(e){
   e.preventDefault();
+  if(lockCheck()) return;
   var id = $('u').value.trim(), pw = $('p').value;
   if(!id || !pw){ err('Enter your User ID and password.'); return; }
   err(''); busy(true);
   try { kind==='internal' ? await internalLogin(id, pw) : await externalLogin(id, pw); }
-  catch(x){ busy(false); err(x.message || 'Could not sign in. Please try again.'); $('p').select(); }
+  catch(x){
+    busy(false);
+    if(x.wrong){
+      var left = VLSLock.fail();
+      err(VLSLock.wrongText(left));
+      if(left === 0){ lockCheck(); return; }
+    } else {
+      err(x.message || 'Could not sign in. Please check your connection and try again.');
+    }
+    $('p').value=''; $('p').focus();
+  }
 });
 document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ setKind(b.dataset.k); }); });
 $('show').addEventListener('click', function(){ var p=$('p'); var h=p.type==='password'; p.type=h?'text':'password'; this.textContent=h?'Hide':'Show'; });

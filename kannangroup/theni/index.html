@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/assets/lock.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
@@ -2984,12 +2986,14 @@ document.getElementById('loginForm').addEventListener('submit', function(e){
   e.preventDefault();
   var btn = document.getElementById('loginBtn'), msg = document.getElementById('loginMsg');
   var pw = document.getElementById('pw').value;
+  if (VLSLock.locked()) { msg.textContent = VLSLock.message; return; }
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Checking…'; msg.textContent = '';
   fetch(API, {method:'POST', redirect:'follow', headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({action:'login', password:pw})})
     .then(function(r){ return r.json(); })
     .then(function(r){
-      if (!r.ok) throw new Error(r.error || 'Incorrect password.');
+      if (!r.ok) { var left = VLSLock.fail(); throw new Error(VLSLock.wrongText(left)); }
+      VLSLock.reset();
       token = r.token;
       try { sessionStorage.setItem('pk_token', token); } catch(e) {}
       showApp();
@@ -3006,7 +3010,8 @@ if (token) {
   showApp();
   reload(false).catch(function(){ signOut(); });
 } else {
-  location.replace('/login/?as=client&next=' + encodeURIComponent(location.pathname));
+  var owner = false; try { owner = !!localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token'); } catch(e) {}
+  if (!owner) location.replace('/login/?as=client&next=' + encodeURIComponent(location.pathname));
 }
 })();
 </script>

@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>
+/* No direct entry: only signed-in users stay on this page */
+(function(){var ok=false;try{ok=!!localStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token');}catch(e){}
+if(!ok){location.replace('/login/');}})();
+</script>
+<script src="/assets/lock.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
@@ -204,6 +210,7 @@ function isOpen(r){ return r.status!=='Completed' && r.status!=='Closed'; }
 
 function signIn(){
   var el=document.getElementById('pw'), m=document.getElementById('loginMsg');
+  if(VLSLock.locked()){ note(m,VLSLock.message,false); return; }
   if(!el.value){ note(m,'Enter the password.',false); return; }
   PW = el.value;
   var b=document.getElementById('loginBtn');
@@ -223,11 +230,12 @@ function signIn(){
   })).then(function(res){
     var good = res.filter(function(r){ return r.token; });
     if(!good.length){
-      note(m, res[0] && res[0].error ? res[0].error : 'Could not sign in.', false);
+      var left = VLSLock.fail(); PW=''; el.value='';
+      note(m, VLSLock.wrongText(left), false);
       return;
     }
     res.forEach(function(r){ ORG[r.slug] = { token:r.token, error:r.error, data:null }; });
-    el.value=''; PW='';
+    VLSLock.reset(); el.value=''; PW='';
     document.getElementById('loginView').classList.add('hidden');
     document.getElementById('appView').classList.remove('hidden');
     document.getElementById('outBtn').classList.remove('hidden');

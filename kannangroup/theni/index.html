@@ -198,6 +198,7 @@
     flex-wrap:wrap;}
   .pgcard-t{font-family:'Lora',Georgia,serif;font-weight:700;color:var(--navy);font-size:14.5px;}
   .pgcard-s{font-size:11.5px;color:var(--muted);}
+  .edocs{border-top:1px solid var(--line);padding-top:13px;margin-top:4px;}
 
   /* ---- phones: one card per record --------------------------------
      Eight columns in a horizontal scroll loses the SF number the moment
@@ -560,7 +561,12 @@ var token = null, DATA = {companies:[],partners:[],survey:[],documents:[],sectio
           survey number and shows every subdivision inside it; a surveyor's
           sketch really is for one SF. All four are overridable per upload. */
 var DOC_CATS = [
-  {id:'primary_docs',    label:'Primary Documents',    scope:'company', def:'company'},
+  {id:'primary_docs',     label:'Primary Documents',       scope:'company', def:'company'},
+  {id:'partnership_deed', label:'Partnership Deed',        scope:'company', def:'company'},
+  {id:'company_pan',      label:'PAN Card',                scope:'company', def:'company'},
+  {id:'company_gst',      label:'GST Certificate',         scope:'company', def:'company'},
+  {id:'kyc',              label:'Partner / Director KYC',  scope:'company', def:'company'},
+  {id:'other_docs',       label:'Other Documents',         scope:'company', def:'company'},
   {id:'patta',           label:'Patta',                scope:'sf',      def:'patta'},
   {id:'ec',              label:'EC',                   scope:'sf',      def:'sf'},
   {id:'a_register',      label:'A Register',           scope:'sf',      def:'patta'},
@@ -1013,6 +1019,16 @@ function profileOverview(c, slug){
           return '<tr><td style="width:190px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;">'+r[0]+'</td><td>'+r[1]+'</td></tr>';
         }).join('') + '</tbody></table></div>'
       : '<div class="card empty" style="margin-bottom:18px;">No entity details recorded yet — add them under Master Data.</div>')
+    + (function(){
+        var mine = entityDocsOf(slug);
+        if (!mine.length) return '';
+        var blocks = entityCats().map(function(k){
+          var files = mine.filter(function(d){ return d.category === k.id; });
+          return files.length ? docBlock(k.label, files, false, true) : '';
+        }).join('');
+        return '<h3 style="font-size:17px;margin-bottom:9px;">Entity Documents</h3>'
+          + '<div class="card" style="margin-bottom:18px;">'+blocks+'</div>';
+      })()
     + '<h3 style="font-size:17px;margin-bottom:9px;">Partners &amp; Share Holding</h3>'
     + (ps.length
         ? '<div class="tablewrap"><table><thead><tr><th>Partner</th><th>Designation</th><th class="num">Share %</th></tr></thead><tbody>'
@@ -1579,8 +1595,8 @@ function mEntities(){
     if (!ps.length) ps = [{partner_name:'',designation:'',share_pct:''}];
     return '<div class="acc'+(open?' open':'')+'" data-acc="e:'+esc(c.company_slug)+'">'
       + '<button class="acc-head" data-toggle="e:'+esc(c.company_slug)+'"><span class="acc-id">'+emark(c.company_slug)
-      + '<span><span class="acc-title">'+esc(c.company)+'</span>'
-      + '<span class="acc-sub">'+esc(c.type||'Company')+' · '+partnersOf(c.company_slug).length+' partners</span></span></span><span class="chev">▸</span></button>'
+      + '<span><span class="acc-title" style="display:block;">'+esc(c.company)+'</span>'
+      + '<span class="acc-sub" style="display:block;">'+esc(c.type||'Company')+' · '+partnersOf(c.company_slug).length+' partners</span></span></span><span class="chev">▸</span></button>'
       + '<div class="acc-body">'
       +   '<div class="row2">'
       +     '<div class="field"><label>Name</label><input data-cf="company" value="'+esc(c.company)+'"></div>'
@@ -1599,6 +1615,7 @@ function mEntities(){
       +   '<label style="margin-bottom:7px;">Partners &amp; share holding</label>'
       +   '<div class="plist" data-plist="'+esc(c.company_slug)+'">' + ps.map(partnerRow).join('') + '</div>'
       +   '<button class="btn outline sm" data-addp="'+esc(c.company_slug)+'" style="margin-bottom:14px;">+ Add partner</button>'
+      +   entityDocs(c.company_slug)
       +   customSectionFields(c.company_slug)
       +   '<div class="btnrow"><button class="btn brass sm" data-savec="'+esc(c.company_slug)+'">Save changes</button>'
       +   '<button class="btn danger sm" data-delc="'+esc(c.company_slug)+'">Delete entity</button>'
@@ -1615,6 +1632,72 @@ function mEntities(){
   +   '<div class="btnrow"><button class="btn brass sm" id="ncAdd">Create entity</button><span class="msg" id="ncNote"></span></div>'
   + '</div>';
 }
+/* ---------------- entity documents, filed from the entity itself --------
+   The partnership deed, PAN, GST certificate and KYC belong to the entity,
+   not to any survey number, so they are uploaded here beside its details
+   rather than over in the Documents tab. They show on the Company Profile
+   under Overview and again in the full document library. */
+function entityCats(){
+  return DOC_CATS.filter(function(k){ return k.scope === 'company'; })
+    .concat(uploadSections().map(function(sec){
+      return {id:sec.section_id, label:sec.title, scope:'company'}; }));
+}
+function entityDocsOf(slug){
+  return DATA.documents.filter(function(d){
+    return d.company_slug === slug && docScope(d) === 'company'; });
+}
+
+function entityDocs(slug){
+  var cats = entityCats();
+  var mine = entityDocsOf(slug);
+  var listed = cats.map(function(k){
+    var files = mine.filter(function(d){ return d.category === k.id; });
+    return files.length ? docBlock(k.label, files, true, true) : '';
+  }).join('');
+
+  return '<div class="edocs">'
+    + '<label style="margin-bottom:8px;">Entity documents</label>'
+    + (listed || '<div class="hint" style="margin-bottom:10px;">None uploaded yet.</div>')
+    + '<div class="row2" style="margin-top:4px;">'
+    +   '<div class="field" style="margin:0;"><label>Document type</label>'
+    +     '<select data-ecat="'+esc(slug)+'">'
+    +       cats.map(function(k){ return '<option value="'+esc(k.id)+'">'+esc(k.label)+'</option>'; }).join('')
+    +     '</select></div>'
+    +   '<div class="field" style="margin:0;"><label>File</label>'
+    +     '<input type="file" data-efile="'+esc(slug)+'"></div>'
+    + '</div>'
+    + '<div class="btnrow" style="margin:10px 0 16px;">'
+    +   '<button class="btn outline sm" data-eup="'+esc(slug)+'">Upload document</button>'
+    +   '<span class="msg" data-enote="'+esc(slug)+'"></span></div>'
+    + '</div>';
+}
+
+function uploadEntityDoc(slug){
+  var catEl  = document.querySelector('[data-ecat="'+slug+'"]');
+  var fileEl = document.querySelector('[data-efile="'+slug+'"]');
+  var noteEl = document.querySelector('[data-enote="'+slug+'"]');
+  var cat  = catEl ? catEl.value : 'other_docs';
+  var file = fileEl && fileEl.files && fileEl.files[0];
+  if (!file) { note(noteEl,'Choose a file first.',false); return; }
+  if (file.size > 8*1024*1024) {
+    note(noteEl,'File is larger than 8 MB \u2014 add it to the Drive folder directly.',false); return; }
+
+  note(noteEl,'Uploading\u2026',true);
+  var fr = new FileReader();
+  fr.onerror = function(){ note(noteEl,'Could not read that file.',false); };
+  fr.onload = function(){
+    call({action:'uploadDoc', company_slug:slug, sf_no:'', category:cat,
+      scope:'company', scope_key:'', file_name:file.name,
+      mime_type:file.type||'application/octet-stream',
+      file_base64:String(fr.result).split(',')[1]})
+      .then(function(r){ if(!r.ok) throw new Error(r.error);
+        openKey = 'e:'+slug;
+        toast('Uploaded to '+companyName(slug)+'.'); return reload(true); })
+      .catch(function(err){ note(noteEl,'Upload failed: '+err.message,false); toast('Upload failed.',true); });
+  };
+  fr.readAsDataURL(file);
+}
+
 function customSectionFields(slug){
   var secs = sectionsFor('company_profile', true);
   if (!secs.length) return '';
@@ -2332,6 +2415,7 @@ document.addEventListener('click', function(e){
   if (t.id === 'ncAdd') { addEntity(); return; }
   if (t.id === 'nsAdd') { addSurvey(); return; }
   if (t.id === 'udBtn') { uploadDoc(); return; }
+  if ((el = t.closest('[data-eup]'))) { uploadEntityDoc(el.getAttribute('data-eup')); return; }
   if (t.id === 'pgAdd') { addPattaRow(); return; }
   if (t.id === 'pgSave') { savePatta(); return; }
   if (t.id === 'pgClear') { clearPatta(); return; }

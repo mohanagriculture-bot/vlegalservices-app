@@ -60,6 +60,33 @@
 
   /* login */
   .login-wrap{display:flex;justify-content:center;padding:48px 16px 72px;}
+  /* who is online */
+  .presw{position:relative;}
+  #presBadge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);
+    background:#fff;color:var(--navy);border-radius:999px;padding:6px 13px;font-size:12.5px;
+    font-weight:600;cursor:pointer;font-family:inherit;}
+  #presBadge:hover{border-color:var(--brass);}
+  .pdot{width:8px;height:8px;border-radius:50%;background:#2F6B4F;flex:none;}
+  .pdot.bad{background:#A13D3D;}
+  #presPanel{position:absolute;right:0;top:calc(100% + 9px);width:290px;max-width:calc(100vw - 32px);
+    background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+    box-shadow:0 14px 34px rgba(22,35,58,.18);z-index:70;text-align:left;}
+  .pp-h{font-family:Georgia,serif;font-weight:700;font-size:14.5px;color:var(--navy);
+    margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--line);}
+  .pp-r{padding:8px 0;border-bottom:1px dotted var(--line);}
+  .pp-r:last-of-type{border-bottom:0;}
+  .pp-r.me{background:#FBF7EF;margin:0 -15px;padding-left:15px;padding-right:15px;}
+  .pp-n{font-size:13.5px;font-weight:600;color:var(--navy);}
+  .pp-tag{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:1px 6px;}
+  .pp-m{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .pp-e{font-size:12.5px;color:var(--muted);padding:6px 0;}
+  .pp-f{font-size:11px;color:var(--muted);margin-top:10px;padding-top:9px;
+    border-top:1px solid var(--line);line-height:1.45;}
+  @media (max-width:560px){
+    #presBadge{padding:5px 10px;font-size:11.5px;}
+    #presPanel{width:270px;}
+  }
   .login{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--brass);border-radius:14px;padding:28px 24px;box-shadow:0 10px 30px rgba(22,35,58,.08);}
   .login h2{font-size:21px;}
   .login .sub{color:var(--muted);font-size:13px;margin:4px 0 20px;}
@@ -471,6 +498,10 @@
         <div class="t2">Legal &amp; Documentation · Coimbatore</div>
       </div>
     </a>
+    <span class="presw">
+      <button class="hidden" id="presBadge" type="button"></button>
+      <div id="presPanel" class="hidden"></div>
+    </span>
     <button class="btn outline sm hidden" id="outBtn">Sign out</button>
   </div>
 </header>
@@ -2671,7 +2702,9 @@ document.addEventListener('click', function(e){
   if (t.closest('[data-cancelsec]')) { editingSection = null; render(); return; }
   if ((el = t.closest('[data-savesec]'))) { saveSectionText(el.getAttribute('data-savesec')); return; }
   if ((el = t.closest('[data-saveentsec]'))) { saveEntitySection(el.getAttribute('data-saveentsec')); return; }
-  if (t.id === 'outBtn') { signOut(); return; }
+  if (t.id === 'outBtn') { PRES.end().then(signOut); return; }
+  if (t.id === 'presBadge' || t.closest('#presBadge')) { PRES.open = !PRES.open; PRES.paint(); return; }
+  if (PRES.open && !t.closest('#presPanel')) { PRES.open = false; PRES.paint(); }
   if (t.id === 'qClear') { clearSearch(); return; }
   if ((el = t.closest('[data-qhit]'))) { gotoHit(parseInt(el.getAttribute('data-qhit'),10)); return; }
   if (!t.closest('.searchwrap')) closeSearch();
@@ -2973,8 +3006,118 @@ function showApp(){
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('appView').classList.remove('hidden');
   document.getElementById('outBtn').classList.remove('hidden');
+  PRES.start();
 }
+
+var PRES_PORTAL = 'theni';
+function PRES_WHO(){ return 'Properties portal'; }
+/* ===================== who is on the portals =====================
+   No server is told when a browser closes, so each open page checks in
+   on a timer and anyone unheard-of for a couple of minutes drops off.
+   A closed laptop therefore looks like a sign-out, a minute or two late.
+   One session per browser, not per tab. ================================ */
+var PRES = {
+  sid: null, timer: null, list: [], open: false, lastErr: '',
+  id: function(){
+    if (PRES.sid) return PRES.sid;
+    var k = 'vls_sid', v = null;
+    try { v = localStorage.getItem(k); } catch(e) {}
+    if (!v) {
+      v = 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      try { localStorage.setItem(k, v); } catch(e) {}
+    }
+    PRES.sid = v; return v;
+  },
+  agent: function(){
+    var u = navigator.userAgent || '';
+    var br = /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera'
+           : /Firefox\//.test(u) ? 'Firefox'
+           : /Chrome\//.test(u) ? 'Chrome'
+           : /Safari\//.test(u) ? 'Safari' : 'Browser';
+    var os = /Android/.test(u) ? 'Android'
+           : /iPhone|iPad|iPod/.test(u) ? 'iPhone or iPad'
+           : /Windows/.test(u) ? 'Windows'
+           : /Mac OS X/.test(u) ? 'Mac'
+           : /Linux/.test(u) ? 'Linux' : 'device';
+    return br + ' on ' + os;
+  },
+  when: function(iso){
+    if (!iso) return '';
+    var d = new Date(iso); if (isNaN(d)) return '';
+    return d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  },
+  ago: function(iso){
+    var d = Date.parse(iso); if (!d) return '';
+    var s = Math.max(0, Math.round((Date.now() - d) / 1000));
+    if (s < 60) return 'just now';
+    var m = Math.round(s / 60);
+    return m + (m === 1 ? ' min ago' : ' mins ago');
+  },
+  start: function(){
+    PRES.stop();
+    PRES.beat();
+    PRES.timer = setInterval(function(){
+      if (document.hidden) return;   // a background tab is not someone working
+      PRES.beat();
+    }, 60000);
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden) PRES.beat();
+    });
+  },
+  stop: function(){ if (PRES.timer) { clearInterval(PRES.timer); PRES.timer = null; } },
+  beat: function(){
+    if (!token) return;
+    call({ action:'ping', session_id: PRES.id(), portal: PRES_PORTAL,
+           who: PRES_WHO(), agent: PRES.agent() })
+      .then(function(r){
+        if (!r.ok) { PRES.lastErr = r.error || 'unavailable'; PRES.list = []; }
+        else { PRES.lastErr = ''; PRES.list = r.sessions || []; }
+        PRES.paint();
+      })
+      .catch(function(err){ PRES.lastErr = err.message || 'offline'; PRES.paint(); });
+  },
+  end: function(){
+    if (!token) return Promise.resolve();
+    return call({ action:'endSession', session_id: PRES.id() }).catch(function(){});
+  },
+  paint: function(){
+    var badge = document.getElementById('presBadge');
+    var panel = document.getElementById('presPanel');
+    if (!badge) return;
+    var n = PRES.list.length;
+    badge.classList.remove('hidden');
+    badge.innerHTML = '<span class="pdot' + (PRES.lastErr ? ' bad' : '') + '"></span>'
+      + (PRES.lastErr ? 'offline' : n + (n === 1 ? ' online' : ' online'));
+    if (!panel) return;
+    panel.classList.toggle('hidden', !PRES.open);
+    if (!PRES.open) return;
+    var mine = PRES.id();
+    panel.innerHTML =
+      '<div class="pp-h">Signed in right now</div>'
+      + (PRES.lastErr
+         ? '<div class="pp-e">Could not check: ' + esc(PRES.lastErr) + '</div>'
+         : (PRES.list.length
+            ? PRES.list.slice().sort(function(a,b){
+                return String(a.started_at||'').localeCompare(String(b.started_at||'')); })
+              .map(function(s){
+                var me = s.session_id === mine;
+                return '<div class="pp-r' + (me ? ' me' : '') + '">'
+                  + '<div class="pp-n">' + esc(s.who || 'Unnamed')
+                  + (me ? ' <span class="pp-tag">this device</span>' : '') + '</div>'
+                  + '<div class="pp-m">' + esc(s.role === 'advocate' ? 'Advocate' : 'Office')
+                  + ' · ' + esc(s.portal === 'theni' ? 'Properties' : 'Service desk')
+                  + ' · ' + esc(s.agent || '') + '</div>'
+                  + '<div class="pp-m">in since ' + esc(PRES.when(s.started_at))
+                  + ' · seen ' + esc(PRES.ago(s.last_seen)) + '</div>'
+                  + '</div>'; }).join('')
+            : '<div class="pp-e">Nobody else right now.</div>'))
+      + '<div class="pp-f">Counted from a check-in every minute. Someone who closes '
+      + 'the page without signing out drops off about two minutes later.</div>';
+  }
+};
+
 function signOut(){
+  PRES.stop();
   token = null;
   try { sessionStorage.removeItem('pk_token'); } catch(e) {}
   document.getElementById('appView').classList.add('hidden');

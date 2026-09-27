@@ -185,6 +185,43 @@ footer a{color:#B9C1CE}
 .poster .acts a{justify-content:center;padding:12px}
 .poster .wa{background:#1F9D5B;color:#fff}
 .poster .mail{position:relative;display:block;text-align:center;margin-top:14px;font-size:13px;color:#C4CBD7;text-decoration:none}
+
+/* Government charges */
+.mod-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);margin-bottom:34px}
+.mod-grid .m{padding:20px 16px;border-right:1px solid var(--line);text-align:center}
+.mod-grid .m:last-child{border-right:none}
+.mod-grid .m .lo{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.mod-grid .m .tot{font-family:var(--serif);font-size:27px;color:var(--navy);margin:6px 0 2px}
+.mod-grid .m .bd{font-size:12.5px;color:var(--muted)}
+.mod-grid .m.cap{background:var(--brass-bg)}
+.mod-grid .m.cap .tot{color:var(--brass)}
+.feetable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14.5px}
+.feetable th{background:var(--navy);color:#fff;text-align:left;padding:13px 16px;font-size:12px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.feetable td{padding:12px 16px;border-top:1px solid var(--line);vertical-align:top;color:var(--text)}
+.feetable td:first-child{font-weight:600;color:var(--navy);width:34%}
+.feetable tr.grp td{background:var(--paper);font-family:var(--serif);font-size:16px;color:var(--navy);font-weight:600}
+.feetable tr.sub td:first-child{font-weight:400;padding-left:32px;color:var(--text)}
+.feetable tr.hl td{background:var(--brass-bg)}
+.feetable tr.hl td:first-child{color:var(--brass)}
+@media (max-width:820px){
+  .mod-grid{grid-template-columns:1fr 1fr}
+  .mod-grid .m{border-bottom:1px solid var(--line)}
+  .mod-grid .m:nth-child(2n){border-right:none}
+  .feetable,.feetable tbody,.feetable tr,.feetable td{display:block;width:100%}
+  .feetable thead{display:none}
+  .feetable{border:none;background:none}
+  .feetable tr{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;padding:14px 16px}
+  .feetable tr.grp{background:var(--navy);border-color:var(--navy);padding:10px 16px}
+  .feetable tr.grp td{background:none;color:#fff;padding:0;border:none}
+  .feetable tr.hl{border-color:var(--brass);background:var(--brass-bg)}
+  .feetable td{border:none;padding:0;width:auto!important}
+  .feetable tr.sub td:first-child{padding-left:0}
+  .feetable td:first-child{font-family:var(--serif);font-size:17px;margin-bottom:9px}
+  .feetable td[data-l]:not(:first-child){padding-top:9px;margin-top:9px;border-top:1px dotted var(--line)}
+  .feetable td[data-l]:not(:first-child)::before{content:attr(data-l);display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .feetable tr.grp td[data-l]::before{content:none}
+}
+
 @media (max-width:900px){.prices{grid-template-columns:1fr}}
 
 @media (max-width:900px){
@@ -226,6 +263,7 @@ footer a{color:#B9C1CE}
       <a href="#opinion">Legal Opinion</a>
       <a href="#drafting">Drafting</a>
       <a href="#pricing">Pricing</a>
+      <a href="#charges">Govt charges</a>
       <a href="#faq">FAQ</a>
       <a href="#contact">Contact</a>
       <a class="btn brass" href="/login/">Login</a>
@@ -476,7 +514,72 @@ footer a{color:#B9C1CE}
         <small>per document + govt charges</small>
       </div>
     </div>
-    <p class="note" style="background:var(--surface)">Government registration charges (stamp duty, registration fee and others) as applicable. For Discharge / Deed of Receipt and other documents, call or WhatsApp <a href="tel:+917373735222"><b>73737 35222</b></a>.</p>
+    <p class="note" style="background:var(--surface)">Government registration charges (stamp duty, registration fee and others) as applicable &mdash; see the <a href="#charges"><b>full rate list</b></a>. For Discharge / Deed of Receipt and other documents, call or WhatsApp <a href="tel:+917373735222"><b>73737 35222</b></a>.</p>
+  </div>
+</section>
+
+<!-- Government charges -->
+<section id="charges" class="alt">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Government charges</span>
+      <h2>Stamp duty and registration fee</h2>
+      <p>These are the charges payable to the Tamil Nadu Registration Department, by category of document. They are separate from our service charge. We confirm the exact amount for your document before anything is filed.</p>
+    </div>
+
+    <h3 style="font-family:var(--serif);font-size:21px;margin:0 0 6px">What a bank MOD costs</h3>
+    <p style="color:var(--muted);font-size:15.5px;margin:0 0 20px">Stamp duty is 0.5% of the loan and the registration fee 1%, but both are capped &mdash; so the charges stop rising once the loan passes a certain size. &#8377;48,000 is the most the Government charges for a MOD, whatever the loan.</p>
+    <div class="mod-grid">
+      <div class="m"><div class="lo">&#8377;10 lakh loan</div><div class="tot">&#8377;13,000</div><div class="bd">5,000 + 8,000</div></div>
+      <div class="m"><div class="lo">&#8377;25 lakh loan</div><div class="tot">&#8377;20,500</div><div class="bd">12,500 + 8,000</div></div>
+      <div class="m"><div class="lo">&#8377;50 lakh loan</div><div class="tot">&#8377;33,000</div><div class="bd">25,000 + 8,000</div></div>
+      <div class="m cap"><div class="lo">&#8377;80 lakh loan</div><div class="tot">&#8377;48,000</div><div class="bd">40,000 + 8,000</div></div>
+      <div class="m cap"><div class="lo">&#8377;1 crore loan</div><div class="tot">&#8377;48,000</div><div class="bd">40,000 + 8,000</div></div>
+    </div>
+
+    <table class="feetable">
+      <thead><tr><th>Category of document</th><th>Stamp duty</th><th>Registration fee</th></tr></thead>
+      <tbody>
+      <tr><td>Conveyance (Sale)</td><td data-l="Stamp duty">7% of the market value of the property</td><td data-l="Registration fee">2% of the market value of the property</td></tr>
+      <tr><td>Gift</td><td data-l="Stamp duty">7% of the market value of the property</td><td data-l="Registration fee">2% of the market value of the property</td></tr>
+      <tr><td>Exchange</td><td data-l="Stamp duty">7% of the market value of the property which is of greater value</td><td data-l="Registration fee">2% of the market value of the property which is of greater value</td></tr>
+      <tr><td>Simple mortgage</td><td data-l="Stamp duty">1% of the loan amount, maximum &#8377;50,000</td><td data-l="Registration fee">1% of the loan amount, maximum &#8377;15,000</td></tr>
+      <tr><td>Mortgage with possession</td><td data-l="Stamp duty">4% of the loan amount</td><td data-l="Registration fee">1%, maximum &#8377;2,00,000</td></tr>
+      <tr class="hl"><td>Memorandum of Deposit of Title Deeds (MOD)</td><td data-l="Stamp duty">0.5% of the loan amount, maximum &#8377;40,000</td><td data-l="Registration fee">1% of the loan amount, maximum &#8377;8,000</td></tr>
+      <tr><td>Agreement to sell</td><td data-l="Stamp duty">&#8377;200</td><td data-l="Registration fee">1% of the money advanced (1% of total consideration if possession is given)</td></tr>
+      <tr><td>Agreement for construction of a building</td><td data-l="Stamp duty">1% of the cost of the proposed construction, the value of construction or the consideration in the agreement, whichever is higher</td><td data-l="Registration fee">3% of the same value</td></tr>
+      <tr><td>Cancellation</td><td data-l="Stamp duty">&#8377;1,000</td><td data-l="Registration fee">&#8377;500</td></tr>
+      <tr class="grp"><td colspan="3">Partition</td></tr>
+      <tr class="sub"><td>Among family members</td><td data-l="Stamp duty">1% of the market value, maximum &#8377;40,000 for each share</td><td data-l="Registration fee">1%, maximum &#8377;10,000 for each share</td></tr>
+      <tr class="sub"><td>Among non-family members</td><td data-l="Stamp duty">4% of the market value of the separated shares</td><td data-l="Registration fee">1% of the market value of the separated shares</td></tr>
+      <tr class="grp"><td colspan="3">Power of attorney</td></tr>
+      <tr class="sub"><td>General POA to sell immovable property &mdash; to a non-family member</td><td data-l="Stamp duty">1% of the market value of the property</td><td data-l="Registration fee">1% of the market value of the property</td></tr>
+      <tr class="sub"><td>General POA to sell immovable property &mdash; to a family member</td><td data-l="Stamp duty">&#8377;1,000</td><td data-l="Registration fee">&#8377;2,000</td></tr>
+      <tr class="sub"><td>General POA for movable property and other purposes</td><td data-l="Stamp duty">&#8377;1,000</td><td data-l="Registration fee">&#8377;500</td></tr>
+      <tr class="sub"><td>General POA given for consideration</td><td data-l="Stamp duty">5% of the total market value of the property</td><td data-l="Registration fee">1% of the market value of the property</td></tr>
+      <tr class="grp"><td colspan="3">Settlement</td></tr>
+      <tr class="sub"><td>In favour of family members</td><td data-l="Stamp duty">1% of the market value, maximum &#8377;40,000</td><td data-l="Registration fee">1% of the market value, maximum &#8377;10,000</td></tr>
+      <tr class="sub"><td>Other cases</td><td data-l="Stamp duty">7% of the market value of the property</td><td data-l="Registration fee">2% of the market value</td></tr>
+      <tr class="grp"><td colspan="3">Partnership deed</td></tr>
+      <tr class="sub"><td>Where the capital does not exceed &#8377;500</td><td data-l="Stamp duty">&#8377;50</td><td data-l="Registration fee">1% of the capital invested</td></tr>
+      <tr class="sub"><td>Other cases</td><td data-l="Stamp duty">&#8377;1,000</td><td data-l="Registration fee">1% of the capital invested</td></tr>
+      <tr class="grp"><td colspan="3">Release</td></tr>
+      <tr class="sub"><td>Among family members (co-parceners)</td><td data-l="Stamp duty">1% of the market value, maximum &#8377;40,000</td><td data-l="Registration fee">1% of the market value, maximum &#8377;10,000</td></tr>
+      <tr class="sub"><td>Among non-family members (between co-owners and benami release)</td><td data-l="Stamp duty">7% of the market value of the property</td><td data-l="Registration fee">1% of the market value of the property</td></tr>
+      <tr class="grp"><td colspan="3">Lease</td></tr>
+      <tr class="sub"><td>Below 30 years</td><td data-l="Stamp duty">1% of the total rent, premium, fine and the like</td><td data-l="Registration fee">1%, maximum &#8377;40,000</td></tr>
+      <tr class="sub"><td>Up to 99 years</td><td data-l="Stamp duty">4% of the total rent, fine, premium or advance payable</td><td data-l="Registration fee">1%, maximum &#8377;40,000</td></tr>
+      <tr class="sub"><td>Above 99 years or perpetual</td><td data-l="Stamp duty">7% of the total rent, fine, premium or advance payable</td><td data-l="Registration fee">1%, maximum &#8377;40,000</td></tr>
+      <tr class="grp"><td colspan="3">Sale certificate</td></tr>
+      <tr class="sub"><td>Issued by a revenue authority, court or public auction</td><td data-l="Stamp duty">5% of the auction price</td><td data-l="Registration fee">2% of the auction price</td></tr>
+      <tr class="sub"><td>Issued by others</td><td data-l="Stamp duty">7% of the market value of the property</td><td data-l="Registration fee">2% of the market value of the property</td></tr>
+      <tr class="sub"><td>Filing of a sale certificate</td><td data-l="Stamp duty">&mdash;</td><td data-l="Registration fee">3% of the auction price</td></tr>
+      <tr><td>Declaration of trust</td><td data-l="Stamp duty">&#8377;1,000</td><td data-l="Registration fee">1% of the corpus fund</td></tr>
+      <tr><td>Receipt</td><td data-l="Stamp duty">&#8377;1</td><td data-l="Registration fee">&#8377;200</td></tr>
+      </tbody>
+    </table>
+
+    <p class="note" style="background:var(--paper)"><b>Market value</b> means the guideline value fixed by the Registration Department or the consideration stated in the document, whichever is higher. Rates are those published by the Department and can change; we verify the current figure for every document we file. For a calculation on your own transaction, call <a href="tel:+917373735222"><b>73737 35222</b></a>.</p>
   </div>
 </section>
 

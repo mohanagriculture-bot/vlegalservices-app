@@ -1,0 +1,14 @@
+# www.vlegalservices.in
+# Public pages are open to search engines. Staff and client areas are not.
+
+User-agent: *
+Allow: /$
+Disallow: /portal/
+Disallow: /admin/
+Disallow: /login/
+Disallow: /client/
+Disallow: /kannangroup/
+Disallow: /app.py
+Disallow: /requirements.txt
+
+Sitemap: https://www.vlegalservices.in/sitemap.xml

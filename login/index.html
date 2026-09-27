@@ -97,7 +97,7 @@ input:disabled{background:#EFECE4;color:#8D96A6}
     </div>
     <button class="go" id="go" type="submit">Sign in</button>
 
-    <p class="help" id="help">Forgot your password? <a href="/portal/">Reset it here</a></p>
+    <p class="help" id="help">Passwords are issued by the office. If you cannot sign in, contact the office.</p>
   </form>
 </main>
 
@@ -140,9 +140,8 @@ function setKind(k){
   document.querySelectorAll('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.k===k ? 'true':'false'); });
   $('u').placeholder = k==='internal' ? 'Your staff User ID or email' : 'Your client User ID';
   $('help').innerHTML = k==='internal'
-    ? 'Forgot your password? <a href="#" id="forgot">Reset it</a>'
+    ? 'Passwords are issued by the office. If you cannot sign in, contact the office.'
     : 'Trouble signing in? Call or WhatsApp <a href="tel:+917373735222">73737 35222</a>';
-  var fg = $('forgot'); if(fg) fg.addEventListener('click', forgot);
   if(!lockCheck()){ err(''); $('u').focus(); }
 }
 function err(t, ok){ var m=$('msg'); m.textContent=t; m.classList.toggle('on', !!t); m.classList.toggle('ok', !!ok); }
@@ -219,18 +218,9 @@ async function accountLogin(id, pw){
   return 'ok';
 }
 
-/* Password reset for staff: sends Supabase's reset link to their email */
-async function forgot(e){
-  e.preventDefault();
-  if(lockCheck()) return;
-  var id = $('u').value.trim();
-  if(!id){ err('Enter your User ID or email above, then click "Reset it".'); $('u').focus(); return; }
-  var email = id.indexOf('@') > -1 ? id : STAFF[id.toLowerCase()];
-  if(email){
-    await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/portal/' });
-  }
-  err('If that User ID is registered, a password reset link has been sent to its email. Check the inbox and spam folder.', true);
-}
+/* No self-service password reset. Staff passwords are set and changed by the
+   office only. Removing this UI does not close Supabase's own reset endpoint —
+   that has to be switched off in the Supabase dashboard as well. */
 
 $('f').addEventListener('submit', async function(e){
   e.preventDefault();

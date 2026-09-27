@@ -1085,16 +1085,10 @@ async function doLoginSubmit(mode){
   if(!email || !password){ loginMessage={type:'error', text:'Please enter both email and password.'}; render(); return; }
   try{
     if(mode==='signup'){
-      const data = await doSignUp(email, password);
-      if(data.session){
-        currentUser = data.session.user;
-        await loadAllData();
-        render();
-      } else {
-        loginMessage = {type:'ok', text:'Account created. Check your email to confirm, then sign in.'};
-        loginMode = 'signin';
-        render();
-      }
+      /* Accounts are created by the office only. Nothing here can make one. */
+      loginMessage = {type:'error', text:'Accounts are issued by the office.'};
+      render();
+      return;
     } else {
       const data = await doSignIn(email, password);
       currentUser = data.session.user;
@@ -1107,20 +1101,9 @@ async function doLoginSubmit(mode){
     render();
   }
 }
-async function doPasswordResetRequest(){
-  const email = document.getElementById('loginEmail').value.trim();
-  if(!email){ loginMessage={type:'error', text:'Please enter your email address first.'}; render(); return; }
-  try{
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
-    if(error) throw error;
-    loginMessage = {type:'ok', text:`If an account exists for ${email}, a password reset link has been sent. Check your email (and spam folder).`};
-    loginMode = 'signin';
-    render();
-  } catch(err){
-    loginMessage = {type:'error', text: err.message || 'Could not send reset email.'};
-    render();
-  }
-}
+/* Self-service password reset is deliberately not offered. The office sets and
+   changes staff passwords. Supabase's own reset endpoint must also be disabled
+   in the dashboard — removing this function alone does not close it. */
 
 /* ---------- load / seed all data for the logged-in user ---------- */
 async function loadAllData(){
@@ -1243,11 +1226,28 @@ async function resolveStaffSession(){
     isFirmOwner = false;
     const { data } = await sb.rpc('current_firm_id');
     firmId = data || null;
-  } else {
-    loggedInStaffId = null;
-    isFirmOwner = true;
-    firmId = currentUser.id;
+    return;
   }
+  /* No staff row. Previously this fell through to firm owner, so any account
+     without a staff row — including a staff member whose row had been deleted —
+     got the owner's interface. Check the recorded owner instead.
+     If firm_settings has no readable row we keep the old behaviour, so a missing
+     row cannot lock the owner out of their own portal. */
+  let ownerId = null;
+  try {
+    const fs = await sb.from('firm_settings').select('owner_id').limit(1);
+    ownerId = (fs.data && fs.data[0]) ? fs.data[0].owner_id : null;
+  } catch(e){ ownerId = null; }
+
+  if (ownerId && ownerId !== currentUser.id) {
+    await sb.auth.signOut();
+    location.replace('/login/');
+    return;
+  }
+
+  loggedInStaffId = null;
+  isFirmOwner = true;
+  firmId = currentUser.id;
 }
 
 /* ---------- Activity Log ---------- */
@@ -1726,13 +1726,11 @@ function renderHelpModal(){
 /* =========================================================
    LOGIN / SIGN UP
 ========================================================= */
-let loginMode = 'signin'; // 'signin' | 'signup' | 'reset'
+let loginMode = 'signin'; // only 'signin' — signup and reset are not offered
 let loginMessage = null;  // {type:'error'|'ok', text}
 
 
 function renderLogin(){
-  const isSignup = loginMode==='signup';
-  const isReset = loginMode==='reset';
   const hasLogo = !!(FIRM.logo && FIRM.logo.trim());
   return `
   <div class="login-wrap">
@@ -1741,22 +1739,14 @@ function renderLogin(){
         ? `<img src="${FIRM.logo}" alt="${esc(FIRM.name)}" style="width:64px;height:64px;object-fit:contain;border-radius:50%;margin:0 auto 14px;display:block;border:2px solid var(--brass);background:#fff;">`
         : `<div class="seal">${esc((FIRM.name||'?').trim().charAt(0))}</div>`}
       <h2>${esc(FIRM.name)}</h2>
-      <span class="sub">${isReset ? 'Reset your password' : esc(FIRM.tagline||'Sign in to continue')}</span>
+      <span class="sub">${esc(FIRM.tagline||'Sign in to continue')}</span>
       ${loginMessage ? `<div class="login-msg ${loginMessage.type==='error'?'error':'ok'}">${esc(loginMessage.text)}</div>` : ''}
       <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com"></div>
-      ${isReset ? `
-      <p class="hint" style="margin-bottom:14px;">We'll email you a link to set a new password.</p>
-      <button class="btn brass" data-action="request-password-reset">Send Reset Link</button>
-      <div class="login-toggle"><a data-action="switch-login">&larr; Back to sign in</a></div>
-      ` : `
       <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
-      <button class="btn brass" data-action="${isSignup?'signup':'signin'}">${isSignup?'Create account':'Sign in'}</button>
+      <button class="btn brass" data-action="signin">Sign in</button>
       <div class="login-toggle">
-        ${isSignup
-          ? `Already have an account? <a data-action="switch-login">Sign in</a>`
-          : `New here? <a data-action="switch-signup">Create an account</a> &nbsp;·&nbsp; <a data-action="switch-reset">Forgot password?</a>`}
+        Accounts and passwords are issued by the office.
       </div>
-      `}
     </div>
   </div>`;
 }
@@ -7728,11 +7718,7 @@ function handleClick(e){
 
   switch(action){
     case 'signin': doLoginSubmit('signin'); break;
-    case 'signup': doLoginSubmit('signup'); break;
     case 'switch-login': loginMode='signin'; loginMessage=null; render(); break;
-    case 'switch-signup': loginMode='signup'; loginMessage=null; render(); break;
-    case 'switch-reset': loginMode='reset'; loginMessage=null; render(); break;
-    case 'request-password-reset': doPasswordResetRequest(); break;
     case 'open-help': helpModalOpen = true; render(); break;
     case 'close-help': helpModalOpen = false; render(); break;
     case 'logout': doSignOut(); break;

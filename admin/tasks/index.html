@@ -107,6 +107,27 @@ if(!ok){location.replace('/login/');}})();
   .bub.mine{background:#FBF7EF;border-color:#EADFC8;}
   .bub-h{font-size:11.5px;color:var(--muted);margin-bottom:4px;}
   .bub-b{font-size:14px;white-space:pre-wrap;}
+  .logtbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);
+    border-radius:11px;overflow:hidden;font-size:13.5px;}
+  .logtbl th{background:var(--navy);color:#fff;text-align:left;padding:10px 13px;font-size:11px;
+    letter-spacing:.1em;text-transform:uppercase;font-weight:500;}
+  .logtbl td{padding:10px 13px;border-top:1px solid var(--line);vertical-align:top;}
+  .logtbl tr.bad td{background:#FBF1F1;}
+  .logtbl .rl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .res{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ok);white-space:nowrap;}
+  .res.no{color:var(--bad);}
+  @media (max-width:760px){
+    .logtbl,.logtbl tbody,.logtbl tr,.logtbl td{display:block;width:100%;}
+    .logtbl thead{display:none;}
+    .logtbl{border:none;background:none;}
+    .logtbl tr{background:#fff;border:1px solid var(--line);border-radius:10px;
+      margin-bottom:10px;padding:12px 14px;}
+    .logtbl tr.bad{border-color:var(--bad);}
+    .logtbl td{border:none;padding:3px 0;}
+    .logtbl td::before{content:attr(data-l) ' · ';font-size:11px;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--muted);}
+  }
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;
          padding:11px 18px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 24px rgba(22,35,58,.28);z-index:60;}
   .toast.bad{background:var(--bad);}
@@ -178,10 +199,27 @@ var PW = '';
 var ORG = {};                 // slug -> { token, data, error }
 var pick = null;              // { org, party }  — null means everything
 var openReq = null, openOrg = null, filter = 'open';
+var screen = 'board';          // 'board' | 'log'
+var LOG = { rows: [], total: 0, failed: 0, keepDays: 0, only: 'all', err: '', loaded: false };
 
 var panel = document.getElementById('panel');
 var side  = document.getElementById('side');
 document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* A short, readable device label for the sign-in log. */
+function agentLabel(){
+  var u = navigator.userAgent || '';
+  var br = /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera'
+         : /Firefox\//.test(u) ? 'Firefox'
+         : /Chrome\//.test(u) ? 'Chrome'
+         : /Safari\//.test(u) ? 'Safari' : 'Browser';
+  var os = /Android/.test(u) ? 'Android'
+         : /iPhone|iPad|iPod/.test(u) ? 'iPhone or iPad'
+         : /Windows/.test(u) ? 'Windows'
+         : /Mac OS X/.test(u) ? 'Mac'
+         : /Linux/.test(u) ? 'Linux' : 'device';
+  return br + ' on ' + os;
+}
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -221,7 +259,8 @@ function signIn(){
   Promise.all(ORGS.map(function(o){
     return fetch(o.api,{method:'POST',redirect:'follow',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({action:'deskLogin', password:PW})})
+        body:JSON.stringify({action:'deskLogin', password:PW,
+          portal:'admin', who:'Advocate', agent:agentLabel()})})
       .then(function(r){ return r.json(); })
       .then(function(r){
         if(!r.ok) return { slug:o.slug, error:r.error };
@@ -317,6 +356,11 @@ function renderSide(){
             + esc(ORG[o.slug].error)+'</div>';
     }
   });
+  html += '<div class="org" style="margin-top:18px;"><span>Security</span></div>'
+        + '<button class="cli' + (screen === 'log' ? ' on' : '') + '" data-screen="log">'
+        + '<span>Sign-in log</span><span class="c">'
+        + (LOG.loaded ? (LOG.failed ? LOG.failed + ' failed' : 'all clear') : '—')
+        + '</span></button>';
   side.innerHTML = html;
 }
 
@@ -459,7 +503,67 @@ function kv(k,v){ return '<div><div class="k">'+esc(k)+'</div><div class="v">'+e
 
 function render(){
   renderSide();
-  panel.innerHTML = openReq ? requestDetail() : boardView();
+  panel.innerHTML = screen === 'log' ? logView()
+                  : openReq ? requestDetail()
+                  : boardView();
+}
+
+/* ---------------------------- sign-in log ---------------------------- */
+
+function whenFull(iso){
+  if(!iso) return '—';
+  var d = new Date(iso); if(isNaN(d)) return String(iso);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})
+       + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+
+function loadLog(){
+  var live = orgsLive()[0];
+  if(!live){ LOG.err = 'Not signed in to any office.'; render(); return; }
+  callOrg(live.slug, { action:'signInLog', limit: 400 })
+    .then(function(r){
+      if(!r.ok) throw new Error(r.error);
+      LOG.rows = r.rows || []; LOG.total = r.total || 0; LOG.failed = r.failed || 0;
+      LOG.keepDays = r.keepDays || 0; LOG.err = ''; LOG.loaded = true;
+      render();
+    })
+    .catch(function(err){ LOG.err = err.message || 'Could not load the log.'; LOG.loaded = true; render(); });
+}
+
+function logView(){
+  if(!LOG.loaded && !LOG.err){ loadLog();
+    return '<div class="card empty">Loading the sign-in log…</div>'; }
+
+  var rows = LOG.rows.filter(function(x){
+    return LOG.only === 'failed' ? x.result !== 'signed in' : true; });
+
+  var chips = [['all','Everything ('+LOG.total+')'],['failed','Failed ('+LOG.failed+')']]
+    .map(function(c){
+      return '<button class="fchip'+(LOG.only===c[0]?' on':'')+'" data-only="'+c[0]+'">'
+           + esc(c[1])+'</button>'; }).join('');
+
+  return '<div class="sec-head"><div class="idx">Security</div><h2>Sign-in log</h2>'
+    + '<p>Every attempt at either door, newest first'
+    + (LOG.keepDays ? ', kept for ' + LOG.keepDays + ' days' : '') + '. '
+    + 'A wrong password is recorded too — that is the one worth watching.</p></div>'
+    + (LOG.err ? '<div class="card empty" style="color:var(--bad)">'+esc(LOG.err)+'</div>' : '')
+    + '<div class="filters">' + chips
+    + '<button class="fchip" data-reloadlog="1">Refresh</button></div>'
+    + (rows.length
+       ? '<table class="logtbl"><thead><tr><th>When</th><th>Who</th><th>Door</th>'
+       +   '<th>Device</th><th>Result</th></tr></thead><tbody>'
+       + rows.map(function(x){
+           var bad = x.result !== 'signed in';
+           return '<tr'+(bad?' class="bad"':'')+'>'
+             + '<td data-l="When">'+esc(whenFull(x.at))+'</td>'
+             + '<td data-l="Who">'+esc(x.who || (x.role==='advocate'?'Advocate':'—'))
+             +   (x.role ? ' <span class="rl">'+esc(x.role)+'</span>' : '')+'</td>'
+             + '<td data-l="Door">'+esc(x.portal==='theni'?'Properties':x.portal==='office'?'Service desk':x.portal==='admin'?'Admin':(x.portal||'—'))+'</td>'
+             + '<td data-l="Device">'+esc(x.agent||'—')+'</td>'
+             + '<td data-l="Result"><span class="res'+(bad?' no':'')+'">'+esc(x.result)+'</span></td>'
+             + '</tr>'; }).join('')
+       + '</tbody></table>'
+       : '<div class="card empty">Nothing recorded yet.</div>');
 }
 
 /* ------------------------------ actions ------------------------------- */
@@ -489,8 +593,13 @@ document.addEventListener('click', function(e){
   var t=e.target, el;
   if(t.id==='loginBtn'){ signIn(); return; }
   if(t.id==='outBtn'){ signOut(); return; }
-  if((el=t.closest('[data-all]'))){ pick=null; openReq=null; render(); return; }
+  if((el=t.closest('[data-screen]'))){ screen=el.getAttribute('data-screen');
+    openReq=null; if(screen==='log' && !LOG.loaded) LOG.err=''; render(); return; }
+  if((el=t.closest('[data-only]'))){ LOG.only=el.getAttribute('data-only'); render(); return; }
+  if(t.closest('[data-reloadlog]')){ LOG.loaded=false; LOG.err=''; render(); return; }
+  if((el=t.closest('[data-all]'))){ screen='board'; pick=null; openReq=null; render(); return; }
   if((el=t.closest('[data-party]'))){
+    screen='board';
     pick={ org:el.getAttribute('data-org'), party:el.getAttribute('data-party') };
     openReq=null; render(); window.scrollTo(0,0); return; }
   if((el=t.closest('[data-filter]'))){ filter=el.getAttribute('data-filter'); render(); return; }

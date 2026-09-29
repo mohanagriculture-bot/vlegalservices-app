@@ -264,7 +264,8 @@ function signIn(){
   var b=document.getElementById('loginBtn');
   b.disabled=true; b.innerHTML='<span class="spin"></span> Checking…'; note(m,'',true);
   fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'deskLogin', password:el.value})})
+      body:JSON.stringify({action:'deskLogin', password:el.value,
+        portal:'office', who:USERNAME, agent:PRES.agent()})})
     .then(function(r){ return r.json(); })
     .then(function(r){ if(!r.ok){ var left=VLSLock.fail(); el.value=''; throw new Error(VLSLock.wrongText(left)); }
       VLSLock.reset(); token=r.token; ROLE=r.role;

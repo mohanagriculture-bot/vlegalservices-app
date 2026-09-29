@@ -3134,7 +3134,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e){
   if (VLSLock.locked()) { msg.textContent = VLSLock.message; return; }
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Checking…'; msg.textContent = '';
   fetch(API, {method:'POST', redirect:'follow', headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action:'login', password:pw})})
+    body: JSON.stringify({action:'login', password:pw,
+      portal:'theni', agent:PRES.agent()})})
     .then(function(r){ return r.json(); })
     .then(function(r){
       if (!r.ok) { var left = VLSLock.fail(); throw new Error(VLSLock.wrongText(left)); }

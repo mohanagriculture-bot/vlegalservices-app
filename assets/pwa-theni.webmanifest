@@ -1,0 +1,25 @@
+{
+ "id": "/kannangroup/theni/",
+ "name": "Theni Properties – V Legal Services",
+ "short_name": "Theni Properties",
+ "start_url": "/kannangroup/theni/",
+ "scope": "/",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#A9762F",
+ "theme_color": "#16233A",
+ "icons": [
+  {
+   "src": "/assets/pwa-theni-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "/assets/pwa-theni-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

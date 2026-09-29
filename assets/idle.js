@@ -42,3 +42,6 @@
     if (!document.hidden && now() - last() > LIMIT) expire();
   });
 })();
+
+/* Installable-app support (loaded on every gated page) */
+(function(){try{var s=document.createElement("script");s.src="/assets/pwa.js";s.defer=true;(document.head||document.documentElement).appendChild(s);}catch(e){}})();

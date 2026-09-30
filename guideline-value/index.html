@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guideline Value Search — Tamil Nadu | V Legal Services</title>
+<meta name="description" content="Find the Tamil Nadu government guideline value of any land or plot by survey number or street. Pick district, SRO and village; the official TNREGINET result opens instantly.">
+<link rel="canonical" href="https://www.vlegalservices.in/guideline-value/">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#16233A">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="V Legal Services and Documentation">
+<meta property="og:url" content="https://www.vlegalservices.in/guideline-value/">
+<meta property="og:title" content="Guideline Value Search — Tamil Nadu">
+<meta property="og:description" content="Check the official guideline value of any property in Tamil Nadu by survey number or street, straight from TNREGINET.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0F1B2D; --navy:#16233A; --navy2:#1F3150;
+  --brass:#A9762F; --brass-lt:#D2A460; --brass-bg:#F6EEDF;
+  --paper:#F7F5EF; --surface:#FFFFFF; --line:#E3DED1;
+  --text:#1E2430; --muted:#5E6573; --ok:#2F6B4F; --err:#A23A34;
+  --serif:'Source Serif 4',Georgia,serif; --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+h1,h2,h3{font-family:var(--serif);color:var(--navy);margin:0;line-height:1.2;font-weight:600}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:8px;font-weight:600;font-size:15px;text-decoration:none;border:1px solid transparent;cursor:pointer;font-family:var(--sans);transition:transform .15s,background .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.brass{background:var(--brass);color:#fff}
+.btn.brass:hover{background:#94661F}
+.btn.brass:disabled{background:#C9B79A;cursor:not-allowed;transform:none}
+.btn.outline{border-color:var(--navy);color:var(--navy);background:var(--surface)}
+.btn.wa{background:#1F7A4D;color:#fff}
+
+header{position:sticky;top:0;z-index:20;background:rgba(15,27,45,.97);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:#fff}
+.seal{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--brass-lt);display:grid;place-items:center;font-family:var(--serif);font-weight:700;color:var(--brass-lt);font-size:17px;flex:none}
+.brand b{font-family:var(--serif);font-weight:600;font-size:17px;display:block;line-height:1.15}
+.brand small{font-size:11px;color:#AEB6C4;letter-spacing:.04em}
+.navlinks{display:flex;gap:20px;align-items:center}
+.navlinks a{color:#D6DBE4;text-decoration:none;font-size:14px}
+.navlinks a:hover{color:#fff}
+.navlinks .btn{padding:8px 14px;font-size:14px;color:#fff}
+
+.hero{background:var(--ink);color:#E7EAF0;padding:52px 0 110px}
+.hero h1{color:#fff;font-size:clamp(30px,4.2vw,46px);margin:12px 0 14px;letter-spacing:-.01em}
+.hero h1 em{font-style:italic;color:var(--brass-lt);font-weight:500}
+.hero p{font-size:17px;color:#C4CBD7;max-width:640px;margin:0}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px -24px rgba(15,27,45,.35)}
+.search{margin-top:-78px;padding:28px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.field label{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field select,.field input[type=text]{width:100%;font:inherit;font-size:15.5px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);appearance:none;-webkit-appearance:none}
+.field select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:34px}
+.field select:disabled{background-color:#F3F1EB;color:#9A9FA8}
+.field select:focus,.field input:focus{outline:2px solid var(--brass-lt);outline-offset:1px;border-color:var(--brass-lt)}
+.vfilter{margin-bottom:6px}
+.mode{display:flex;gap:8px;margin:22px 0 16px;flex-wrap:wrap}
+.mode button{font:inherit;font-size:14px;font-weight:500;padding:9px 16px;border-radius:30px;border:1px solid var(--line);background:var(--surface);color:var(--navy);cursor:pointer}
+.mode button[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.go{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end}
+.hint{font-size:13px;color:var(--muted);margin-top:6px}
+.msg{font-size:14px;margin-top:14px;min-height:22px}
+.msg.err{color:var(--err)}
+.msg.ok{color:var(--ok)}
+.linkbox{display:none;margin-top:16px;padding:14px 16px;background:var(--brass-bg);border:1px solid #EAD9BA;border-radius:10px;font-size:14px}
+.linkbox.on{display:block}
+.linkbox .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.linkbox .btn{padding:8px 14px;font-size:14px}
+
+section{padding:56px 0}
+.cols{display:grid;grid-template-columns:1.2fr 1fr;gap:28px}
+.info{padding:26px}
+.info h2{font-size:24px;margin:8px 0 12px}
+.info ol,.info ul{margin:0;padding-left:20px}
+.info li{margin:7px 0}
+.cta{background:var(--navy);color:#DDE2EA;border-radius:16px;padding:26px}
+.cta h3{color:#fff;font-size:21px;margin:8px 0 10px}
+.cta p{margin:0 0 16px;color:#C4CBD7;font-size:15px}
+.cta .acts{display:flex;gap:10px;flex-wrap:wrap}
+.cta .eyebrow{color:var(--brass-lt)}
+.recent{margin-top:18px}
+.recent h3{font-size:16px;margin-bottom:8px}
+.recent a{display:block;font-size:14px;padding:7px 0;border-bottom:1px dashed var(--line);text-decoration:none;color:var(--navy)}
+.recent a:hover{color:var(--brass)}
+
+footer{background:var(--ink);color:#8C95A5;font-size:13px;padding:26px 0}
+footer .row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer a{color:#C9D0DB}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr}
+  .cols{grid-template-columns:1fr}
+  .go{grid-template-columns:1fr}
+  .navlinks a:not(.btn){display:none}
+  .search{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <span class="seal">V</span>
+      <span><b>V Legal Services</b><small>AND DOCUMENTATION · COIMBATORE</small></span>
+    </a>
+    <nav class="navlinks">
+      <a href="/#registration">Registration</a>
+      <a href="/#opinion">Legal Opinion</a>
+      <a href="/#contact">Contact</a>
+      <a class="btn brass" href="/login/">Login</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Free tool · Tamil Nadu</span>
+    <h1>Guideline value, <em>any property</em></h1>
+    <p>Choose the district, Sub-Registrar office and village, enter the survey number or street, and the official
+      TNREGINET guideline value opens in a new tab.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <form class="card search" id="f" autocomplete="off" onsubmit="return false">
+    <div class="grid">
+      <div class="field">
+        <label for="d">District</label>
+        <select id="d"><option value="">Loading…</option></select>
+      </div>
+      <div class="field">
+        <label for="s">Sub-Registrar Office (SRO)</label>
+        <select id="s" disabled><option value="">Select district first</option></select>
+      </div>
+      <div class="field">
+        <label for="v">Village</label>
+        <input type="text" id="vf" class="vfilter" placeholder="Type to filter villages" disabled hidden>
+        <select id="v" disabled><option value="">Select SRO first</option></select>
+      </div>
+    </div>
+
+    <div class="mode" role="group" aria-label="Search by">
+      <button type="button" id="mSurvey" aria-pressed="true">By survey number</button>
+      <button type="button" id="mStreet" aria-pressed="false">By street name</button>
+    </div>
+
+    <div class="go">
+      <div class="field">
+        <label for="q" id="qLabel">Survey number</label>
+        <input type="text" id="q" placeholder="e.g. 253  or  253/1A">
+        <div class="hint" id="qHint">Enter the main survey number (e.g. 253) to see every subdivision under it, or the exact subdivision (253/1A).</div>
+      </div>
+      <button class="btn brass" id="goBtn" type="submit" disabled>Show guideline value &rarr;</button>
+    </div>
+
+    <div class="msg" id="msg" aria-live="polite"></div>
+
+    <div class="linkbox" id="lb">
+      <b>Result opened on TNREGINET.</b> If your browser blocked the new tab, use the button below.
+      <div class="acts">
+        <a class="btn brass" id="lbOpen" target="_blank" rel="noopener">Open TNREGINET result</a>
+        <button class="btn outline" type="button" id="lbCopy">Copy link</button>
+        <a class="btn wa" id="lbWa" target="_blank" rel="noopener">Share on WhatsApp</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<section>
+  <div class="wrap cols">
+    <div class="card info">
+      <span class="eyebrow">How to read the result</span>
+      <h2>What TNREGINET shows you</h2>
+      <ol>
+        <li><b>Survey / subdivision number</b> and its <b>land classification</b> (wet, dry, dry special, house site, etc.).</li>
+        <li><b>Guideline value</b> per acre (British value) and per hectare (metric value) for land, or per square foot / square metre for street-wise urban property.</li>
+        <li><b>Effective start date</b> — the current revision applies from 1 July 2024 unless a later date is shown for that survey number.</li>
+        <li>A value of <b>0 / "Govt. Others"</b> means the land is classified as government land.</li>
+      </ol>
+      <p class="hint" style="margin-top:14px">Guideline value is the minimum value on which stamp duty and registration fee are charged — it is not the market value.
+        The result comes directly from the Registration Department's site (tnreginet.gov.in); for use in a document or legal opinion, obtain a certified guideline value from the SRO.
+        If the survey number is not found, it may have been re-subdivided — check the latest Patta / A-Register.</p>
+      <div class="recent" id="recentBox" hidden>
+        <h3>Your recent searches</h3>
+        <div id="recent"></div>
+      </div>
+    </div>
+    <div>
+      <div class="cta">
+        <span class="eyebrow">Need more than the value?</span>
+        <h3>Legal opinion &amp; presence-less registration</h3>
+        <p>Title verification, EC and Patta checks, legal opinion for bank loans, document drafting, and presence-less online registration across Coimbatore, Tiruppur and Erode.</p>
+        <div class="acts">
+          <a class="btn brass" href="tel:+917373735222">Call 73737 35222</a>
+          <a class="btn wa" href="https://wa.me/917373735222?text=Hello%2C%20I%20need%20help%20with%20a%20property%20%28guideline%20value%20%2F%20legal%20opinion%29." target="_blank" rel="noopener">WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <div>Guideline values are published by the Registration Department, Government of Tamil Nadu, at tnreginet.gov.in. This page only helps you reach the official result; it does not store or alter any value.</div>
+    <div>© <span id="yr"></span> V Legal Services and Documentation · <a href="/">Home</a></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+var TNR = 'https://tnreginet.gov.in/portal/webHP';
+var DEFAULT_DISTRICT = 'Coimbatore';
+var $ = function(id){ return document.getElementById(id); };
+var dSel = $('d'), sSel = $('s'), vSel = $('v'), vf = $('vf'), q = $('q'), go = $('goBtn'), msg = $('msg');
+var DIST = [], cur = null, mode = 'survey';
+$('yr').textContent = new Date().getFullYear();
+
+function store(k, v){ try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); localStorage.setItem(k, JSON.stringify(v)); } catch(e){ return null; } }
+function opt(v, t){ var o = document.createElement('option'); o.value = v; o.textContent = t; return o; }
+function say(t, cls){ msg.textContent = t || ''; msg.className = 'msg' + (cls ? ' ' + cls : ''); }
+function title(s){ return String(s).toLowerCase().replace(/_/g,' ').replace(/\b[a-z]/g, function(c){ return c.toUpperCase(); }); }
+
+function fill(sel, items, placeholder){
+  sel.innerHTML = ''; sel.appendChild(opt('', placeholder));
+  items.forEach(function(it){ sel.appendChild(opt(it[0], it[1])); });
+  sel.disabled = !items.length;
+}
+
+function villages(){
+  var sro = cur && cur.s.filter(function(x){ return String(x[0]) === sSel.value; })[0];
+  if (!sro) return [];
+  return (mode === 'street' ? (sro[3] || sro[2]) : sro[2]) || [];
+}
+function refreshVillages(keep){
+  var list = villages(), f = vf.value.trim().toLowerCase();
+  var shown = list.filter(function(v){ return !f || v[1].toLowerCase().indexOf(f) >= 0; })
+                  .map(function(v){ return [v[0], title(v[1])]; });
+  var prev = keep ? vSel.value : '';
+  fill(vSel, shown, list.length ? (shown.length ? 'Select village (' + shown.length + ')' : 'No village matches') : 'Select SRO first');
+  vf.hidden = vf.disabled = !list.length;
+  if (list.length && !f) vSel.disabled = false;
+  if (prev && shown.some(function(v){ return String(v[0]) === prev; })) vSel.value = prev;
+  else if (shown.length === 1 && f) vSel.value = shown[0][0];
+  check();
+}
+function check(){ go.disabled = !(vSel.value && q.value.trim()); }
+
+function loadDistrict(id, then){
+  var d = DIST.filter(function(x){ return String(x[0]) === String(id); })[0];
+  cur = null; fill(sSel, [], 'Loading…'); sSel.disabled = true; vf.value = ''; refreshVillages();
+  if (!d) { fill(sSel, [], 'Select district first'); return; }
+  fetch('data/d' + d[0] + '.json').then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(j){
+    cur = j;
+    fill(sSel, j.s.map(function(x){ return [x[0], x[1]]; }).sort(function(a,b){ return a[1].localeCompare(b[1]); }), 'Select SRO (' + j.s.length + ')');
+    if (then) then();
+  }).catch(function(){ fill(sSel, [], 'Could not load — retry'); say('Could not load the SRO list. Check your connection and pick the district again.', 'err'); });
+}
+
+function setMode(m){
+  mode = m;
+  $('mSurvey').setAttribute('aria-pressed', m === 'survey');
+  $('mStreet').setAttribute('aria-pressed', m === 'street');
+  $('qLabel').textContent = m === 'survey' ? 'Survey number' : 'Street name';
+  q.placeholder = m === 'survey' ? 'e.g. 253  or  253/1A' : 'e.g. Gandhi Road  (a part of the name is enough)';
+  $('qHint').textContent = m === 'survey'
+    ? 'Enter the main survey number (e.g. 253) to see every subdivision under it, or the exact subdivision (253/1A).'
+    : 'Type part of the street name. For urban areas TNREGINET lists values street-wise.';
+  refreshVillages(true);
+}
+
+function buildUrl(){
+  var sroName = sSel.options[sSel.selectedIndex].textContent;
+  var vRaw = villages().filter(function(v){ return String(v[0]) === vSel.value; })[0];
+  var p = {
+    requestType:'ApplicationRH', actionVal:'criteriaSearch', screenId:'7000054', fromHome:'1',
+    searchCriteria: mode === 'survey' ? '2' : '1',
+    cmb_reg_village: vSel.value,
+    villageName: vRaw ? vRaw[1] : '',
+    sroName: sroName,
+    txt_SearchCriteria: q.value.trim(),
+    UserLocaleID: 'en'
+  };
+  return TNR + '?' + Object.keys(p).map(function(k){ return k + '=' + encodeURIComponent(p[k]); }).join('&');
+}
+function label(){
+  return (mode === 'survey' ? 'SF ' : '') + q.value.trim() + ', ' + vSel.options[vSel.selectedIndex].textContent
+    + ' (' + sSel.options[sSel.selectedIndex].textContent + ' SRO, ' + dSel.options[dSel.selectedIndex].textContent + ')';
+}
+
+function showRecent(){
+  var r = store('gv_recent') || [];
+  $('recentBox').hidden = !r.length;
+  $('recent').innerHTML = '';
+  r.forEach(function(x){
+    var a = document.createElement('a'); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; a.textContent = x.l;
+    $('recent').appendChild(a);
+  });
+}
+
+function submit(){
+  if (go.disabled) return;
+  if (mode === 'survey' && !/^[0-9]/.test(q.value.trim())) { say('A survey number starts with a digit, e.g. 253 or 253/1A.', 'err'); return; }
+  var url = buildUrl(), lab = label();
+  window.open(url, '_blank', 'noopener');
+  $('lbOpen').href = url;
+  $('lbWa').href = 'https://wa.me/?text=' + encodeURIComponent('Guideline value — ' + lab + ':\n' + url);
+  $('lb').classList.add('on');
+  say('Showing the official result for ' + lab + '.', 'ok');
+  var r = (store('gv_recent') || []).filter(function(x){ return x.u !== url; });
+  r.unshift({u:url, l:lab}); store('gv_recent', r.slice(0, 6));
+  store('gv_last', {d:dSel.value, s:sSel.value, v:vSel.value, m:mode});
+  showRecent();
+}
+
+dSel.addEventListener('change', function(){ say(''); loadDistrict(dSel.value); });
+sSel.addEventListener('change', function(){ vf.value = ''; refreshVillages(); if (!vSel.disabled) vf.focus(); });
+vf.addEventListener('input', function(){ refreshVillages(true); });
+vSel.addEventListener('change', function(){ check(); if (vSel.value) q.focus(); });
+q.addEventListener('input', function(){ say(''); check(); });
+$('mSurvey').addEventListener('click', function(){ setMode('survey'); });
+$('mStreet').addEventListener('click', function(){ setMode('street'); });
+$('f').addEventListener('submit', submit);
+$('lbCopy').addEventListener('click', function(){
+  var u = $('lbOpen').href;
+  (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function(){ say('Link copied.', 'ok'); })
+    .catch(function(){ window.prompt('Copy this link:', u); });
+});
+
+fetch('data/districts.json').then(function(r){ return r.json(); }).then(function(j){
+  DIST = j.sort(function(a,b){ return a[1].localeCompare(b[1]); });
+  fill(dSel, DIST, 'Select district');
+  var last = store('gv_last');
+  var start = last && DIST.some(function(x){ return String(x[0]) === last.d; }) ? last.d
+            : (DIST.filter(function(x){ return x[1] === DEFAULT_DISTRICT; })[0] || [''])[0];
+  if (last && last.m) setMode(last.m);
+  if (start) { dSel.value = start; loadDistrict(start, function(){
+    if (last && last.d === String(start) && last.s) { sSel.value = last.s; refreshVillages(); if (last.v) { vSel.value = last.v; check(); } }
+  }); }
+}).catch(function(){ fill(dSel, [], 'Could not load'); say('Could not load the district list. Please refresh the page.', 'err'); });
+showRecent();
+})();
+</script>
+</body>
+</html>

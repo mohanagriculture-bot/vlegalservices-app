@@ -14,6 +14,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="gv-data.js"></script>
 <style>
   :root{
     --bg:#F5F3EC; --surface:#FFFFFF; --ink:#1E2430; --muted:#6B7280;
@@ -545,6 +546,7 @@
     <button class="tab active" data-tab="dash">Dashboard</button>
     <button class="tab" data-tab="profiles">Company Profiles</button>
     <button class="tab" data-tab="reports">Reports</button>
+    <button class="tab" data-tab="gv">Guideline Value</button>
     <button class="tab" data-tab="master">Master Data</button>
   </div>
   <div id="panel"></div>
@@ -811,6 +813,7 @@ function render(){
   if (tab === 'dash') renderDash();
   else if (tab === 'profiles') renderProfiles();
   else if (tab === 'reports') renderReports();
+  else if (tab === 'gv') renderGV();
   else renderMaster();
   cardify(panel);
 }
@@ -951,6 +954,7 @@ var PROFILE_TABS = [
   ['sold','Sold Areas'],
   ['enc','Encroached Areas'],
   ['free','Free Hold'],
+  ['gv','Guideline Value'],
   ['docs','Documents']
 ];
 
@@ -997,6 +1001,7 @@ function renderProfileDetail(slug){
     : pTab === 'sold'     ? profileSold(recs, slug)
     : pTab === 'enc'      ? profileEnc(recs, slug)
     : pTab === 'free'     ? profileFree(recs, slug)
+    : pTab === 'gv'       ? gvIntro(slug) + reportTable(buildReport('gv', slug))
     :                       (ds.length ? docLibrary(false, slug)
                              : '<div class="card empty">No documents uploaded yet — add them under Master Data.</div>');
 }
@@ -1169,10 +1174,31 @@ var REPORT_DEFS = {
       {k:'sold',    label:'Sold Ac',       num:true, sum:true},
       {k:'enc',     label:'Encr. Ac',      num:true, sum:true},
       {k:'status',  label:'Status',        w:90},
-      {k:'verif',   label:'Verification',  w:90}
+      {k:'verif',   label:'Verification',  w:90},
+      {k:'gv_acre', label:'GV ₹/Acre',     num:true, money:true}
     ],
-    row: function(r,c){ return {sf_no:r.sf_no, patta_no:(r.patta_no||'—'), total:c.total, free:c.free,
-      sold:c.sold, enc:c.enc, status:(r.sold_status||'unsold').replace(/_/g,' '), verif:(r.verification_status||'—')}; }
+    row: function(r,c){ var g = gvFor(r.sf_no); return {sf_no:r.sf_no, patta_no:(r.patta_no||'—'), total:c.total, free:c.free,
+      sold:c.sold, enc:c.enc, status:(r.sold_status||'unsold').replace(/_/g,' '), verif:(r.verification_status||'—'),
+      gv_acre:(g ? g.acre : null)}; }
+  },
+  gv: {
+    label: 'Guideline Value',
+    note: 'Guideline value per survey number from TNREGINET, and the value of the extent still held.',
+    keep: function(){ return true; },
+    cols: [
+      {k:'sf_no',   label:'SF No.',               w:70},
+      {k:'cls',     label:'Land Classification',  w:150},
+      {k:'gv_acre', label:'GV ₹/Acre',            num:true, money:true},
+      {k:'gv_ha',   label:'GV ₹/Hectare',         num:true, money:true},
+      {k:'eff',     label:'Effective From',       w:80},
+      {k:'held',    label:'Held Ac',              num:true, sum:true},
+      {k:'gv_held', label:'GV of Held Extent ₹',  num:true, money:true, sum:true},
+      {k:'basis',   label:'TNREGINET Match',      w:150}
+    ],
+    row: function(r,c){ var g = gvFor(r.sf_no);
+      return {sf_no:r.sf_no, cls:(g ? g.label : 'Not listed on TNREGINET'), gv_acre:(g ? g.acre : null),
+        gv_ha:(g ? g.ha : null), eff:(g ? g.eff : '—'), held:c.avail,
+        gv_held:(g ? g.acre * c.avail : 0), basis:(g ? g.basis : 'Not found — check current subdivision'), _nogv:!g}; }
   },
   sold: {
     label: 'Sold Areas',
@@ -1255,8 +1281,9 @@ function reportTable(b){
   if (!b.rows.length) return '<div class="card empty">Nothing recorded under this heading.</div>';
   var head = b.cols.map(function(c){ return '<th'+(c.num?' class="num"':'')+'>'+esc(c.label)+'</th>'; }).join('');
   var body = b.rows.map(function(o){
-    return '<tr>' + b.cols.map(function(c){
+    return '<tr'+(o._nogv ? ' style="background:#FBEDEC;"' : '')+'>' + b.cols.map(function(c){
       var v = o[c.k];
+      if (c.money) return '<td class="num">'+(v==null ? '<span style="color:var(--sold);">—</span>' : inr(v))+'</td>';
       if (c.num) {
         var col = c.k==='free'||c.k==='clean' ? 'var(--free)' : c.k==='sold' ? 'var(--sold)' : c.k==='enc' ? 'var(--enc)' : '';
         return '<td class="num"'+(col?' style="color:'+col+';font-weight:600;"':'')+'>'+f2(v)+'</td>';
@@ -1277,7 +1304,7 @@ function reportTable(b){
   var hasTotals = b.cols.some(function(c){ return c.sum; });
   var totalRow = hasTotals ? '<tr style="background:#EFEBE0;font-weight:700;">'
     + b.cols.map(function(c,i){
-        if (c.sum) return '<td class="num">'+f2(b.totals[c.k])+'</td>';
+        if (c.sum) return '<td class="num">'+(c.money ? inr(b.totals[c.k]) : f2(b.totals[c.k]))+'</td>';
         return i===0 ? '<td>Total ('+b.rows.length+')</td>' : '<td></td>';
       }).join('') + '</tr>' : '';
   return '<div class="tablewrap"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+totalRow+'</tbody></table></div>';
@@ -1320,7 +1347,7 @@ function exportExcel(){
   aoa.push([]);
   aoa.push(b.cols.map(function(c){ return c.label; }));
   b.rows.forEach(function(o){
-    aoa.push(b.cols.map(function(c){ return c.num ? Math.round(n(o[c.k])*100)/100 : String(o[c.k]==null?'':o[c.k]); }));
+    aoa.push(b.cols.map(function(c){ return (c.money && o[c.k]==null) ? '' : c.num ? Math.round(n(o[c.k])*100)/100 : String(o[c.k]==null?'':o[c.k]); }));
   });
   if (b.cols.some(function(c){ return c.sum; })) {
     aoa.push(b.cols.map(function(c,i){
@@ -1360,6 +1387,7 @@ function exportPdf(){
 
   var body = b.rows.map(function(o){
     return b.cols.map(function(c){
+      if (c.money) return o[c.k]==null ? '—' : inr(o[c.k], true);
       if (c.num) return f2(o[c.k]);
       var v = String(o[c.k]==null?'':o[c.k]);
       if (c.k === 'note' && v.length > 180) v = v.slice(0,177) + '\u2026';
@@ -1368,7 +1396,7 @@ function exportPdf(){
   });
   if (b.cols.some(function(c){ return c.sum; })) {
     body.push(b.cols.map(function(c,i){
-      if (c.sum) return f2(b.totals[c.k]);
+      if (c.sum) return c.money ? inr(b.totals[c.k], true) : f2(b.totals[c.k]);
       return i===0 ? 'Total (' + b.rows.length + ')' : '';
     }));
   }
@@ -1404,6 +1432,94 @@ function exportPdf(){
   });
   doc.save(safeName(b) + '.pdf');
   toast('PDF downloaded.');
+}
+
+/* ======================= guideline value (TNREGINET) =======================
+   Rates come from gv-data.js, keyed by the survey/subdivision number as TNREGINET
+   lists it. An SF held as "310/1pt" takes its parent's rate; an SF held at a
+   parent level (e.g. 237/3) takes the rate its subdivisions share, if they all
+   agree. Anything else is shown as not listed rather than guessed. */
+function inr(v, plain){
+  var x = Math.round(n(v));
+  var s = String(Math.abs(x)), last3 = s.slice(-3), rest = s.slice(0,-3);
+  if (rest) last3 = ',' + last3;
+  s = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + last3;
+  return (x < 0 ? '-' : '') + (plain ? 'Rs.' : '₹') + s;
+}
+function gvNorm(sf){ return String(sf||'').replace(/\s+/g,'').toUpperCase(); }
+var GV_INDEX = null;
+function gvFor(sf){
+  var G = window.GV_THENI; if (!G) return null;
+  if (!GV_INDEX) { GV_INDEX = {}; Object.keys(G.SF).forEach(function(k){ GV_INDEX[gvNorm(k)] = k; }); }
+  var mk = function(key, basis){
+    var e = G.SF[key], c = G.classes[e[0]];
+    return {label:c.label, acre:c.acre, ha:c.ha, eff:(e[1] || G.defaultEffective), basis:basis, code:e[0]};
+  };
+  var s = gvNorm(sf);
+  if (GV_INDEX[s]) return mk(GV_INDEX[s], 'Exact');
+  var base = s.replace(/PT$/,'');
+  if (base !== s && GV_INDEX[base]) return mk(GV_INDEX[base], 'Part of ' + GV_INDEX[base]);
+  var subs = Object.keys(GV_INDEX).filter(function(k){
+    return k.indexOf(base) === 0 && k !== base && /^[A-Z\/]/.test(k.slice(base.length)); });
+  if (subs.length) {
+    var codes = {}; subs.forEach(function(k){ codes[G.SF[GV_INDEX[k]][0]] = 1; });
+    if (Object.keys(codes).length === 1)
+      return mk(GV_INDEX[subs[0]], 'Via subdivisions ' + subs.map(function(k){ return GV_INDEX[k]; }).join(', '));
+  }
+  return null;
+}
+function gvAgg(slug){
+  var o = {sf:0, held:0, val:0, missing:0, missingHeld:0};
+  DATA.survey.forEach(function(r){
+    if (slug && r.company_slug !== slug) return;
+    var c = classify(r), g = gvFor(r.sf_no);
+    o.sf++; o.held += c.avail;
+    if (g) o.val += g.acre * c.avail; else { o.missing++; o.missingHeld += c.avail; }
+  });
+  return o;
+}
+function gvIntro(slug){
+  var G = window.GV_THENI;
+  if (!G) return '<div class="card empty">Guideline value data could not be loaded.</div>';
+  var a = gvAgg(slug);
+  return '<div class="totals" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px;">'
+    + '<div class="tstat"><div class="tn">'+f2(a.held)+'</div><div class="tl">Acres held</div></div>'
+    + '<div class="tstat brass"><div class="tn">'+inr(a.val)+'</div><div class="tl">Guideline value of held extent</div></div>'
+    + '<div class="tstat'+(a.missing?' sold':'')+'"><div class="tn">'+a.missing+'</div><div class="tl">SF not listed on TNREGINET</div></div>'
+    + '</div>'
+    + '<p class="notehint" style="margin-bottom:12px;">Source: '+esc(G.source)+', checked '+esc(G.fetched)
+    + '. Held extent is the unsold balance of each SF. Rows shaded red are not listed on TNREGINET under that number'
+    + (a.missing ? ' ('+f2(a.missingHeld)+' Ac held, left out of the value)' : '')
+    + ' — usually re-subdivided after a sale; confirm the current number from the latest Patta.'
+    + ' Guideline value is the registration floor, not market value; take a certified copy from the SRO before relying on it.</p>';
+}
+function renderGV(){
+  var G = window.GV_THENI;
+  var rateRows = G ? Object.keys(G.classes).filter(function(k){ return k !== 'G'; }).map(function(k){
+    var c = G.classes[k], cnt = DATA.survey.filter(function(r){ var g = gvFor(r.sf_no); return g && g.code === k; }).length;
+    return '<tr><td>'+esc(c.label)+'</td><td class="num">'+inr(c.acre)+'</td><td class="num">'+inr(c.ha)+'</td><td class="num">'+cnt+'</td></tr>';
+  }).join('') : '';
+  var ents = companyOrder().map(function(c){
+    var a = gvAgg(c.company_slug);
+    return '<tr><td class="entcell">'+emark(c.company_slug,'sm')+'<span>'+esc(c.company)+'</span></td>'
+      + '<td class="num">'+a.sf+'</td><td class="num">'+f2(a.held)+'</td><td class="num">'+inr(a.val)+'</td>'
+      + '<td class="num"'+(a.missing?' style="color:var(--sold);font-weight:700;"':'')+'>'+a.missing+'</td>'
+      + '<td><button class="btn outline sm" data-report="gv" data-slug="'+esc(c.company_slug)+'">SF-wise</button></td></tr>';
+  }).join('');
+  var t = gvAgg(null);
+  panel.innerHTML = '<div class="sec-head"><div class="idx">TNREGINET</div><h2>Guideline Value</h2>'
+    + '<p>Current guideline value of every survey number, and of the extent each entity still holds.</p></div>'
+    + gvIntro(null)
+    + '<h3 style="font-size:16px;margin:18px 0 9px;">Rates applying to these survey numbers</h3>'
+    + '<div class="tablewrap"><table><thead><tr><th>Land Classification</th><th class="num">₹ / Acre</th><th class="num">₹ / Hectare</th><th class="num">SF Nos.</th></tr></thead><tbody>'+rateRows+'</tbody></table></div>'
+    + '<h3 style="font-size:16px;margin:22px 0 9px;">Entity-wise</h3>'
+    + '<div class="tablewrap"><table><thead><tr><th>Entity</th><th class="num">SF Nos.</th><th class="num">Held Ac</th><th class="num">GV of Held Extent</th><th class="num">Not listed</th><th></th></tr></thead><tbody>'
+    + ents + '<tr style="background:#EFEBE0;font-weight:700;"><td>Total</td><td class="num">'+t.sf+'</td><td class="num">'+f2(t.held)+'</td><td class="num">'+inr(t.val)+'</td><td class="num">'+t.missing+'</td><td></td></tr>'
+    + '</tbody></table></div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin:22px 0 9px;gap:10px;flex-wrap:wrap;">'
+    + '<h3 style="font-size:16px;">Survey-number-wise</h3>'
+    + '<button class="btn outline sm" data-report="gv" data-slug="">Open / download (Excel, PDF)</button></div>'
+    + reportTable(buildReport('gv', null));
 }
 
 /* ---- profile tab views now reuse the builders ---- */
@@ -2598,6 +2714,7 @@ function gotoHit(i){
 /* Name whatever is on screen, so the printed sheet says what it is. */
 function currentViewTitle(){
   if (tab === 'dash')    return 'Portfolio Summary';
+  if (tab === 'gv')      return 'Guideline Value (TNREGINET)';
   if (tab === 'reports') return 'Report — ' + ((REPORTS.filter(function(r){ return r[0]===rTab; })[0]||[])[1] || '');
   if (tab === 'master')  return 'Master Data — ' + (mTab==='entities' ? 'Entities'
                                  : mTab==='survey' ? 'Survey Numbers'

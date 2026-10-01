@@ -173,6 +173,7 @@ var SITE = 'https://www.vlegalservices.in';
 var KANNAN = { login_id:'kannangroup', name:'Kannan Group', nature:'Builder / Promoter',
   api_url:'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec',
   dest:'/kannangroup/theni/', area:'/kannangroup/', pages:[['Property portal','/kannangroup/theni/'],['Office service desk','/kannangroup/office/'],['Kannan Group home','/kannangroup/']] };
+var KANNAN_VIEW = { api_url:KANNAN.api_url, dest:'/kannangroup/theni/view/', area:'/kannangroup/', nature:'Kannan Group customer (view only)' };
 var setupMode = null;
 var STATUSES = ['New','Acknowledged','In progress','Awaiting information','Completed','Closed'];
 var state = { me:null, clients:[], counts:{}, sel:null, tab:'requests', reqs:[], openReq:null, docs:[] };
@@ -216,6 +217,9 @@ function renderList(){
   var hasKannan = state.clients.some(function(c){ return c.login_id===KANNAN.login_id; });
   if(!hasKannan && (!q || 'kannan group kannangroup'.indexOf(q)>-1)){
     h += '<button class="item static" id="setupKannan"><b>Kannan Group</b><div class="row"><small>Set up profile to manage login, reset and freeze →</small></div></button>';
+  }
+  if(!q || 'kannan group view only customer'.indexOf(q)>-1){
+    h += '<button class="item static" id="setupKannanView"><b>+ Kannan Group customer</b><div class="row"><small>View-only Theni Properties: no download, share or edit →</small></div></button>';
   }
   $('clientList').innerHTML = h || '<div class="empty">No clients match.</div>';
 }
@@ -321,6 +325,7 @@ document.addEventListener('click', async function(e){
   if(t.id==='reqBack'){ state.openReq=null; await loadDetail(); renderDetail(); return; }
   if(t.id==='newBtn'){ openNew(); return; }
   if(t.id==='setupKannan'){ openNew('kannan'); return; }
+  if(t.id==='setupKannanView'){ openNew('kannanview'); return; }
   if(t.id==='ptTest'){
     t.disabled=true;
     try { var tr = await callFn({action:'test_portal', account_id:state.sel.id}); note($('ptNote'), tr.tested ? 'Connected: the portal accepts the saved key.' : 'The portal did not accept the key: '+tr.test_error, tr.tested); }
@@ -419,12 +424,15 @@ document.addEventListener('submit', async function(e){
 function openNew(mode){
   setupMode = mode || null;
   $('newForm').reset(); $('newForm').style.display=''; $('nmDone').style.display='none'; note($('nmNote'),'');
-  var k = setupMode==='kannan';
-  $('nmTitle').textContent = k ? 'Set up Kannan Group profile' : 'New client';
-  $('nPortalWrap').style.display = k ? '' : 'none';
-  $('nPortal').required = k;
+  var k = setupMode==='kannan', kv = setupMode==='kannanview';
+  $('nmTitle').textContent = k ? 'Set up Kannan Group profile' : kv ? 'New Kannan Group customer (view only)' : 'New client';
+  $('nPortalWrap').style.display = (k||kv) ? '' : 'none';
+  $('nPortal').required = (k||kv);
+  document.querySelector('label[for="nPortal"]').textContent = kv ? 'View-only key' : 'Property portal key';
+  $('nPortal').placeholder = kv ? 'The view-only password set in the Apps Script (setViewerPassword)' : 'The password the Kannan Group portal uses today';
   $('nLogin').readOnly = k; $('nLogin').dataset.touched = k ? '1' : '';
   if(k){ $('nName').value=KANNAN.name; $('nNature').value=KANNAN.nature; $('nLogin').value=KANNAN.login_id; }
+  if(kv){ $('nNature').value = 'Individual'; }
   $('newModal').classList.add('on'); (k ? $('nEmail') : $('nName')).focus();
 }
 $('nName').addEventListener('input', function(){
@@ -433,7 +441,18 @@ $('nName').addEventListener('input', function(){
 });
 $('nLogin').addEventListener('input', function(){ this.dataset.touched='1'; this.value=this.value.toLowerCase().replace(/[^a-z0-9._-]/g,''); });
 /* Welcome message sent to a new client. Edit the wording here once; every client gets it. */
-function welcomeText(a, emailed){
+function welcomeText(a, emailed, viewOnly){
+  if(viewOnly) return 'Dear '+a.name+',\n\n'+
+    'Welcome. You now have view-only access to the Kannan Group property records, arranged by V Legal Services.\n\n'+
+    'Sign in: '+SITE+'/login/?as=client\n'+
+    'User ID: '+a.login_id+'\n'+
+    (emailed ? 'Password: we have emailed '+a.email+' a link to set your own password.'
+             : 'Password: will be shared with you separately.')+'\n\n'+
+    'You can search any SF number and see its extent, Patta, FMB, A Register, Surveyor Sketch and status (free hold, sold, partially sold, encroached).\n'+
+    'This access is for viewing only: downloading, sharing, printing and editing are switched off.\n\n'+
+    'Please keep your password private. If a wrong password is entered 3 times, sign-in is blocked on that device for an hour; call us and we will help.\n\n'+
+    'For help, call or WhatsApp: 73737 35222\n\n'+
+    'Regards,\nMohan Kumar Rajavel, Advocate\nV Legal Services and Documentation, Coimbatore';
   return 'Dear '+a.name+',\n\n'+
     'Welcome to V Legal Services. Your secure client portal is ready.\n\n'+
     'Sign in: '+SITE+'/login/?as=client\n'+
@@ -456,11 +475,12 @@ $('newForm').addEventListener('submit', async function(e){
     var r = await callFn({ action:'create', name:$('nName').value, nature:$('nNature').value, login_id:$('nLogin').value,
       email:$('nEmail').value, phone:$('nPhone').value, password:pw });
     var a = r.account;
-    if(setupMode==='kannan'){
-      var lr = await callFn({action:'link_portal', account_id:a.id, api_url:KANNAN.api_url, dest:KANNAN.dest, area:KANNAN.area, portal_password:$('nPortal').value});
+    if(setupMode==='kannan' || setupMode==='kannanview'){
+      var KC = setupMode==='kannanview' ? KANNAN_VIEW : KANNAN;
+      var lr = await callFn({action:'link_portal', account_id:a.id, api_url:KC.api_url, dest:KC.dest, area:KC.area, portal_password:$('nPortal').value});
       if(!lr.tested) r.portal_warn = 'Profile created, but the property portal did not accept that key ('+lr.test_error+'). Fix it on the Login tab.';
     }
-    var msg = welcomeText(a, r.email_sent);
+    var msg = welcomeText(a, r.email_sent, setupMode==='kannanview');
     var waNum = a.phone ? a.phone.replace(/\D/g,'').replace(/^(\d{10})$/,'91$1') : '';
     $('shareText').textContent = msg;
     $('shareText').contentEditable = 'true';

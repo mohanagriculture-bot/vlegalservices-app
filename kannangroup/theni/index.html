@@ -2856,14 +2856,27 @@ function sfGoSearch(){
   if (!ex.length && !sfMatches(q).length) toast('SF number not found.', true);
 }
 function sfText(d){
-  var L = ['*SF ' + d.r.sf_no + '* — ' + d.status, d.company + ', Palakombai Village, Theni',
-    'Extent: ' + f2(d.extent) + ' Ac', 'Primary Doc No: ' + (d.docNo || '—'), 'Patta No: ' + (d.patta || '—'),
-    'Free Hold: ' + f2(d.c.free) + ' Ac · Sold: ' + f2(d.c.sold) + ' Ac · Encroached: ' + f2(d.c.enc) + ' Ac'];
+  var line = '━━━━━━━━━━━━━━━━━━';
+  var icon = d.status === 'Free Hold' ? '🟢' : d.status === 'Partially Sold' ? '🟠' : d.status === 'Sold' ? '🔴' : '🟡';
+  var L = ['🏛️ *V LEGAL SERVICES*', '_Property Record · Palakombai, Theni_', line,
+    '📍 *SF ' + d.r.sf_no + '*  ' + icon + ' *' + d.status.toUpperCase() + '*',
+    '🏢 ' + d.company, line,
+    '📐 *Extent:* ' + f2(d.extent) + ' Ac',
+    '📑 *Primary Doc No:* ' + (d.docNo || '—'),
+    '📋 *Patta No:* ' + (d.patta || '—'), '',
+    '*STATUS*',
+    '🟢 Free Hold: ' + f2(d.c.free) + ' Ac',
+    '🔴 Sold: ' + f2(d.c.sold) + ' Ac' + (d.r.sold_to ? ' (' + d.r.sold_to + ')' : ''),
+    '🚧 Encroached: ' + (d.es === 'none' ? 'No' : f2(d.c.enc) + ' Ac'), line, '*DOCUMENTS*'];
   SF_FILE_ROWS.forEach(function(fr){
     var fl = d.files[fr[0]];
-    L.push(fr[1] + ': ' + (fl.length ? fl.map(function(f){ return f.file_url; }).join(' , ') : 'not uploaded'));
+    L.push('', '📄 *' + fr[1] + '*');
+    if (!fl.length) L.push('   Not uploaded');
+    fl.forEach(function(f, i){
+      L.push('   ' + (fl.length > 1 ? (i + 1) + '. ' : '') + f.file_name, '   ' + String(f.file_url).replace(/\/preview$/, '/view'));
+    });
   });
-  L.push('— V Legal Services and Documentation');
+  L.push('', line, '_Mohan Kumar Rajavel, Advocate_', '_V Legal Services and Documentation_', '📞 6379588507');
   return L.join('\n');
 }
 function sfPdf(){
@@ -2910,7 +2923,7 @@ function sfShareWa(){ if (SF_CUR) window.open('https://wa.me/?text=' + encodeURI
 function sfShareMail(){
   if (!SF_CUR) return;
   location.href = 'mailto:?subject=' + encodeURIComponent('SF ' + SF_CUR.r.sf_no + ' — ' + SF_CUR.company + ' (Palakombai, Theni)')
-    + '&body=' + encodeURIComponent(sfText(SF_CUR).replace(/\*/g,''));
+    + '&body=' + encodeURIComponent(sfText(SF_CUR).replace(/\*/g,'').replace(/^_(.*)_$/gm,'$1'));
 }
 
 /* ---------------------------- printing ---------------------------- */

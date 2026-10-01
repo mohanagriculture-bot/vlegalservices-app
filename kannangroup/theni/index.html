@@ -359,6 +359,33 @@
     background:#FBF9F3;border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:6px;}
   .docname{font-size:13.5px;font-weight:500;word-break:break-word;flex:1;min-width:150px;}
   .docacts{display:flex;gap:6px;flex-wrap:wrap;}
+
+  /* ---- SF finder ---- */
+  .sffind{background:linear-gradient(135deg,var(--navy),#22355a);border-radius:12px;padding:16px 18px;margin-bottom:16px;color:#fff;}
+  .sffind h3{margin:0 0 4px;font-family:'Lora',serif;font-size:17px;color:#fff;}
+  .sffind p{margin:0 0 10px;font-size:12.5px;color:#d9c9a3;}
+  .sffind .row{display:flex;gap:8px;position:relative;}
+  .sffind input{flex:1;min-width:0;padding:11px 13px;border-radius:8px;border:2px solid var(--brass);font-size:15px;font-family:inherit;}
+  .sffind .go{background:var(--brass);color:#fff;border:0;border-radius:8px;padding:0 18px;font-weight:700;cursor:pointer;font-size:14px;}
+  .sfsug{position:absolute;left:0;right:78px;top:100%;margin-top:4px;background:#fff;color:var(--navy);border-radius:8px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:40;max-height:300px;overflow:auto;}
+  .sfsug.hidden{display:none;}
+  .sfsug button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:none;border:0;
+    border-bottom:1px solid #eee;padding:10px 12px;cursor:pointer;font-size:13.5px;font-family:inherit;color:var(--navy);}
+  .sfsug button:hover{background:#f5f3ec;}
+  .sfsug small{color:#6b7280;}
+  .sfbox{max-width:860px;height:92vh;}
+  .sfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:14px;}
+  .sftile{border:1px solid #e3dfd2;border-radius:10px;padding:10px 12px;background:#fff;}
+  .sftile .k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;font-weight:600;}
+  .sftile .v{font-family:'Lora',serif;font-size:16px;font-weight:700;color:var(--navy);margin-top:3px;word-break:break-word;}
+  .sftile .s{font-size:12px;color:#6b7280;margin-top:2px;}
+  .sftile.on-good{background:#e8f5ec;border-color:#9fd3ae;} .sftile.on-warn{background:#fff4e0;border-color:#e8c27a;}
+  .sftile.on-bad{background:#fde9e7;border-color:#e6a49d;} .sftile.off{opacity:.55;}
+  .sfh{font-family:'Lora',serif;font-weight:700;color:var(--navy);margin:14px 0 8px;font-size:14px;}
+  .sfdoc{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  .sfdoc a,.sfdoc button{font-size:12px;}
+  .sfshare{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid #e3dfd2;background:#faf8f2;}
   .docmodal{position:fixed;inset:0;background:rgba(22,35,58,.62);z-index:70;display:flex;
     align-items:center;justify-content:center;padding:18px;}
   .docmodal[hidden]{display:none;}
@@ -532,6 +559,16 @@
 
 <!-- ============ APP ============ -->
 <main class="wrap hidden" id="appView" style="padding-top:28px;padding-bottom:40px;">
+  <div class="sffind">
+    <h3>Find an SF Number</h3>
+    <p>Type a survey / SF number to see its extent, Patta, documents and status.</p>
+    <div class="row">
+      <input id="sfq" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. 123/4A">
+      <button class="go" id="sfGo" type="button">Search</button>
+      <div class="sfsug hidden" id="sfSug"></div>
+    </div>
+  </div>
+
   <div class="searchwrap">
     <div class="searchbox">
       <span class="searchicon">&#128269;</span>
@@ -579,6 +616,22 @@
       </span>
     </div>
     <div style="flex:1;overflow:auto;padding:14px 16px;" id="repBody"></div>
+  </div>
+</div>
+
+<div class="docmodal" id="sfModal" hidden style="z-index:65;">
+  <div class="docmodal-box sfbox">
+    <div class="docmodal-head">
+      <span><span id="sfTitle" style="display:block;"></span>
+        <span id="sfSub" style="display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:2px;"></span></span>
+      <span class="btnrow"><button class="btn outline sm" id="sfClose">Close</button></span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:14px 16px;" id="sfBody"></div>
+    <div class="sfshare">
+      <button class="btn brass sm" id="sfPdf">&#128196; Download PDF</button>
+      <button class="btn outline sm" id="sfWa">WhatsApp</button>
+      <button class="btn outline sm" id="sfMail">Email</button>
+    </div>
   </div>
 </div>
 
@@ -2710,6 +2763,156 @@ function gotoHit(i){
   if (h.docId) setTimeout(function(){ openDoc(h.docId); }, 350);
 }
 
+
+/* ---------------------------- SF finder ---------------------------- */
+var SF_CUR = null;
+function sfNorm(v){ return String(v==null?'':v).toLowerCase().replace(/\s+/g,''); }
+function sfMatches(q, exactOnly){
+  var k = sfNorm(q); if (!k) return [];
+  var ex = DATA.survey.filter(function(r){ return sfNorm(r.sf_no) === k; });
+  if (exactOnly) return ex;
+  var part = DATA.survey.filter(function(r){ var x = sfNorm(r.sf_no); return x !== k && x.indexOf(k) === 0; });
+  var more = DATA.survey.filter(function(r){ var x = sfNorm(r.sf_no); return x.indexOf(k) > 0; });
+  return ex.concat(part, more).slice(0, 40);
+}
+function renderSfSug(){
+  var box = document.getElementById('sfSug'), q = document.getElementById('sfq').value.trim();
+  if (!q) { box.classList.add('hidden'); return; }
+  var m = sfMatches(q);
+  box.innerHTML = m.length ? m.map(function(r){
+    return '<button type="button" data-sfpick="' + esc(r.company_slug) + '|' + esc(r.sf_no) + '"><span><b>SF ' + esc(r.sf_no)
+      + '</b> <small>Patta ' + esc(r.patta_no||'—') + '</small></span><small>' + esc(companyName(r.company_slug)) + '</small></button>';
+  }).join('') : '<div style="padding:12px;font-size:13px;color:#6b7280;">No SF number matches &ldquo;' + esc(q) + '&rdquo;.</div>';
+  box.classList.remove('hidden');
+}
+function sfDetail(r){
+  var c = classify(r), slug = r.company_slug;
+  var st = (r.sold_status||'unsold').trim(), es = (r.encroachment_status||'none').trim();
+  var docs = docsForSf(slug, r.sf_no);
+  function files(cat){ return docs.filter(function(d){ return d.category === cat; }); }
+  var status = st === 'fully_sold' ? 'Sold' : st === 'partially_sold' ? 'Partially Sold'
+             : (es !== 'none' && c.enc >= c.avail && c.avail) ? 'Encroached' : 'Free Hold';
+  return {
+    r:r, c:c, slug:slug, company:companyName(slug), st:st, es:es, status:status,
+    extent: (r.document_extent_ac!=='' && r.document_extent_ac!=null) ? n(r.document_extent_ac)
+          : (r.patta_extent_ac!=='' && r.patta_extent_ac!=null) ? n(r.patta_extent_ac) : c.total,
+    docNo: String(r.original_deed||'').trim(),
+    patta: String(r.patta_no||'').trim(),
+    files: { patta:files('patta'), fmb:files('fmb'), a_register:files('a_register'), surveyor_sketch:files('surveyor_sketch') }
+  };
+}
+var SF_FILE_ROWS = [['patta','Patta (file)'],['fmb','FMB'],['a_register','A Register'],['surveyor_sketch','Surveyor Sketch']];
+
+function openSf(slug, sf){
+  var r = DATA.survey.filter(function(x){ return x.company_slug === slug && x.sf_no === sf; })[0];
+  if (!r) return;
+  var d = SF_CUR = sfDetail(r), c = d.c;
+  var isFree = d.status === 'Free Hold', isSold = d.st === 'fully_sold', isPart = d.st === 'partially_sold', isEnc = d.es !== 'none';
+  function tile(k, v, s, cls){ return '<div class="sftile ' + (cls||'') + '"><div class="k">' + esc(k) + '</div><div class="v">'
+    + esc(v) + '</div>' + (s ? '<div class="s">' + esc(s) + '</div>' : '') + '</div>'; }
+  var h = '<div class="sfgrid">'
+    + tile('SF Number', d.r.sf_no)
+    + tile('Extent', f2(d.extent) + ' Ac', 'Patta extent: ' + (d.r.patta_extent_ac===''||d.r.patta_extent_ac==null ? '—' : f2(d.r.patta_extent_ac) + ' Ac'))
+    + tile('Primary Doc No', d.docNo || '—', 'Original deed')
+    + tile('Company', d.company)
+    + tile('Patta No', d.patta || '—')
+    + tile('Verification', d.r.verification_status || '—')
+    + '</div><div class="sfh">Status</div><div class="sfgrid">'
+    + tile('Free Hold', isFree ? 'Yes' : (c.free > 0 ? 'Partly' : 'No'), f2(c.free) + ' Ac free', isFree ? 'on-good' : (c.free > 0 ? '' : 'off'))
+    + tile('Sold', isSold ? 'Yes' : (isPart ? 'Part' : 'No'), f2(c.sold) + ' Ac sold' + (d.r.sold_to ? ' · ' + d.r.sold_to : ''), isSold ? 'on-bad' : 'off')
+    + tile('Partially Sold', isPart ? 'Yes' : 'No', isPart ? 'Balance ' + f2(c.avail) + ' Ac' : '', isPart ? 'on-warn' : 'off')
+    + tile('Encroached', isEnc ? (d.es === 'full' ? 'Fully' : 'Partly') : 'No', isEnc ? f2(c.enc) + ' Ac encroached' : '', isEnc ? 'on-bad' : 'off')
+    + '</div><div class="sfh">Documents</div><div class="sfgrid" style="grid-template-columns:1fr;">';
+  SF_FILE_ROWS.forEach(function(fr){
+    var fl = d.files[fr[0]];
+    h += '<div class="sftile"><div class="k">' + fr[1] + '</div>';
+    if (!fl.length) h += '<div class="s" style="margin-top:4px;">Not uploaded</div>';
+    fl.forEach(function(f){
+      h += '<div class="sfdoc" style="margin-top:6px;"><span style="font-size:13px;">' + esc(f.file_name) + '</span><span class="btnrow">'
+        + '<button class="btn outline sm" type="button" data-sfview="' + esc(f.doc_id) + '">View</button>'
+        + '<a class="btn outline sm" target="_blank" rel="noopener" href="' + esc(f.file_url) + '">Open</a></span></div>';
+    });
+    h += '</div>';
+  });
+  h += '</div>';
+  if (d.r.remarks) h += '<div class="sfh">Remarks</div><div style="font-size:13px;">' + esc(d.r.remarks) + '</div>';
+  document.getElementById('sfTitle').textContent = 'SF ' + d.r.sf_no + ' — ' + d.status;
+  document.getElementById('sfSub').textContent = d.company + ' · Palakombai Village, Theni';
+  document.getElementById('sfBody').innerHTML = h;
+  document.getElementById('sfModal').removeAttribute('hidden');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('sfSug').classList.add('hidden');
+}
+function closeSf(){
+  document.getElementById('sfModal').setAttribute('hidden','');
+  document.body.style.overflow = '';
+}
+function sfGoSearch(){
+  var q = document.getElementById('sfq').value.trim();
+  if (!q) return;
+  var ex = sfMatches(q, true);
+  if (ex.length === 1) { openSf(ex[0].company_slug, ex[0].sf_no); return; }
+  renderSfSug();
+  if (!ex.length && !sfMatches(q).length) toast('SF number not found.', true);
+}
+function sfText(d){
+  var L = ['*SF ' + d.r.sf_no + '* — ' + d.status, d.company + ', Palakombai Village, Theni',
+    'Extent: ' + f2(d.extent) + ' Ac', 'Primary Doc No: ' + (d.docNo || '—'), 'Patta No: ' + (d.patta || '—'),
+    'Free Hold: ' + f2(d.c.free) + ' Ac · Sold: ' + f2(d.c.sold) + ' Ac · Encroached: ' + f2(d.c.enc) + ' Ac'];
+  SF_FILE_ROWS.forEach(function(fr){
+    var fl = d.files[fr[0]];
+    L.push(fr[1] + ': ' + (fl.length ? fl.map(function(f){ return f.file_url; }).join(' , ') : 'not uploaded'));
+  });
+  L.push('— V Legal Services and Documentation');
+  return L.join('\n');
+}
+function sfPdf(){
+  var d = SF_CUR, J = window.jspdf && window.jspdf.jsPDF;
+  if (!d || !J) { toast('PDF unavailable.', true); return; }
+  var doc = new J({unit:'pt', format:'a4'}), W = doc.internal.pageSize.getWidth();
+  doc.setFillColor(22,35,58); doc.rect(0,0,W,62,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('V Legal Services and Documentation', 40, 26);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(201,154,75);
+  doc.text('Mohan Kumar Rajavel, B.Sc.(Agri), LL.B., Advocate  ·  Gowtham Centre, Coimbatore  ·  6379588507', 40, 42);
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  doc.text('Palakombai Village, Andipatti Taluk, Theni District', 40, 55);
+  doc.setTextColor(22,35,58); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('SF ' + d.r.sf_no + ' — ' + d.status, 40, 90);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(107,114,128);
+  doc.text(d.company + '   ·   Generated ' + stamp(), 40, 104);
+  var rows = [
+    ['SF Number', d.r.sf_no], ['Company', d.company], ['Extent', f2(d.extent) + ' Ac'],
+    ['Primary Doc No (Original deed)', d.docNo || '—'], ['Patta No', d.patta || '—'],
+    ['Free Hold', f2(d.c.free) + ' Ac free'],
+    ['Sold', d.st === 'fully_sold' ? 'Yes — ' + f2(d.c.sold) + ' Ac' : d.st === 'partially_sold' ? 'Partly — ' + f2(d.c.sold) + ' Ac' : 'No'],
+    ['Partially Sold', d.st === 'partially_sold' ? 'Yes — balance ' + f2(d.c.avail) + ' Ac' : 'No'],
+    ['Encroached', d.es === 'none' ? 'No' : (d.es === 'full' ? 'Fully' : 'Partly') + ' — ' + f2(d.c.enc) + ' Ac']
+  ];
+  if (d.r.sold_to) rows.push(['Sold to', d.r.sold_to]);
+  var docRows = SF_FILE_ROWS.map(function(fr){
+    var fl = d.files[fr[0]];
+    return [fr[1], fl.length ? fl.map(function(f){ return f.file_name; }).join('\n') : 'Not uploaded'];
+  });
+  doc.autoTable({ startY:116, head:[['Detail','Value']], body:rows, theme:'grid',
+    headStyles:{fillColor:[22,35,58]}, styles:{fontSize:9.5,cellPadding:5}, columnStyles:{0:{cellWidth:170,fontStyle:'bold'}} });
+  doc.autoTable({ startY:doc.lastAutoTable.finalY + 14, head:[['Document','File (tap to open)']], body:docRows, theme:'grid',
+    headStyles:{fillColor:[169,118,47]}, styles:{fontSize:9.5,cellPadding:5}, columnStyles:{0:{cellWidth:170,fontStyle:'bold'}},
+    didDrawCell:function(data){
+      if (data.section === 'body' && data.column.index === 1) {
+        var fl = d.files[SF_FILE_ROWS[data.row.index][0]];
+        if (fl.length) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, {url: fl[0].file_url});
+      }
+    } });
+  doc.save('SF-' + String(d.r.sf_no).replace(/[^\w.-]+/g,'_') + '.pdf');
+}
+function sfShareWa(){ if (SF_CUR) window.open('https://wa.me/?text=' + encodeURIComponent(sfText(SF_CUR)), '_blank', 'noopener'); }
+function sfShareMail(){
+  if (!SF_CUR) return;
+  location.href = 'mailto:?subject=' + encodeURIComponent('SF ' + SF_CUR.r.sf_no + ' — ' + SF_CUR.company + ' (Palakombai, Theni)')
+    + '&body=' + encodeURIComponent(sfText(SF_CUR).replace(/\*/g,''));
+}
+
 /* ---------------------------- printing ---------------------------- */
 /* Name whatever is on screen, so the printed sheet says what it is. */
 function currentViewTitle(){
@@ -2822,6 +3025,14 @@ document.addEventListener('click', function(e){
   if (t.id === 'outBtn') { PRES.end().then(signOut); return; }
   if (t.id === 'presBadge' || t.closest('#presBadge')) { PRES.open = !PRES.open; PRES.paint(); return; }
   if (PRES.open && !t.closest('#presPanel')) { PRES.open = false; PRES.paint(); }
+  if (t.id === 'sfGo') { sfGoSearch(); return; }
+  if (t.id === 'sfClose') { closeSf(); return; }
+  if (t.id === 'sfPdf') { sfPdf(); return; }
+  if (t.id === 'sfWa') { sfShareWa(); return; }
+  if (t.id === 'sfMail') { sfShareMail(); return; }
+  if ((el = t.closest('[data-sfpick]'))) { var pk = el.getAttribute('data-sfpick').split('|'); openSf(pk[0], pk.slice(1).join('|')); return; }
+  if ((el = t.closest('[data-sfview]'))) { openDoc(el.getAttribute('data-sfview')); return; }
+  if (!t.closest('.sffind')) document.getElementById('sfSug').classList.add('hidden');
   if (t.id === 'qClear') { clearSearch(); return; }
   if ((el = t.closest('[data-qhit]'))) { gotoHit(parseInt(el.getAttribute('data-qhit'),10)); return; }
   if (!t.closest('.searchwrap')) closeSearch();
@@ -2851,6 +3062,8 @@ document.addEventListener('change', function(e){
   if (e.target.dataset && e.target.dataset.pgrow !== undefined) { readPattaRows(); renderPattaSummary(); }
 });
 document.addEventListener('keydown', function(e){
+  if (e.target.id === 'sfq' && e.key === 'Enter') { e.preventDefault(); sfGoSearch(); return; }
+  if (e.key === 'Escape' && !document.getElementById('sfModal').hasAttribute('hidden') && document.getElementById('docModal').hasAttribute('hidden')) { closeSf(); return; }
   var panel = document.getElementById('qPanel');
   if (panel && !panel.classList.contains('hidden')) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -2875,6 +3088,7 @@ document.addEventListener('keydown', function(e){
   if (e.key === 'Escape' && !document.getElementById('repModal').hasAttribute('hidden')) closeReport();
 });
 document.addEventListener('input', function(e){
+  if (e.target.id === 'sfq') { renderSfSug(); return; }
   if (e.target.id === 'q') { qSel = -1; renderSearch(); return; }
   if (e.target.id === 'sSearch') {
     mSearch = e.target.value; openKey = null;

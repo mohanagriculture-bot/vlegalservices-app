@@ -155,7 +155,7 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:0 
       </div>
     </form>
     <div id="nmDone" style="display:none">
-      <p style="margin:0 0 6px">Share these details with the client:</p>
+      <p style="margin:0 0 6px">Welcome message for the client. You can edit it before sending:</p>
       <div class="share" id="shareText"></div>
       <div class="actions" style="justify-content:flex-end">
         <button class="btn" id="copyShare">Copy</button>
@@ -432,6 +432,22 @@ $('nName').addEventListener('input', function(){
   $('nLogin').value = this.value.toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,20);
 });
 $('nLogin').addEventListener('input', function(){ this.dataset.touched='1'; this.value=this.value.toLowerCase().replace(/[^a-z0-9._-]/g,''); });
+/* Welcome message sent to a new client. Edit the wording here once; every client gets it. */
+function welcomeText(a, emailed){
+  return 'Dear '+a.name+',\n\n'+
+    'Welcome to V Legal Services. Your secure client portal is ready.\n\n'+
+    'Sign in: '+SITE+'/login/?as=client\n'+
+    'User ID: '+a.login_id+'\n'+
+    (emailed ? 'Password: we have emailed '+a.email+' a link to set your own password.'
+             : 'Password: will be shared with you separately.')+'\n\n'+
+    'In the portal you can:\n'+
+    '\u2022 see the documents we have shared with you\n'+
+    '\u2022 follow the status of your matter\n'+
+    '\u2022 send us a new request or message\n\n'+
+    'Please keep your password private. If a wrong password is entered 3 times, sign-in is blocked on that device for an hour; call us and we will help.\n\n'+
+    'For help, call or WhatsApp: 73737 35222\n\n'+
+    'Regards,\nMohan Kumar Rajavel, Advocate\nV Legal Services and Documentation, Coimbatore';
+}
 $('newForm').addEventListener('submit', async function(e){
   e.preventDefault();
   var b=$('nGo'); b.disabled=true; b.innerHTML='<span class="spin"></span> Creating…'; note($('nmNote'),'');
@@ -444,11 +460,12 @@ $('newForm').addEventListener('submit', async function(e){
       var lr = await callFn({action:'link_portal', account_id:a.id, api_url:KANNAN.api_url, dest:KANNAN.dest, area:KANNAN.area, portal_password:$('nPortal').value});
       if(!lr.tested) r.portal_warn = 'Profile created, but the property portal did not accept that key ('+lr.test_error+'). Fix it on the Login tab.';
     }
-    var msg = 'Dear '+a.name+',\n\nYour V Legal Services client login is ready.\n\nLogin: '+SITE+'/login  (choose External)\nUser ID: '+a.login_id+'\n'+
-      (r.email_sent ? 'We have emailed '+a.email+' a link to set your password.' : 'Password: shared separately.')+
-      '\n\nFor help: 73737 35222';
+    var msg = welcomeText(a, r.email_sent);
+    var waNum = a.phone ? a.phone.replace(/\D/g,'').replace(/^(\d{10})$/,'91$1') : '';
     $('shareText').textContent = msg;
-    $('waShare').href = 'https://wa.me/'+(a.phone? a.phone.replace(/\D/g,'').replace(/^(\d{10})$/,'91$1') : '')+'?text='+encodeURIComponent(msg);
+    $('shareText').contentEditable = 'true';
+    var setWa = function(){ $('waShare').href = 'https://wa.me/'+waNum+'?text='+encodeURIComponent($('shareText').innerText.trim()); };
+    setWa(); $('shareText').oninput = setWa;
     if(r.portal_warn){ note($('nmNote'), r.portal_warn, false); } else
     note($('nmNote'), r.email_sent ? 'Login created. An invitation email has been sent to '+a.email+'.' : 'Login created, but the email could not be sent. Share the User ID and starting password with the client yourself.', true);
     $('newForm').style.display='none'; $('nmDone').style.display='';

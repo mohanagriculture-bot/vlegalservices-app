@@ -297,7 +297,18 @@ function renderLogin(){
     '<button class="btn '+(c.active?'danger':'')+'" id="toggle">'+(c.active?'Freeze access':'Unfreeze access')+'</button></div>'+
     '<form id="pwForm" class="card" style="padding:14px;background:#FDFCF9"><div class="f"><label for="newPw">Set a new password for this client</label><input id="newPw" type="text" minlength="8" maxlength="72" placeholder="At least 8 characters"></div>'+
     '<div class="actions" style="justify-content:flex-end"><button class="btn navy">Set password</button></div></form>'+
-    '<div id="portalBox"></div>';
+    '<form id="editForm" class="card" style="padding:14px;background:#FDFCF9;margin-top:14px"><h3 style="font-size:16px;margin:0 0 10px">Edit client details</h3>'+
+    '<div class="grid2"><div class="f"><label for="eName">Name</label><input id="eName" required maxlength="120" value="'+esc(c.name)+'"></div>'+
+    '<div class="f"><label for="eNature">Type</label><input id="eNature" maxlength="60" value="'+esc(c.nature||'')+'"></div></div>'+
+    '<div class="grid2"><div class="f"><label for="eLogin">User ID</label><input id="eLogin" required maxlength="40" autocapitalize="none" spellcheck="false" value="'+esc(c.login_id)+'"></div>'+
+    '<div class="f"><label for="ePhone">Phone</label><input id="ePhone" maxlength="30" value="'+esc(c.phone||'')+'"></div></div>'+
+    '<div class="f"><label for="eEmail">Email</label><input id="eEmail" type="email" required maxlength="160" value="'+esc(c.email)+'"><div class="hint">Changing the email changes where password links are sent. The client signs in with the User ID, not the email.</div></div>'+
+    '<div class="actions" style="justify-content:flex-end"><button class="btn navy">Save details</button></div></form>'+
+    '<div id="portalBox"></div>'+
+    '<form id="delForm" class="card" style="padding:14px;margin-top:18px;border-color:#e6a49d;background:#fdf3f2"><h3 style="font-size:16px;margin:0 0 6px;color:#9b2c22">Delete this client</h3>'+
+    '<p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Removes the login and all their requests, shared document records and portal link. This cannot be undone. To stop access without deleting, use Freeze instead.</p>'+
+    '<div class="f"><label for="dConfirm">Type the User ID <b>'+esc(c.login_id)+'</b> to confirm</label><input id="dConfirm" autocomplete="off" autocapitalize="none" spellcheck="false"></div>'+
+    '<div class="actions" style="justify-content:flex-end"><button class="btn danger" id="dBtn">Delete client</button></div></form>';
   loadPortal();
 }
 async function loadPortal(){
@@ -395,6 +406,32 @@ document.addEventListener('submit', async function(e){
     var ins = await sb.from('client_shared_docs').insert({ client_account_id:state.sel.id, title:$('dTitle').value.trim(), note:$('dNote').value.trim()||null, file_path:path, file_name:f.name, uploaded_by:'firm' });
     if(ins.error){ await sb.storage.from('client-portal').remove([path]); note($('upNote'),ins.error.message,false); b.disabled=false; b.textContent='Share with client'; return; }
     await loadDetail(); renderDetail(); return;
+  }
+  if(e.target.id==='editForm'){
+    e.preventDefault();
+    var eb = e.target.querySelector('button'); eb.disabled = true;
+    try {
+      var ur = await callFn({action:'update', account_id:state.sel.id, name:$('eName').value, nature:$('eNature').value,
+        login_id:$('eLogin').value, phone:$('ePhone').value, email:$('eEmail').value});
+      Object.assign(state.sel, ur.account);
+      var ix = state.clients.findIndex(function(x){ return x.id===state.sel.id; }); if(ix>-1) state.clients[ix] = state.sel;
+      renderList(); renderDetail();
+      note($('lgNote'),'Details saved.',true);
+    } catch(x){ note($('lgNote'),x.message,false); eb.disabled = false; }
+    return;
+  }
+  if(e.target.id==='delForm'){
+    e.preventDefault();
+    var c0 = state.sel;
+    if($('dConfirm').value.trim().toLowerCase() !== String(c0.login_id).toLowerCase()){ note($('lgNote'),'Type the User ID exactly to confirm deletion.',false); return; }
+    if(!confirm('Permanently delete '+c0.name+' ('+c0.login_id+')? This cannot be undone.')) return;
+    try {
+      await callFn({action:'delete', account_id:c0.id, confirm_login_id:$('dConfirm').value});
+      state.clients = state.clients.filter(function(x){ return x.id!==c0.id; }); state.sel = null;
+      $('layout').classList.remove('detail-open'); renderList();
+      $('pane').innerHTML = ''; try { $('detail').innerHTML = '<div class="empty">Client deleted.</div>'; } catch(z){}
+    } catch(x){ note($('lgNote'),x.message,false); }
+    return;
   }
   if(e.target.id==='ptForm'){
     e.preventDefault();

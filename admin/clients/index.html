@@ -124,6 +124,30 @@ label{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:0 
   </div>
 </div>
 
+<!-- Read-only viewers -->
+<div class="modal" id="vwModal" role="dialog" aria-modal="true" aria-labelledby="vwTitle">
+  <div class="box" style="max-width:640px">
+    <h3 id="vwTitle">Read-only viewers &mdash; Theni Properties</h3>
+    <p class="sub">People you give their own User ID and password to view the Theni records. They cannot download, share, edit or add anything.</p>
+    <div class="note" id="vwNote"></div>
+    <div class="card" style="padding:14px;background:#FDFCF9;margin-bottom:14px">
+      <div class="kv"><span>Sign-in page</span><span><a id="vwUrl" href="https://www.vlegalservices.in/kannangroup/theni/view/" target="_blank" rel="noopener">www.vlegalservices.in/kannangroup/theni/view/ &#8599;</a></span>
+      <span>Portal password</span><span id="vwKeyState">&hellip;</span></div>
+      <form id="vwKeyForm" style="margin-top:10px"><div class="f"><label for="vwKey">Property portal password (the one you use for Theni Properties)</label>
+        <input id="vwKey" type="password" autocomplete="off" maxlength="200" placeholder="Needed once, so the viewer service can read the records">
+        <div class="hint">Stored only on the server. Viewers never see it. Enter it again only if you change your portal password.</div></div>
+      <div class="actions" style="justify-content:flex-end"><button class="btn navy">Save &amp; test</button></div></form>
+    </div>
+    <div id="vwUsers"></div>
+    <form id="vwAddForm" class="card" style="padding:14px;margin-top:14px" autocomplete="off"><h3 style="font-size:16px;margin:0 0 10px">Add a viewer</h3>
+      <div class="grid2"><div class="f"><label for="vwUid">User ID</label><input id="vwUid" required maxlength="40" autocapitalize="none" spellcheck="false" placeholder="e.g. surveyor"></div>
+      <div class="f"><label for="vwName">Name</label><input id="vwName" maxlength="120" placeholder="e.g. Surveyor"></div></div>
+      <div class="f"><label for="vwPass">Password</label><input id="vwPass" type="text" required minlength="8" maxlength="72" placeholder="At least 8 characters"></div>
+      <div class="actions" style="justify-content:flex-end"><button class="btn navy">Create viewer</button></div></form>
+    <div class="actions" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn" data-vwclose>Close</button></div>
+  </div>
+</div>
+
 <!-- New client -->
 <div class="modal" id="newModal" role="dialog" aria-modal="true" aria-labelledby="nmTitle">
   <div class="box">
@@ -187,6 +211,32 @@ function pill(s){ return '<span class="pill p-'+esc(String(s).split(' ')[0])+'">
 function note(el,t,ok){ el.textContent=t; el.className='note on '+(ok?'ok':'bad'); if(!t) el.className='note'; }
 function isOpen(r){ return r.status!=='Completed' && r.status!=='Closed'; }
 
+async function callView(body){
+  var s = (await sb.auth.getSession()).data.session;
+  var r = await fetch(SB_URL+'/functions/v1/theni-view', { method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey:SB_KEY, Authorization:'Bearer '+(s?s.access_token:SB_KEY) },
+    body: JSON.stringify(body) });
+  var j = {}; try { j = await r.json(); } catch(e){}
+  if(!r.ok || j.error) throw new Error(j.error || ('Request failed ('+r.status+')'));
+  return j;
+}
+async function openViewers(){
+  $('vwModal').classList.add('on'); note($('vwNote'),'');
+  await refreshViewers();
+}
+async function refreshViewers(){
+  try {
+    var st = await callView({action:'admin_state'});
+    $('vwKeyState').textContent = st.key_set ? 'Saved' : 'Not set yet \u2014 viewers cannot open the records until you save it';
+    $('vwUsers').innerHTML = st.users.length ? '<table class="docs"><tr><th style="text-align:left">User ID</th><th style="text-align:left">Name</th><th style="text-align:left">Last sign-in</th><th></th></tr>'+
+      st.users.map(function(u){
+        var wa = 'https://wa.me/?text='+encodeURIComponent('Sign in to view the Theni property records:\nhttps://www.vlegalservices.in/kannangroup/theni/view/\nUser ID: '+u.login_id+'\nPassword: will be shared with you separately.\nThis access is view-only.\n\nV Legal Services and Documentation');
+        return '<tr><td class="mono">'+esc(u.login_id)+(u.active?'':' <span class="pill p-off">Frozen</span>')+'</td><td>'+esc(u.name||'')+'</td><td>'+(u.last_login_at?when(u.last_login_at):'\u2014')+'</td>'+
+          '<td style="white-space:nowrap"><a class="btn sm" href="'+wa+'" target="_blank" rel="noopener">Share</a> <button class="btn sm" data-vwpw="'+esc(u.login_id)+'">Password</button> '+
+          '<button class="btn sm" data-vwtoggle="'+esc(u.login_id)+'" data-active="'+(u.active?'1':'0')+'">'+(u.active?'Freeze':'Unfreeze')+'</button> <button class="btn sm danger" data-vwdel="'+esc(u.login_id)+'">Delete</button></td></tr>';
+      }).join('')+'</table>' : '<div class="empty">No viewers yet.</div>';
+  } catch(x){ note($('vwNote'), x.message, false); }
+}
 async function callFn(body){
   var s = (await sb.auth.getSession()).data.session;
   var r = await fetch(SB_URL+'/functions/v1/client-accounts', { method:'POST',
@@ -222,6 +272,9 @@ function renderList(){
   }
   if(!q || 'kannan group view only customer'.indexOf(q)>-1){
     h += '<button class="item static" id="setupKannanView"><b>+ Kannan Group customer</b><div class="row"><small>View-only Theni Properties: no download, share or edit →</small></div></button>';
+  }
+  if(!q || 'read-only viewers theni surveyor'.indexOf(q)>-1){
+    h += '<button class="item static" id="setupViewers"><b>Read-only viewers</b><div class="row"><small>Own User ID and password to view Theni Properties only →</small></div></button>';
   }
   $('clientList').innerHTML = h || '<div class="empty">No clients match.</div>';
 }
@@ -343,6 +396,26 @@ document.addEventListener('click', async function(e){
   if(t.dataset.tab){ state.tab=t.dataset.tab; state.openReq=null; renderDetail(); return; }
   if(t.id==='reqBack'){ state.openReq=null; await loadDetail(); renderDetail(); return; }
   if(t.id==='newBtn'){ openNew(); return; }
+  if(t.id==='setupViewers'){ openViewers(); return; }
+  if(t.hasAttribute('data-vwclose')){ $('vwModal').classList.remove('on'); return; }
+  if(t.dataset.vwpw){
+    var np = prompt('New password for '+t.dataset.vwpw+' (at least 8 characters):'); if(!np) return;
+    try { await callView({action:'admin_save_user', login_id:t.dataset.vwpw, password:np}); note($('vwNote'),'Password changed for '+t.dataset.vwpw+'. Share it with them privately.',true); }
+    catch(x){ note($('vwNote'),x.message,false); }
+    return;
+  }
+  if(t.dataset.vwtoggle){
+    var to = t.dataset.active!=='1';
+    try { await callView({action:'admin_save_user', login_id:t.dataset.vwtoggle, active:to}); await refreshViewers(); note($('vwNote'),(to?'Unfrozen: ':'Frozen: ')+t.dataset.vwtoggle,true); }
+    catch(x){ note($('vwNote'),x.message,false); }
+    return;
+  }
+  if(t.dataset.vwdel){
+    if(!confirm('Delete viewer '+t.dataset.vwdel+'? They will no longer be able to sign in.')) return;
+    try { await callView({action:'admin_delete_user', login_id:t.dataset.vwdel}); await refreshViewers(); note($('vwNote'),'Deleted '+t.dataset.vwdel+'.',true); }
+    catch(x){ note($('vwNote'),x.message,false); }
+    return;
+  }
   if(t.id==='setupKannan'){ openNew('kannan'); return; }
   if(t.id==='setupKannanView'){ openNew('kannanview'); return; }
   if(t.id==='ptTest'){
@@ -414,6 +487,22 @@ document.addEventListener('submit', async function(e){
     var ins = await sb.from('client_shared_docs').insert({ client_account_id:state.sel.id, title:$('dTitle').value.trim(), note:$('dNote').value.trim()||null, file_path:path, file_name:f.name, uploaded_by:'firm' });
     if(ins.error){ await sb.storage.from('client-portal').remove([path]); note($('upNote'),ins.error.message,false); b.disabled=false; b.textContent='Share with client'; return; }
     await loadDetail(); renderDetail(); return;
+  }
+  if(e.target.id==='vwKeyForm'){
+    e.preventDefault();
+    var kb = e.target.querySelector('button'); kb.disabled = true;
+    try { await callView({action:'admin_set_key', portal_key:$('vwKey').value}); $('vwKey').value=''; note($('vwNote'),'Saved and tested: the viewer service can read the Theni records.',true); await refreshViewers(); }
+    catch(x){ note($('vwNote'),x.message,false); }
+    kb.disabled = false; return;
+  }
+  if(e.target.id==='vwAddForm'){
+    e.preventDefault();
+    var ab = e.target.querySelector('button'); ab.disabled = true;
+    try { await callView({action:'admin_save_user', login_id:$('vwUid').value, name:$('vwName').value, password:$('vwPass').value, active:true});
+      note($('vwNote'),'Viewer '+$('vwUid').value.toLowerCase()+' created. Share the User ID and password with them privately.',true);
+      e.target.reset(); await refreshViewers(); }
+    catch(x){ note($('vwNote'),x.message,false); }
+    ab.disabled = false; return;
   }
   if(e.target.id==='editForm'){
     e.preventDefault();

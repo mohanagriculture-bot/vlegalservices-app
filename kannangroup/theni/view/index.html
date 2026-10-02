@@ -19,6 +19,7 @@ setInterval(function(){try{var l=parseInt(sessionStorage.getItem(K)||'0',10);if(
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="/kannangroup/theni/gv-data.js"></script>
+<script src="/kannangroup/theni/rsr-data.js"></script>
 <style>
   :root{
     --bg:#F5F3EC; --surface:#FFFFFF; --ink:#1E2430; --muted:#6B7280;
@@ -1302,9 +1303,10 @@ var REPORT_DEFS = {
       {k:'enc',     label:'Encr. Ac',      num:true, sum:true},
       {k:'status',  label:'Status',        w:90},
       {k:'verif',   label:'Verification',  w:90},
-      {k:'gv_acre', label:'GV ₹/Acre',     num:true, money:true}
+      {k:'gv_acre', label:'GV ₹/Acre',     num:true, money:true},
+      {k:'rsr',     label:'RSR Extract Details (Owner Name & Assessment)', w:230, rsr:true}
     ],
-    row: function(r,c){ var g = gvFor(r.sf_no); return {sf_no:r.sf_no, patta_no:(r.patta_no||'—'), total:c.total, free:c.free,
+    row: function(r,c){ var g = gvFor(r.sf_no); return {sf_no:r.sf_no, rsr:rsrText(r.sf_no), _rsrHtml:rsrHtml(r.sf_no), patta_no:(r.patta_no||'—'), total:c.total, free:c.free,
       sold:c.sold, enc:c.enc, status:(r.sold_status||'unsold').replace(/_/g,' '), verif:(r.verification_status||'—'),
       gv_acre:(g ? g.acre : null)}; }
   },
@@ -1425,6 +1427,7 @@ function reportTable(b){
       if (c.k==='company') return '<td class="entcell">'
         + (o._slug ? emark(o._slug,'sm') : '') + '<span>'+esc(v)+'</span></td>';
       if (c.k==='sf_no') return '<td><b>'+esc(v)+'</b></td>';
+      if (c.rsr) return '<td style="min-width:200px;">'+o._rsrHtml+'</td>';
       return '<td>'+esc(String(v).slice(0,80))+'</td>';
     }).join('') + '</tr>';
   }).join('');
@@ -1492,6 +1495,7 @@ function exportExcel(){
 
 function exportPdf(){
   var b = CURRENT_REPORT;
+  if (b) b = Object.assign({}, b, {cols: b.cols.filter(function(c){ return !c.rsr; })}); /* Tamil text is not supported in the PDF font */
   var J = window.jspdf && window.jspdf.jsPDF;
   if (!b || !J) { toast('PDF export unavailable.',true); return; }
   var landscape = b.cols.length > 5;
@@ -1575,6 +1579,35 @@ function inr(v, plain){
 }
 function gvNorm(sf){ return String(sf||'').replace(/\s+/g,'').toUpperCase(); }
 var GV_INDEX = null;
+/* RSR extract lookup: exact sub-division, else the parent survey number, else its sub-divisions */
+function rsrFor(sf){
+  var R = window.RSR_THENI; if (!R) return null;
+  var k = String(sf==null?'':sf).toLowerCase().replace(/\s+/g,'').replace(/\//g,'-');
+  if (!k) return null;
+  function pick(key){ var e = R.rows[key]; return {sub:e[0], name:e[1], assess:e[2], patta:e[3], remark:e[4]}; }
+  if (R.rows[k]) return {basis:'exact', items:[pick(k)]};
+  var parent = k.replace(/[a-z]+$/, '');
+  if (parent !== k && R.rows[parent]) return {basis:'parent', items:[pick(parent)]};
+  var kids = Object.keys(R.rows).filter(function(x){ return x.indexOf(k) === 0 && /^[a-z]+$/.test(x.slice(k.length)); });
+  if (kids.length) return {basis:'split', items:kids.sort().map(pick)};
+  return null;
+}
+function rsrText(sf){
+  var m = rsrFor(sf); if (!m) return '';
+  return m.items.map(function(i){
+    return (i.name || '—') + (i.assess ? ' (Assessment Rs. ' + i.assess + ')' : '') + (m.basis === 'exact' ? '' : ' [RSR ' + i.sub + ']');
+  }).join('; ');
+}
+function rsrHtml(sf){
+  var m = rsrFor(sf);
+  if (!m) return '<span style="color:var(--muted);">Not in RSR extract</span>';
+  return m.items.map(function(i){
+    return '<div class="tamil" style="line-height:1.35;"><b>' + esc(i.name || '—') + '</b>'
+      + '<div style="font-size:11px;color:var(--muted);">' + (i.assess ? 'Assessment Rs. ' + esc(i.assess) + ' · ' : '')
+      + 'RSR ' + esc(i.sub) + (i.patta ? ' · Patta ' + esc(i.patta) : '') + (m.basis === 'exact' ? '' : ' · ' + (m.basis === 'parent' ? 'parent survey no.' : 'sub-division'))
+      + (i.remark ? ' · ' + esc(i.remark) : '') + '</div></div>';
+  }).join('');
+}
 function gvFor(sf){
   var G = window.GV_THENI; if (!G) return null;
   if (!GV_INDEX) { GV_INDEX = {}; Object.keys(G.SF).forEach(function(k){ GV_INDEX[gvNorm(k)] = k; }); }
@@ -2896,7 +2929,8 @@ function openSf(slug, sf){
     + tile('Sold', isSold ? 'Yes' : (isPart ? 'Part' : 'No'), f2(c.sold) + ' Ac sold' + (d.r.sold_to ? ' · ' + d.r.sold_to : ''), isSold ? 'on-bad' : 'off')
     + tile('Partially Sold', isPart ? 'Yes' : 'No', isPart ? 'Balance ' + f2(c.avail) + ' Ac' : '', isPart ? 'on-warn' : 'off')
     + tile('Encroached', isEnc ? (d.es === 'full' ? 'Fully' : 'Partly') : 'No', isEnc ? f2(c.enc) + ' Ac encroached' : '', isEnc ? 'on-bad' : 'off')
-    + '</div><div class="sfh">Documents</div><div class="sfgrid" style="grid-template-columns:1fr;">';
+    + '</div><div class="sfh">RSR Extract (A Register)</div><div class="sftile">' + rsrHtml(d.r.sf_no) + '</div>'
+    + '<div class="sfh">Documents</div><div class="sfgrid" style="grid-template-columns:1fr;">';
   SF_FILE_ROWS.forEach(function(fr){
     var fl = d.files[fr[0]];
     h += '<div class="sftile"><div class="k">' + fr[1] + '</div>';
@@ -2937,7 +2971,8 @@ function sfText(d){
     '🏢 ' + d.company, line,
     '📐 *Extent:* ' + f2(d.extent) + ' Ac',
     '📑 *Primary Doc No:* ' + (d.docNo || '—'),
-    '📋 *Patta No:* ' + (d.patta || '—'), '',
+    '📋 *Patta No:* ' + (d.patta || '—'),
+    '📜 *RSR Extract:* ' + (rsrText(d.r.sf_no) || 'Not in RSR extract'), '',
     '*STATUS*',
     '🟢 Free Hold: ' + f2(d.c.free) + ' Ac',
     '🔴 Sold: ' + f2(d.c.sold) + ' Ac' + (d.r.sold_to ? ' (' + d.r.sold_to + ')' : ''),

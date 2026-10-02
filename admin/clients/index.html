@@ -174,6 +174,8 @@ var KANNAN = { login_id:'kannangroup', name:'Kannan Group', nature:'Builder / Pr
   api_url:'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec',
   dest:'/kannangroup/theni/', area:'/kannangroup/', pages:[['Property portal','/kannangroup/theni/'],['Office service desk','/kannangroup/office/'],['Kannan Group home','/kannangroup/']] };
 var KANNAN_VIEW = { api_url:KANNAN.api_url, dest:'/kannangroup/theni/view/', area:'/kannangroup/', nature:'Kannan Group customer (view only)' };
+var PAGE_OPTIONS = [['/kannangroup/theni/view/','Theni Properties \u2014 view only (no download, share or edit)'],
+                    ['/kannangroup/theni/','Theni Properties \u2014 full access (can edit)']];
 var setupMode = null;
 var STATUSES = ['New','Acknowledged','In progress','Awaiting information','Completed','Closed'];
 var state = { me:null, clients:[], counts:{}, sel:null, tab:'requests', reqs:[], openReq:null, docs:[] };
@@ -315,16 +317,22 @@ async function loadPortal(){
   var c = state.sel, box = $('portalBox'); if(!box) return;
   var info = null;
   try { info = (await callFn({action:'portal_info', account_id:c.id})).link; } catch(x){}
-  if(!info && c.login_id!==KANNAN.login_id) return;
+  var kannanish = c.login_id===KANNAN.login_id || /kannan/i.test((c.name||'')+' '+(c.login_id||'')+' '+(c.nature||''));
+  if(!info && !kannanish) return;
   var pages = c.login_id===KANNAN.login_id ? KANNAN.pages : (info ? [['Property portal', info.dest]] : []);
+  var curDest = info ? info.dest : PAGE_OPTIONS[0][0];
+  var pageOpts = PAGE_OPTIONS.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===curDest?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('');
+  if(!PAGE_OPTIONS.some(function(o){ return o[0]===curDest; })) pageOpts = '<option value="'+esc(curDest)+'" selected>'+esc(curDest)+'</option>'+pageOpts;
   box.innerHTML = '<div class="card" style="padding:16px;margin-top:18px"><h3 style="font-size:18px;margin-bottom:4px">Linked property portal</h3>'+
     '<p style="margin:0 0 12px;color:var(--muted);font-size:13.5px">When this client signs in, the system opens their property portal for them. Freezing access above also locks the portal.</p>'+
     '<div class="kv"><span>Status</span><span>'+(info ? (info.has_key?'Key saved':'Key missing — client cannot open the portal') : 'Not linked yet')+'</span>'+
     '<span>Pages</span><span>'+pages.map(function(p){ return '<a href="'+p[1]+'" target="_blank" rel="noopener">'+esc(p[0])+' ↗</a>'; }).join('<br>')+'</span></div>'+
     '<div class="note" id="ptNote"></div>'+
-    '<form id="ptForm"><div class="f"><label for="ptKey">'+(info&&info.has_key?'Replace portal key':'Portal key')+'</label><input id="ptKey" type="password" autocomplete="off" maxlength="200" placeholder="The password their property portal uses">'+
+    '<form id="ptForm"><div class="f"><label for="ptPage">Page this client opens after sign-in</label><select id="ptPage">'+pageOpts+'</select>'+
+    '<div class="hint">View-only needs the view-only key; full access needs the full portal password. Changing the page means entering the key for it below.</div></div>'+
+    '<div class="f"><label for="ptKey">'+(info&&info.has_key?'Replace portal key':'Portal key')+'</label><input id="ptKey" type="password" autocomplete="off" maxlength="200" placeholder="The password their property portal uses">'+
     '<div class="hint">If you change the password in their Google Sheet, enter the new one here.</div></div>'+
-    '<div class="actions" style="justify-content:flex-end">'+(info?'<button type="button" class="btn" id="ptTest">Test connection</button>':'')+'<button class="btn navy">Save key</button></div></form></div>';
+    '<div class="actions" style="justify-content:flex-end">'+(info?'<button type="button" class="btn" id="ptTest">Test connection</button>':'')+'<button class="btn navy">Save page &amp; key</button></div></form></div>';
 }
 
 /* ---------------- events ---------------- */
@@ -436,13 +444,16 @@ document.addEventListener('submit', async function(e){
   if(e.target.id==='ptForm'){
     e.preventDefault();
     var key=$('ptKey').value, c=state.sel;
-    var base = c.login_id===KANNAN.login_id ? KANNAN : null;
+    var base = (c.login_id===KANNAN.login_id || /kannan/i.test((c.name||'')+' '+(c.login_id||'')+' '+(c.nature||''))) ? KANNAN : null;
     var cur = null; try { cur = (await callFn({action:'portal_info', account_id:c.id})).link; } catch(x){}
     var cfg = cur || base;
     if(!cfg){ note($('ptNote'),'This client has no portal to link.',false); return; }
+    var dest = $('ptPage').value;
     if(!key && !(cur&&cur.has_key)){ note($('ptNote'),'Enter the portal key.',false); return; }
+    if(cur && cur.dest!==dest && !key){ note($('ptNote'),'You changed the page, so enter the key for it: the view-only key for the view-only page, the full portal password for full access.',false); return; }
+    if(dest==='/kannangroup/theni/' && (!cur || cur.dest!==dest) && !confirm('Full access lets this client change, upload and delete property records. Link '+c.name+' to the full portal?')) return;
     try {
-      var lr = await callFn({action:'link_portal', account_id:c.id, api_url:cfg.api_url, dest:cfg.dest, area:cfg.area, portal_password:key||''});
+      var lr = await callFn({action:'link_portal', account_id:c.id, api_url:cfg.api_url, dest:dest, area:cfg.area||'/kannangroup/', portal_password:key||''});
       note($('ptNote'), lr.tested ? 'Saved and tested: the portal opens with this key.' : 'Saved, but the portal did not accept it: '+lr.test_error, lr.tested);
       $('ptKey').value='';
     } catch(x){ note($('ptNote'),x.message,false); }

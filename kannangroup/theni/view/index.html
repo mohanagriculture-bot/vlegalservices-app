@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="/assets/idle.js"></script>
+<script>
+/* sign out after 10 idle minutes */
+(function(){var K='vls_last_active',L=600000;function t(){try{sessionStorage.setItem(K,String(Date.now()))}catch(e){}}
+function out(){try{sessionStorage.removeItem('pkv_token');sessionStorage.removeItem(K)}catch(e){}location.reload();}
+try{var l=parseInt(sessionStorage.getItem(K)||'0',10);if(l&&Date.now()-l>L&&sessionStorage.getItem('pkv_token')){out();return;}}catch(e){}
+t();['mousemove','mousedown','keydown','scroll','touchstart','wheel'].forEach(function(ev){window.addEventListener(ev,function(){t()},{passive:true,capture:true})});
+setInterval(function(){try{var l=parseInt(sessionStorage.getItem(K)||'0',10);if(l&&Date.now()-l>L&&sessionStorage.getItem('pkv_token'))out();}catch(e){}},15000);})();
+</script>
 
 <script src="/assets/lock.js"></script>
 
@@ -609,8 +616,12 @@
 <!-- ============ LOGIN ============ -->
 <div class="login-wrap" id="loginView">
   <form class="login" id="loginForm" autocomplete="off">
-    <h2>Sign in</h2>
-    <div class="sub">Authorised access only.</div>
+    <h2>Read-only sign in</h2>
+    <div class="sub">View-only access to the Theni property records.</div>
+    <div class="field">
+      <label for="uid">User ID</label>
+      <input id="uid" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false">
+    </div>
     <div class="field">
       <label for="pw">Password</label>
       <input id="pw" type="password" required autocomplete="current-password">
@@ -713,7 +724,7 @@
 
 <script>
 (function(){
-var API = 'https://script.google.com/macros/s/AKfycbwHv7LpxBwx4acq1oUca1nK9FuAtq8v2ZyX9ymqXXvonyPTtjP8dGI_kFpC8PYpQNVtdA/exec';
+var API = 'https://tjvvqoomaptxscgiziks.supabase.co/functions/v1/theni-view';
 
 var token = null, DATA = {companies:[],partners:[],survey:[],documents:[],sections:[],seccontent:[]}, tab = 'dash', openKey = null, viewSlug = null;
 
@@ -826,7 +837,7 @@ function docsForSf(slug, sf){
          :                  false;
   });
 }
-try { token = sessionStorage.getItem('pk_token') || null; } catch(e) {}
+try { token = sessionStorage.getItem('pkv_token') || null; } catch(e) {}
 
 document.getElementById('yr').textContent = new Date().getFullYear();
 
@@ -837,11 +848,11 @@ function f2(v){ return (Math.round(n(v)*100)/100).toFixed(2); }
 
 function call(payload){
   if (payload.action !== 'load') return Promise.reject(new Error('This copy is view only.'));
-  payload.token = token;
+  if (payload.action !== 'load') return Promise.reject(new Error('This copy is view only.'));
   return fetch(API, {
-    method:'POST', redirect:'follow',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify(payload)
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action:'view_load', token:token})
   }).then(function(r){ return r.json(); });
 }
 
@@ -3525,13 +3536,14 @@ var PRES = {
 
 function signOut(){
   PRES.stop();
+  try { if (token) fetch(API, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'view_logout', token:token})}); } catch(e) {}
   token = null;
-  try { sessionStorage.removeItem('pk_token'); } catch(e) {}
+  try { sessionStorage.removeItem('pkv_token'); } catch(e) {}
   document.getElementById('appView').classList.add('hidden');
   document.getElementById('outBtn').classList.add('hidden');
   document.getElementById('loginView').classList.remove('hidden');
   document.getElementById('pw').value = '';
-  location.replace('/login/?as=client');
+  document.getElementById('uid').value = '';
 }
 
 document.getElementById('loginForm').addEventListener('submit', function(e){
@@ -3540,15 +3552,14 @@ document.getElementById('loginForm').addEventListener('submit', function(e){
   var pw = document.getElementById('pw').value;
   if (VLSLock.locked()) { msg.textContent = VLSLock.message; return; }
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Checking…'; msg.textContent = '';
-  fetch(API, {method:'POST', redirect:'follow', headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action:'login', password:pw,
-      portal:'theni', agent:PRES.agent()})})
+  fetch(API, {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action:'view_login', login_id:document.getElementById('uid').value, password:pw})})
     .then(function(r){ return r.json(); })
     .then(function(r){
-      if (!r.ok) { var left = VLSLock.fail(); throw new Error(VLSLock.wrongText(left)); }
+      if (!r.ok) { var left = VLSLock.fail(); throw new Error(r.error && !/incorrect/i.test(r.error) ? r.error : VLSLock.wrongText(left)); }
       VLSLock.reset();
       token = r.token;
-      try { sessionStorage.setItem('pk_token', token); } catch(e) {}
+      try { sessionStorage.setItem('pkv_token', token); } catch(e) {}
       showApp();
       return reload(false);
     })
@@ -3565,7 +3576,7 @@ if (token) {
   showApp();
   reload(false).catch(function(){ signOut(); });
 } else {
-  location.replace('/login/?as=client&next=' + encodeURIComponent(location.pathname));
+  document.getElementById('loginView').classList.remove('hidden');
 }
 })();
 </script>

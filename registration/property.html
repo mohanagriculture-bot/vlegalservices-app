@@ -598,6 +598,8 @@ drawExt();drawSROs();drawSurveys();render();
   $("loadMsg").textContent="Loading village and survey lists…";
   try{MASTER=await fetch("data/master.json").then(r=>r.json());$("loadMsg").textContent="";fetch("data/urban.json").then(r=>r.json()).then(u=>{URBAN=u;drawUrban()}).catch(()=>{});fetch("data/streets.json").then(r=>r.json()).then(s=>{STREETS=s;drawStreets()}).catch(()=>{})}catch(e){$("loadMsg").textContent="Could not load the village lists. Reload the page."}
   drawSROs();
+  window.S=S;
+  if(/work=1/.test(location.search)){try{if(window.parent&&window.parent.propInit)await window.parent.propInit(window)}catch(e){}render();return}
   document.querySelector('input[name=partyTypeRadio][value="5"]').checked=true;S.ptype="5";
   document.querySelector('input[name=areaType][value="Rural"]').checked=true;
   $("cmb_sub_registrar_office").value="22610";await onSRO();

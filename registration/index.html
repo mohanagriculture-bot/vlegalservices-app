@@ -80,6 +80,24 @@ th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertic
 th{background:var(--soft);font-weight:600;font-size:12.5px;white-space:nowrap;text-align:center;border-bottom:2px solid #e1e4ed}
 td.num{font-variant-numeric:tabular-nums;text-align:right}
 .empty{color:var(--muted);text-align:center;padding:14px}
+.subnav{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.subnav .tabs{margin:0;flex:1 1 auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--panel);border-radius:10px;padding:14px 16px;box-shadow:0 2px 3px 1px #21212112;border-left:4px solid var(--accent)}
+.stat b{display:block;font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.warn{border-left-color:var(--warn)}
+td.cnt,th.cnt{text-align:center;font-variant-numeric:tabular-nums}
+td.cnt button{border:0;background:none;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:2px 6px;border-radius:4px}
+td.cnt button:hover{background:var(--accent-soft)}
+tr.tot td{font-weight:600;background:var(--soft)}
+tbody tr.pick{cursor:pointer}tbody tr.pick:hover td{background:var(--accent-soft)}
+tbody tr.sel td{background:var(--accent-soft)}
+.st{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);white-space:nowrap}
+.st.draft{background:#eceff1;color:#455a64}.st.awaiting_approval{background:var(--warn-soft);color:var(--warn)}.st.query{background:#fde8e8;color:var(--err)}.st.registered,.st.delivered{background:#e3f4ea;color:var(--ok)}
+.hist{list-style:none;margin:0;padding:0;font-size:13px}.hist li{padding:6px 0;border-bottom:1px solid var(--line)}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px}.filters .f{min-width:180px;flex:1 1 180px}
 .docgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px 18px;margin-top:8px}
 .docrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .upl{position:relative;overflow:hidden;display:inline-flex;align-items:center}
@@ -124,31 +142,30 @@ iframe.prop{width:100%;height:1500px;border:1px solid var(--line);border-radius:
 </head>
 <body>
 <div class="topband"></div>
-<div class="ribbon">Practice replica for V Legal / MOD Desk staff training. This is <b>not</b> the TNREGINET portal: nothing here is sent to the Registration Department. Screen entries are cleared when you close the page; uploaded documents are kept in the firm's Google Drive.</div>
+<div class="ribbon">V Legal registration desk. This is <b>not</b> the TNREGINET portal: nothing here is sent to the Registration Department. Files are saved to the firm's records as you type; scans go to the firm's Google Drive.</div>
 <div class="wrap">
   <div class="top">
-    <div class="brand">MOD Desk · Portal Practice<small>Presence-less registration screens</small></div>
+    <div class="brand">V Legal · Registration Desk<small id="whoami">Presence-less registration</small></div>
     <nav class="nav" aria-label="Pages">
-      <button type="button" data-go="entry" aria-current="page">Entry Details</button>
-      <button type="button" data-go="home">Home</button>
-      <button type="button" data-go="create">Create Document</button>
-      <button type="button" data-go="wizard">Document</button>
-      <button type="button" data-go="mydocs">My Documents</button>
+      <button type="button" data-go="dash" aria-current="page">Dashboard</button>
+      <button type="button" data-go="docreg">Document Registration</button>
       <button type="button" id="signOut">Sign out</button>
     </nav>
   </div>
   <div class="crumb" id="crumb"></div>
+  <div class="subnav" id="subnav" hidden><div class="tabs child" role="tablist"><button type="button" data-sub="new">Create New</button><button type="button" data-sub="drafts">Drafts</button><button type="button" data-sub="mydocs">My Documents</button></div><span class="hint" id="saveState" aria-live="polite"></span></div>
   <main id="stage"></main>
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2600)}
 let SCR=null,OPTS={};
-const APP={page:"entry",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},done:{},docs:[]};
+const APP={page:"dash",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},done:{},docs:[]};
 
 /* ---------- deed configuration (tab names exactly as on the portal; unverified ones flagged) ---------- */
 const DEEDS={
@@ -166,21 +183,27 @@ const DEEDS={
 const PARTY_COLS=["Sr. No.","Name","Age","Gender","Party Type","Contact Details","Full Address","Action"];
 
 /* ---------- navigation ---------- */
-function go(p){APP.page=p;$$(".nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===p?"page":"false"));render();window.scrollTo(0,0)}
-$$(".nav button[data-go]").forEach(b=>b.onclick=()=>{if(b.dataset.go==="wizard"&&!APP.deedType){toast("Choose the Nature of Document and press Proceed first");return go("create")}go(b.dataset.go)});
+const GROUP={entry:"new",create:"new",wizard:"new",drafts:"drafts",mydocs:"mydocs"};
+function go(p){if(APP.page==="wizard")saveScreen();if(APP.page!==p)scheduleSave(true);APP.page=p;
+ $$(".nav button[data-go]").forEach(b=>b.setAttribute("aria-current",(b.dataset.go==="dash"?p==="dash":p!=="dash")?"page":"false"));
+ $("#subnav").hidden=p==="dash";$$("#subnav [data-sub]").forEach(b=>b.setAttribute("aria-selected",GROUP[p]===b.dataset.sub));
+ render();window.scrollTo(0,0)}
+$$(".nav button[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go==="dash"?"dash":"mydocs"));
+$$("#subnav [data-sub]").forEach(b=>b.onclick=()=>{const k=b.dataset.sub;if(k==="new")return newFile();go(k)});
 function crumb(t){$("#crumb").innerHTML=t}
 function render(){const p=APP.page;const st=$("#stage");
+ if(p==="dash")return renderDash(st);
+ if(p==="drafts")return renderList(st,"drafts");
  if(p==="entry")return renderEntry(st);
- if(p==="home")return renderHome(st);
  if(p==="create")return renderCreate(st);
  if(p==="wizard")return renderWizard(st);
- if(p==="mydocs")return renderMyDocs(st)}
+ if(p==="mydocs")return renderList(st,"mydocs")}
 
 /* ---------- helpers ---------- */
 function optsHTML(list,sel){return (list||[]).map(([v,t])=>`<option value="${esc(v)}"${String(sel)===String(v)?" selected":""}>${esc(t)}</option>`).join("")}
 function opts(ref){return typeof ref==="string"?OPTS[ref]||[]:ref||[]}
 function findOpts(id){for(const k in SCR.pages)for(const x of SCR.pages[k]){const fs=x.k==="f"?x.fs:x.k==="x"?[x.f]:[];for(const f of fs)if(f.id===id&&f.opts)return opts(f.opts)}return[]}
-const today=()=>{const d=new Date();return d.toISOString().slice(0,10)};
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
 /* ---------- 1. Entry details (internal) ---------- */
@@ -194,13 +217,13 @@ const ENTRY_FIELDS=[
  ["client","Mortgagor / Buyer name"],["clientMobile","Mobile number"],["bank","Bank / NBFC","bank"],["ifsc","Branch IFSC code","ifsc"],["branch","Branch"],["branchPin","Branch pincode"],["loanAc","Loan account no."],["sanction","Sanction / loan amount (₹)","num"],["branchAddr","Branch address (goes to Mortgagee address)","area"],
  ["Documents received","h"],
  ["docs","","checks",["Title / sale deed","Parent documents","Earlier MOD","Chitta / Patta","Encumbrance Certificate","KYC of all parties","Sanction letter","Loan closure letter (discharge)","Other documents"]],
- ["Office tracking","h"],
- ["status","Status","sel",[["New","New"],["Documents pending","Documents pending"],["Ready for portal","Ready for portal"],["TP created","TP created"],["Registered","Registered"]]],["tpNo","TP number (after Create Document)"],["remarks","Remarks","area"]
+ ["Remarks","h"],
+ ["remarks","Remarks","area"]
 ];
 function bankCode(n){const w=(n||"").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(x=>x&&!/^(of|the|and|ltd|limited|pvt|private)$/i.test(x));return w.length>1?w.map(x=>x[0]).join("").toUpperCase().slice(0,5):(w[0]||"").slice(0,4).toUpperCase()}
 function fileRef(){const e=APP.entry;const b=e.bank&&e.bank!=="-1"?bankCode((findOpts("govtBodyList").find(o=>o[0]===e.bank)||[])[1]):"";const br=(e.branch||"").replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12);const nm=(e.client||"").trim().split(/\s+/)[0]?.replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12)||"";
  const d=e.emDate?new Date(e.emDate):new Date();const ds=String(d.getDate()).padStart(2,"0")+MON[d.getMonth()]+String(d.getFullYear()).slice(2);return [b,br,nm,ds].filter(Boolean).join("-")}
-function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on the portal");const e=APP.entry;if(!e.fileDate)e.fileDate=today();if(!e.status)e.status="New";
+function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on the portal");const e=APP.entry;if(!e.fileDate)e.fileDate=today();
  const sros=findOpts("sub_reg_off"),banks=findOpts("govtBodyList");
  let h=`<div class="card"><h1>Entry Details</h1><p class="sub">Fill this before opening the portal screens. Proceed carries the work type, SRO, client and bank into the document.</p><div class="grid">`;
  for(const r of ENTRY_FIELDS){if(r[1]==="h"){h+=`<div class="heading">${esc(r[0])}</div>`;continue}
@@ -215,31 +238,22 @@ function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on t
   else if(t==="area")h+=`<div class="f wide"><label for="e_${k}">${l}</label><textarea id="e_${k}">${esc(v)}</textarea></div>`;
   else if(t==="checks"){h+=`<div class="f wide"><p class="hint" style="margin:0">Tick what you received and upload the scan (PDF or photo, up to 20 MB each). Files go to Google Drive → <b>V Legal MOD Desk Files</b> → a folder named after the File reference.</p><div class="docgrid">`+o.map((d,i)=>`<div class="docrow"><label class="chk"><input type="checkbox" id="e_doc${i}" ${(e.docs||[]).includes(d)?"checked":""}> ${esc(d)}</label><label class="btn sm upl"><input type="file" data-doc="${i}" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">Upload</label><ul class="files" id="e_files${i}">${fileList(d)}</ul></div>`).join("")+`</div><span class="hint" id="e_upMsg"></span></div>`}
   else h+=`<div class="f"><label for="e_${k}">${l}</label><input type="text" id="e_${k}" value="${esc(v)}"></div>`}
- h+=`</div><div class="row" style="margin-top:18px"><button class="btn" type="button" id="e_go">Proceed to portal screens</button><button class="btn sec" type="button" id="e_copy">Copy entry as text</button><span class="hint" id="e_msg"></span></div></div>`;
+ h+=`</div><div class="row" style="margin-top:18px"><button class="btn" type="button" id="e_go">Proceed to Document Registration</button><button class="btn sec" type="button" id="e_copy">Copy entry as text</button><span class="hint" id="e_msg"></span></div></div>`;
  st.innerHTML=`<div id="entryRoot">${h}</div>`;const er=$("#entryRoot");
  const sync=()=>{for(const r of ENTRY_FIELDS){const el=$("#e_"+r[0]);if(el&&r[2]!=="ro")e[r[0]]=el.value}
-   e.docs=(ENTRY_FIELDS.find(r=>r[0]==="docs")[3]).filter((d,i)=>$("#e_doc"+i)?.checked);$("#e_fileRef").value=fileRef()};
+   e.docs=(ENTRY_FIELDS.find(r=>r[0]==="docs")[3]).filter((d,i)=>$("#e_doc"+i)?.checked);$("#e_fileRef").value=fileRef();scheduleSave()};
  er.querySelectorAll("input[type=file][data-doc]").forEach(inp=>inp.addEventListener("change",async ev=>{ev.stopPropagation();const i=+inp.dataset.doc,cat=ENTRY_FIELDS.find(r=>r[0]==="docs")[3][i];const files=[...inp.files];inp.value="";if(!files.length)return;
    sync();const msg=$("#e_upMsg");
-   for(const f of files){msg.textContent=`Uploading ${f.name}…`;try{const r=await driveUpload(f,cat,fileRef()||"Unfiled");(e.files=e.files||[]).push({cat,name:r.name,url:r.url,folderUrl:r.folderUrl});$("#e_doc"+i).checked=true;sync();$("#e_files"+i).innerHTML=fileList(cat);msg.innerHTML=`Saved <b>${esc(r.name)}</b> to Google Drive. <a href="${esc(r.folderUrl)}" target="_blank" rel="noopener">Open folder</a>`}catch(x){msg.textContent=f.name+": "+x.message;break}}}));
+   for(const f of files){msg.textContent=`Uploading ${f.name}…`;try{const r=await driveUpload(f,cat,fileRef()||"Unfiled");(e.files=e.files||[]).push({cat,name:r.name,url:r.url,folderUrl:r.folderUrl});$("#e_doc"+i).checked=true;sync();$("#e_files"+i).innerHTML=fileList(cat);scheduleSave(true);msg.innerHTML=`Saved <b>${esc(r.name)}</b> to Google Drive. <a href="${esc(r.folderUrl)}" target="_blank" rel="noopener">Open folder</a>`}catch(x){msg.textContent=f.name+": "+x.message;break}}}));
  er.addEventListener("input",sync);er.addEventListener("change",sync);
  $("#e_ifscFind").onclick=async()=>{sync();const m=$("#e_ifscMsg");m.textContent="Looking up…";try{const i=await ifscLookup(e.ifsc);
    const bk=matchBank(i.BANK);if(bk&&(!e.bank||e.bank==="-1"))e.bank=bk;e.branch=i.BRANCH||e.branch;e.branchAddr=i.ADDRESS||e.branchAddr;e.branchPin=pinOf(i.ADDRESS)||e.branchPin;e.branchDist=i.DISTRICT||"";e.branchCity=i.CITY||"";
    ["bank","branch","branchAddr","branchPin"].forEach(k=>{const el=$("#e_"+k);if(el)el.value=e[k]||""});$("#e_fileRef").value=fileRef();m.textContent=(i.BANK||"")+" · "+(i.BRANCH||"")+(bk?"":" (pick the bank from the list)")}catch(x){m.textContent=x.message}};
  $("#e_copy").onclick=()=>{sync();const txt=Object.entries({...e,fileRef:fileRef()}).map(([k,v])=>k+": "+(Array.isArray(v)?v.map(x=>x&&x.name?x.cat+": "+x.name+" "+x.url:x).join(", "):v)).join("\n");copyText(txt,"#e_msg")};
- $("#e_go").onclick=()=>{sync();if(e.work){APP.deedType="";}go("home")}}
+ $("#e_go").onclick=()=>{sync();if(e.work&&!APP.deedType)APP.deedType=e.work;go("create")}}
 function copyText(t,msgSel){const done=()=>{if(msgSel)$(msgSel).textContent="Copied";toast("Copied")};try{navigator.clipboard.writeText(t).then(done,()=>fallback())}catch(_){fallback()}
  function fallback(){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");done()}catch(e){toast("Select and copy the text manually")}ta.remove()}}
 
-/* ---------- 2. Home (after login) ---------- */
-function renderHome(st){crumb("Home");st.innerHTML=`<div class="card"><h1>Welcome</h1><p class="sub">The portal's home screen after login, reduced to the services the office uses.</p>
- <div class="tiles">
-  <button class="tile primary" type="button" data-t="create"><b>Presence Less Registration</b><span>Create Document · Deposit of Title Deeds, Sale deed, Further Charge</span></button>
-  <button class="tile" type="button" data-t="mydocs"><b>My Documents</b><span>Temporary Deed Numbers created in this practice session</span></button>
-  <button class="tile" type="button" data-t="entry"><b>Entry Details</b><span>Internal file sheet for this work</span></button>
- </div>
- <h2>Create Document in Just 4 Steps</h2><div class="row"><span class="pill">Buyer/Seller Details</span><span class="pill">Property Details</span><span class="pill">Deed Drafting</span><span class="pill">Pay &amp; Book Appointment</span></div></div>`;
- $$(".tile").forEach(t=>t.onclick=()=>go(t.dataset.t))}
 
 /* ---------- 3. Create Document ---------- */
 function renderCreate(st){crumb("Home &gt; Registration &gt; Document Registration &gt; <b>Presenceless Registration</b>");
@@ -274,7 +288,7 @@ function renderCreate(st){crumb("Home &gt; Registration &gt; Document Registrati
  $("#linkPrevDoc").onchange=e=>$("#linkBox").hidden=!e.target.checked;
  $("#isTpNoCheck").onchange=e=>$("#tpBox").hidden=!e.target.checked;
  const drawLinks=()=>{$("#linkRows").innerHTML=APP.linked.length?APP.linked.map((l,i)=>`<tr><td>${i+1}</td><td>${esc(l.sro)}</td><td>${esc(l.book)}</td><td>${esc(l.no)}</td><td>${esc(l.year)}</td><td>${esc(l.type)}</td><td>${esc(l.deed)}</td><td>${l.principal?"Yes":"No"}</td><td><button class="btn sm sec" type="button" data-del="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="9" class="empty">No document linked yet</td></tr>`;
-  $$("#linkRows [data-del]").forEach(b=>b.onclick=()=>{APP.linked.splice(+b.dataset.del,1);drawLinks()})};drawLinks();
+  $$("#linkRows [data-del]").forEach(b=>b.onclick=()=>{APP.linked.splice(+b.dataset.del,1);drawLinks()});scheduleSave()};drawLinks();
  const txt=id=>{const s=$("#"+id);return s.selectedOptions[0]?.text||""};
  $("#createDocSearch").onclick=()=>{const er=[];if($("#sub_reg_off").value==="-1")er.push("Select Sub Registrar Office");if(!$("#sub_doc_no").value.trim())er.push("Enter Document No.");if($("#sub_year").value==="-1")er.push("Select Year");if($("#cmb_doc_type").value==="-1")er.push("Select Document Type");
   if(er.length)return showErr("#cdErr",er);$("#cdErr").innerHTML="";
@@ -323,7 +337,7 @@ function renderWizard(st){const D=DEEDS[APP.deedType];if(!D)return go("create");
  if(bp)bp.onclick=()=>{saveScreen();if(APP.child>0){APP.child--;render()}};
  if(bn)bn.onclick=()=>{saveScreen();const c=D.parties[APP.child];const er=partyChildCheck(c);if(er.length)return showErr("#scrErr",er);if(APP.child<D.parties.length-1){APP.child++;render()}else toast("Last party screen. Press Save and Continue")};
  $("#btnMainPrev").onclick=()=>{saveScreen();if(APP.tab>0){APP.tab--;APP.child=0;render()}};
- $("#btnMainSaveAsDraft").onclick=()=>{saveScreen();toast("Saved as draft (practice: kept only while this page is open)")};
+ $("#btnMainSaveAsDraft").onclick=()=>{saveScreen();scheduleSave(true);toast("Saved in Drafts")};
  const nx=$("#btnMainNext");if(nx)nx.onclick=()=>{saveScreen();const er=tabCheck();if(er.length)return showErr("#scrErr",er);APP.done[D.tabs[APP.tab][1]]=1;APP.tab++;APP.child=0;render();toast("Saved")};
  const cd=$("#btnCreateDocument");if(cd)cd.onclick=createDoc}
 
@@ -426,7 +440,7 @@ function wireSpec(root,page,key,pc,grid){
  const cp=root.querySelector("#btnCopyData");if(cp)cp.onclick=()=>{const t=[...root.querySelectorAll("input[id^=chk_]:checked")].map(c=>c.value.trim()).join("\n\n");const ta=root.querySelector("#Conditions");if(ta){ta.value=t;toast("Legal conditions copied")}};
  const draw=()=>{const tb=root.querySelector("#gridRows");if(!tb)return;const rows=APP.grids[key]||[];
   tb.innerHTML=rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map(c=>`<td>${esc(c)}</td>`).join("")}<td><button class="btn sm sec" type="button" data-rdel="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="${grid.length}" class="empty">No record added</td></tr>`;
-  tb.querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.rdel,1);draw()})};
+  tb.querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.rdel,1);draw()});scheduleSave()};
  draw();
  root.querySelectorAll("button[id]").forEach(b=>{
   if(ADD_IDS.includes(b.id)&&grid)b.onclick=()=>{const er=requiredCheck(root,pc?null:b);if(!pc&&/^d7_tab4$/.test(page)){const g=id=>root.querySelector("#"+id);if(!g("txtDesc").value.trim())er.push("Please enter Description");if(!g("txtDocNoId").value.trim())er.push("Please enter Document Number");if(!g("dtDoc").value.trim())er.push("Please enter Date of Document");if(g("cmbDepositedDoc").value==="-1")er.push("Please select Document Deposited")}if(pc&&pt&&pt.value==="-1")er.unshift("Please select Party Type");
@@ -435,11 +449,11 @@ function wireSpec(root,page,key,pc,grid){
   if(RESET_IDS.includes(b.id))b.onclick=()=>{clearFields(root);root.addrSync&&root.addrSync();$("#scrErr").innerHTML=""}});
  root.addEventListener("change",()=>saveScreen())}
 function clearFields(root){root.querySelectorAll("input[type=text],textarea").forEach(i=>{if(!i.readOnly)i.value=""});root.querySelectorAll("select").forEach(s=>{if(s.id!=="partyType"&&s.id!=="cmb_Country"&&s.id!=="cmb_State")s.value="-1"});root.querySelectorAll("input[type=checkbox]").forEach(c=>{if(!/^chk_/.test(c.id))c.checked=false})}
-function saveScreen(){const scr=$("#screen");if(!scr||APP.page!=="wizard")return;const key=curKey();const o={};scr.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{if(el.type==="button")return;o[el.id]=el.type==="checkbox"||el.type==="radio"?el.checked:el.value});APP.vals[key]=o}
+function saveScreen(){const scr=$("#screen");if(!scr||APP.page!=="wizard")return;const key=curKey();const o={};scr.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{if(el.type==="button")return;o[el.id]=el.type==="checkbox"||el.type==="radio"?el.checked:el.value});APP.vals[key]=o;scheduleSave()}
 function presenterOpts(){const D=DEEDS[APP.deedType];const o=[["-1","- Select -"]];if(!D)return o;D.parties.forEach(c=>(APP.grids[c[1]+"#"+c[2]]||[]).forEach((r,i)=>{if(r[0])o.push([c[2]+i,r[0]+" ("+c[0].replace(" Details","")+")"])}));return o}
 
 /* Property tab = the verified Property Tab replica (21 + 19 + 14 SROs) */
-function renderProperty(root){root.innerHTML=`<p class="sub">Property Details uses the checked Property Tab replica (Coimbatore, Erode and Tiruppur SROs) with the same tabs as the portal: Property, Survey, Boundary, Building, Remarks, Property Items.</p><iframe class="prop" id="propFrame" src="property.html" title="Property Details"></iframe>`}
+function renderProperty(root){root.innerHTML=`<p class="sub">Property Details has the checked village and survey lists (Coimbatore, Erode and Tiruppur SROs) and the same tabs as the portal. Properties you save to the list are kept with this file.</p><iframe class="prop" id="propFrame" src="property.html?work=1" title="Property Details"></iframe>`}
 
 /* Receipt details (Deed of Receipt – unverified) */
 function renderReceipt(root){const v=APP.vals["receipt#"]||{};root.innerHTML=`<h2>Receipt Details</h2><p class="sub">Best-guess screen for MOD Discharge until checked with a Bankers/NBFC login.</p>
@@ -468,16 +482,10 @@ function renderValuation(root){const D=DEEDS[APP.deedType];root.innerHTML=`<h2>S
  <dl class="kv"><dt>Temporary Deed Number :</dt><dd>–</dd><dt>Nature of Deed :</dt><dd>${esc(D.name)}</dd></dl>
  <div class="tblwrap"><table><thead><tr><th>Schedule(s)</th><th>Sub Registrar Office</th><th>Village</th></tr></thead><tbody><tr><td>1</td><td>${esc((findOpts("sub_reg_off").find(x=>x[0]===APP.entry.sro)||[])[1]||"–")}</td><td>From Property Details</td></tr></tbody></table></div>`}
 function createDoc(){const D=DEEDS[APP.deedType];const er=[];D.parties.forEach(c=>er.push(...partyChildCheck(c)));if(er.length){APP.tab=0;render();return showErr("#scrErr",er)}
- const no="PRACTICE/"+String(Math.floor(1e8+Math.random()*9e8))+"/"+new Date().getFullYear();
- APP.docs.unshift({tp:no,deed:D.name,date:new Date().toLocaleDateString("en-IN"),status:"Document Created (practice)",ref:fileRef()});APP.entry.tpNo=no;APP.entry.status="TP created";
- $("#screen").innerHTML=`<div class="card" style="border-color:var(--ok)"><h2 style="color:var(--ok)">Document Created Successfully!</h2><p>Temporary Document Number: <b class="mono">${esc(no)}</b></p><p class="sub">Practice number only. On the portal, Create Document needs the advocate's go-ahead, then payment and Aadhaar authentication by the parties.</p><button class="btn" type="button" id="toDocs">Go to My Documents</button></div>`;$("#toDocs").onclick=()=>go("mydocs")}
+ saveScreen();
+ if(CUR.status&&CUR.status!=="draft"){scheduleSave(true);toast(EDITABLE.includes(CUR.status)?"Changes saved":"View only – changes are not saved");return}
+ finishEntry()}
 
-/* ---------- My Documents ---------- */
-function renderMyDocs(st){crumb("Home &gt; <b>My Documents</b>");st.innerHTML=`<div class="card"><h1>My Documents</h1><p class="sub">Kindly take Colour Printout of the Document within 30 Days For Paperless and Online flow. (Practice list for this session.)</p>
- <div class="tblwrap"><table><thead><tr><th>Select</th><th>Temporary Deed Number</th><th>Nature of Deed</th><th>Registration Number</th><th>Created Date</th><th>View</th><th>Status</th><th>Document Type</th><th>Remarks</th><th>Action</th></tr></thead>
- <tbody>${APP.docs.length?APP.docs.map(d=>`<tr><td><input type="radio" name="sel" aria-label="Select ${esc(d.tp)}"></td><td class="mono">${esc(d.tp)}</td><td>${esc(d.deed)}</td><td>–</td><td>${esc(d.date)}</td><td>–</td><td>${esc(d.status)}</td><td>Fully Online Doc</td><td>${esc(d.ref)}</td><td>–</td></tr>`).join(""):`<tr><td colspan="10" class="empty">No document created in this session yet</td></tr>`}</tbody></table></div>
- <div class="row" style="margin-top:12px">${["Sign of all Parties","Upload Documents","Photo biometric capture","Pay","View Document Valuation"].map(b=>`<button class="btn sm sec" type="button" disabled title="Done on the portal by the parties">${b}</button>`).join("")}</div>
- <p class="hint">E-sign, biometric capture and payment happen only on the real portal, by the parties.</p></div>`}
 
 /* ---------- address: District → Taluk → Village, lists as loaded by the portal (all 38 districts) ---------- */
 let ADDR=null;
@@ -524,10 +532,7 @@ function branchHelper(root){const blk=root.querySelector("#govtBodyList").closes
 const DRIVE_URL="https://script.google.com/macros/s/AKfycbxcqoewmVccK2ZPZdDxqTp79qGGwiygF9nFbqcA2Q_WlMw_5Li02xa-z_uui7xUbMLP/exec";   // the deployed Apps Script web app URL (…/exec)
 const SB_URL="https://tjvvqoomaptxscgiziks.supabase.co",SB_KEY="sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm",SB_TOK="sb-tjvvqoomaptxscgiziks-auth-token";
 function fileList(cat){return (APP.entry.files||[]).filter(f=>f.cat===cat).map(f=>`<li>✓ <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a></li>`).join("")}
-async function staffToken(){let s;try{s=JSON.parse(sessionStorage.getItem(SB_TOK)||"null")}catch(e){}if(!s||!s.access_token)throw new Error("Sign in to the website first (uploads need the staff sign-in).");
- if(s.expires_at&&s.expires_at*1000<Date.now()+60000&&s.refresh_token){const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});
-  if(!r.ok)throw new Error("Your sign-in has expired. Sign out and sign in again.");const n=await r.json();s=Object.assign(s,n);try{sessionStorage.setItem(SB_TOK,JSON.stringify(s))}catch(e){}}
- return s.access_token}
+async function staffToken(){const {data}=await sb.auth.getSession();if(!data||!data.session)throw new Error("Your sign-in has expired. Sign out and sign in again.");return data.session.access_token}
 async function driveUpload(file,cat,folder){if(!DRIVE_URL)throw new Error("Google Drive upload is not connected yet.");if(file.size>20*1024*1024)throw new Error("File is larger than 20 MB.");
  const token=await staffToken();
  const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=()=>no(new Error("Could not read the file"));r.readAsDataURL(file)});
@@ -536,10 +541,176 @@ async function driveUpload(file,cat,folder){if(!DRIVE_URL)throw new Error("Googl
  if(!j.ok)throw new Error(j.error||"Upload failed");return j}
 
 /* ---------- sign out ---------- */
-$("#signOut").onclick=()=>{try{sessionStorage.clear()}catch(e){}location.replace("/login/")};
+$("#signOut").onclick=async()=>{await flushSave();try{await sb.auth.signOut()}catch(e){}try{sessionStorage.clear()}catch(e){}location.replace("/login/")};
 /* ---------- boot ---------- */
 fetch("data/address.json").then(r=>r.json()).then(d=>{ADDR=d;if(APP.page==="wizard")render()}).catch(()=>{});
-fetch("screens.json").then(r=>r.json()).then(d=>{SCR=d;OPTS=d.opts;render()}).catch(()=>{$("#stage").innerHTML=`<div class="card"><h1>Could not load the screen definitions</h1><p class="sub">Reload the page. If it keeps failing, ask Claude to republish the practice portal.</p></div>`});
+/* ============================================================
+   Registration desk: files are kept in the firm's database (Supabase, table reg_docs).
+   Staff see their own files; the advocate sees every file and alone can approve a file for the portal.
+   ============================================================ */
+let sb=null;const ME={id:"",email:"",owner:false};
+const CUR={id:null,status:"draft",lastJSON:"",timer:null,saving:null,again:false};
+const STATUSES=[["draft","Draft"],["awaiting_approval","Awaiting approval"],["ready","Ready for portal"],["tp_created","TP created"],["with_parties","Pending with parties"],["payment","Payment done"],["submitted","Submitted to TNREGINET"],["query","Query / Returned"],["registered","Registered"],["delivered","Delivered"]];
+const STL=Object.fromEntries(STATUSES);
+const TYPES=[["MOD",["7"]],["Further Charge",["28","22"]],["Discharge",["DOR"]],["Sale Deed",["1"]]];
+const typeOf=dt=>(TYPES.find(t=>t[1].includes(String(dt||"")))||["Other"])[0];
+const EDITABLE=["draft","awaiting_approval","query"];
+const COLS="id,file_ref,deed_type,client,bank,branch,sro,status,status_at,tp_no,tp_date,payment,submitted_on,reg_doc_no,reg_book,reg_year,reg_date,delivered_on,delivered_to,last_note,drive_folder_url,approved_by_email,approved_at,created_by,created_by_email,created_at,updated_at";
+const fmtD=d=>{if(!d)return"";const x=new Date(d);return isNaN(x)?String(d):String(x.getDate()).padStart(2,"0")+"-"+MON[x.getMonth()].charAt(0)+MON[x.getMonth()].slice(1).toLowerCase()+"-"+x.getFullYear()};
+const fmtDT=d=>{if(!d)return"";const x=new Date(d);return fmtD(d)+" "+x.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})};
+const daysSince=d=>Math.floor((Date.now()-new Date(d))/864e5);
+const rupee=n=>n==null||n===""||isNaN(+n)?"":"₹"+Math.round(+n).toLocaleString("en-IN");
+const stPill=s=>`<span class="st ${esc(s)}">${esc(STL[s]||s)}</span>`;
+const who=e=>esc(String(e||"").split("@")[0]);
+
+/* ---------- autosave ---------- */
+function propSnap(){try{const w=$("#propFrame")?.contentWindow;if(w&&w.S)APP.prop={props:w.S.props||[],surveys:w.S.surveys||[]}}catch(e){}return APP.prop||null}
+function snapshot(){return{v:1,page:["entry","create","wizard"].includes(APP.page)?APP.page:(APP.lastStep||"entry"),entry:APP.entry,deedType:APP.deedType,docDesc:APP.docDesc,linked:APP.linked,tpCopy:APP.tpCopy,tab:APP.tab,child:APP.child,vals:APP.vals,grids:APP.grids,done:APP.done,prop:propSnap()}}
+function metaRow(){const e=APP.entry;const bank=e.bank&&e.bank!=="-1"?((findOpts("govtBodyList").find(o=>o[0]===e.bank)||[])[1]||""):"";const sro=e.sro&&e.sro!=="-1"?((findOpts("sub_reg_off").find(o=>o[0]===e.sro)||[])[1]||""):"";
+ return{file_ref:fileRef()||null,deed_type:APP.deedType||e.work||null,client:e.client||null,bank:bank||null,branch:e.branch||null,sro:sro||null,drive_folder_url:((e.files||[])[0]||{}).folderUrl||null}}
+function meaningful(){const e=APP.entry;return !!(e.client||e.work||(e.bank&&e.bank!=="-1")||APP.deedType||(e.files||[]).length)}
+function setSaveState(t){const el=$("#saveState");if(el)el.textContent=t}
+function scheduleSave(now){if(!sb||!["entry","create","wizard"].includes(APP.page)&&!now)return;clearTimeout(CUR.timer);CUR.timer=setTimeout(()=>{doSave()},now?0:1200)}
+async function flushSave(){clearTimeout(CUR.timer);await doSave();if(CUR.saving)await CUR.saving}
+async function doSave(){if(!sb||!meaningful())return;if(CUR.id&&!EDITABLE.includes(CUR.status))return;
+ if(CUR.saving){CUR.again=true;return CUR.saving}
+ if(["entry","create","wizard"].includes(APP.page))APP.lastStep=APP.page;
+ const data=snapshot(),js=JSON.stringify([data,metaRow()]);if(js===CUR.lastJSON)return;
+ setSaveState("Saving…");
+ CUR.saving=(async()=>{try{const row=Object.assign(metaRow(),{data});
+   if(!CUR.id){const {data:r,error}=await sb.from("reg_docs").insert(row).select("id,status").single();if(error)throw error;CUR.id=r.id;CUR.status=r.status}
+   else{const {error}=await sb.from("reg_docs").update(row).eq("id",CUR.id);if(error)throw error}
+   CUR.lastJSON=js;setSaveState("Saved "+new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})+(CUR.status==="draft"?" · in Drafts":""))}
+  catch(x){setSaveState("Not saved – "+(x.message||"check the connection")+". Retrying…");setTimeout(()=>scheduleSave(true),8000)}
+  finally{CUR.saving=null;if(CUR.again){CUR.again=false;scheduleSave(true)}}})();
+ return CUR.saving}
+setInterval(()=>{if(APP.page==="wizard"&&$("#propFrame"))scheduleSave()},5000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){if(APP.page==="wizard")saveScreen();doSave()}});
+
+function resetApp(){Object.assign(APP,{page:"",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},done:{},prop:null,lastStep:"entry"});Object.assign(CUR,{id:null,status:"draft",lastJSON:""});setSaveState("")}
+async function newFile(){if(APP.page==="wizard")saveScreen();await flushSave();const had=CUR.id&&CUR.status==="draft";resetApp();go("entry");if(had)toast("The previous file is kept in Drafts")}
+async function openDoc(id,step){await flushSave();const {data:r,error}=await sb.from("reg_docs").select("*").eq("id",id).single();if(error)return toast("Could not open: "+error.message);
+ resetApp();const d=r.data||{};Object.assign(APP,{entry:d.entry||{},deedType:d.deedType||r.deed_type||"",docDesc:d.docDesc||"",linked:d.linked||[],tpCopy:d.tpCopy||"",tab:d.tab||0,child:d.child||0,vals:d.vals||{},grids:d.grids||{},done:d.done||{},prop:d.prop||null,lastStep:d.page||"entry"});
+ CUR.id=r.id;CUR.status=r.status;CUR.lastJSON=JSON.stringify([snapshot(),metaRow()]);
+ let pg=step||d.page||"entry";if(pg==="wizard"&&!DEEDS[APP.deedType])pg="create";
+ go(pg);setSaveState(EDITABLE.includes(r.status)?"Opened "+(r.file_ref||"file"):"View only – "+(STL[r.status]||r.status)+". Changes are not saved.")}
+async function finishEntry(){await flushSave();if(!CUR.id)return toast("Fill the Entry Details first");
+ const {error}=await sb.from("reg_docs").update({status:"awaiting_approval",last_note:"Desk entry complete"}).eq("id",CUR.id);if(error)return toast("Could not send for approval: "+error.message);
+ CUR.status="awaiting_approval";toast(ME.owner?"Entry complete. Approve it in My Documents.":"Entry complete. Sent to the advocate for approval.");LIST.sel=CUR.id;resetApp();go("mydocs")}
+window.propInit=async w=>{const p=APP.prop;if(p){w.S.props=p.props||[];w.S.surveys=p.surveys||[];try{w.drawSurveys()}catch(e){}}
+ const sro=APP.entry.sro;if(sro&&sro!=="-1"&&!(p&&p.props&&p.props.length)){try{const el=w.document.getElementById("cmb_sub_registrar_office");if([...el.options].some(o=>o.value===sro)){el.value=sro;await w.onSRO()}}catch(e){}}};
+
+/* ---------- lists ---------- */
+let ROWS=[];const LIST={sel:null,status:"",type:"",q:"",action:null};
+async function loadRows(){const {data,error}=await sb.from("reg_docs").select(COLS).order("updated_at",{ascending:false}).limit(2000);if(error)throw error;ROWS=data||[];return ROWS}
+function renderList(st,kind){const drafts=kind==="drafts";
+ crumb(`Document Registration &gt; <b>${drafts?"Drafts":"My Documents"}</b>${ME.owner?" · all staff":""}`);
+ st.innerHTML=`<div class="card"><h1>${drafts?"Drafts":"My Documents"}</h1><p class="sub">${drafts?"Files not yet complete. Open one to carry on where it stopped.":"Files sent for approval and onward. Pick a file to see its history and record the next step."}</p>
+ ${drafts?"":`<div class="filters"><div class="f"><label for="fSt">Status</label><select id="fSt">${optsHTML([["","All statuses"],...STATUSES.filter(x=>x[0]!=="draft")],LIST.status)}</select></div><div class="f"><label for="fTy">Document</label><select id="fTy">${optsHTML([["","All documents"],...TYPES.map(t=>[t[0],t[0]])],LIST.type)}</select></div><div class="f"><label for="fQ">Search</label><input type="text" id="fQ" placeholder="Client, bank, file ref, TP no" value="${esc(LIST.q)}"></div></div>`}
+ <div id="listBox"><p class="hint">Loading…</p></div></div><div id="detail"></div>`;
+ const draw=()=>{const q=LIST.q.toLowerCase();let L=ROWS.filter(r=>drafts?r.status==="draft":r.status!=="draft");
+  if(!drafts){if(LIST.status)L=L.filter(r=>r.status===LIST.status);if(LIST.type)L=L.filter(r=>typeOf(r.deed_type)===LIST.type);if(q)L=L.filter(r=>[r.file_ref,r.client,r.bank,r.branch,r.sro,r.tp_no,r.reg_doc_no].join(" ").toLowerCase().includes(q))}
+  $("#listBox").innerHTML=`<div class="tblwrap"><table><thead><tr><th>File reference</th><th>Document</th><th>Client</th><th>Bank / Branch</th><th>SRO</th><th>Status</th><th>${drafts?"Last saved":"Since"}</th>${ME.owner?"<th>Staff</th>":""}${drafts?"<th>Action</th>":""}</tr></thead><tbody>${L.length?L.map(r=>`<tr class="pick${LIST.sel===r.id?" sel":""}" data-id="${r.id}" tabindex="0"><td class="mono">${esc(r.file_ref||"(no reference yet)")}</td><td>${esc(typeOf(r.deed_type))}</td><td>${esc(r.client||"")}</td><td>${esc([r.bank,r.branch].filter(Boolean).join(" · "))}</td><td>${esc(r.sro||"")}</td><td>${stPill(r.status)}</td><td>${drafts?fmtDT(r.updated_at):fmtD(r.status_at)+(daysSince(r.status_at)>3&&!["registered","delivered"].includes(r.status)?` <span class="pill warn">${daysSince(r.status_at)} days</span>`:"")}</td>${ME.owner?`<td>${who(r.created_by_email)}</td>`:""}${drafts?`<td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" type="button" data-open="${r.id}">Continue</button>${r.created_by===ME.id||ME.owner?`<button class="btn sm sec" type="button" data-del="${r.id}">Delete</button>`:""}</div></td>`:""}</tr>`).join(""):`<tr><td colspan="9" class="empty">${drafts?"No drafts. Files you start in Create New appear here until they are complete.":"No files match."}</td></tr>`}</tbody></table></div><p class="hint">${L.length} file${L.length===1?"":"s"}</p>`;
+  $$("#listBox [data-open]").forEach(b=>b.onclick=ev=>{ev.stopPropagation();openDoc(b.dataset.open)});
+  $$("#listBox [data-del]").forEach(b=>b.onclick=async ev=>{ev.stopPropagation();if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Confirm delete";setTimeout(()=>{b.dataset.armed="";b.textContent="Delete"},4000);return}
+   const {error}=await sb.from("reg_docs").delete().eq("id",b.dataset.del);if(error)return toast("Could not delete: "+error.message);ROWS=ROWS.filter(r=>r.id!==b.dataset.del);toast("Draft deleted");draw()});
+  $$("#listBox tr.pick").forEach(tr=>{const pick=()=>{if(drafts)return openDoc(tr.dataset.id);LIST.sel=tr.dataset.id;LIST.action=null;draw();renderDetail()};tr.onclick=pick;tr.onkeydown=e=>{if(e.key==="Enter")pick()}})};
+ if(!drafts){$("#fSt").onchange=e=>{LIST.status=e.target.value;draw()};$("#fTy").onchange=e=>{LIST.type=e.target.value;draw()};$("#fQ").oninput=e=>{LIST.q=e.target.value;draw()}}
+ loadRows().then(()=>{draw();if(!drafts&&LIST.sel&&ROWS.some(r=>r.id===LIST.sel))renderDetail()}).catch(x=>$("#listBox").innerHTML=`<div class="errbox">Could not load files: ${esc(x.message)}</div>`)}
+
+/* ---------- file detail + next step ---------- */
+const PAYMODES=[["","- Select -"],["Online – Net banking","Online – Net banking"],["Online – UPI","Online – UPI"],["Online – Debit/Credit card","Online – Debit/Credit card"],["e-Challan at bank","e-Challan at bank"],["Other","Other"]];
+const PAIDBY=[["","- Select -"],["Bank","Bank"],["Client / borrower","Client / borrower"],["Firm (to be reimbursed)","Firm (to be reimbursed)"]];
+function nextSteps(r){const own=r.created_by===ME.id;const S={
+ awaiting_approval:ME.owner?[{to:"ready",label:"Approve for portal",fields:[["note","Remarks (optional)","area"]]},{to:"draft",label:"Send back for correction",sec:1,fields:[["note","What needs correcting","area",1]]}]:(own?[{to:"draft",label:"Withdraw to draft",sec:1,fields:[["note","Reason","area"]]}]:[]),
+ ready:[{to:"tp_created",label:"TP created on TNREGINET",fields:[["tp_no","Temporary Deed (TP) number","text",1],["tp_date","TP date","date",1]]}],
+ tp_created:[{to:"with_parties",label:"Sent to parties (e-sign / Aadhaar / biometric)",fields:[["note","Remarks","area"]]}],
+ with_parties:[{to:"payment",label:"Record payment",pay:1}],
+ payment:[{to:"submitted",label:"Submitted to TNREGINET",fields:[["submitted_on","Submitted on","date",1],["note","Remarks (appointment, token no.)","area"]]}],
+ submitted:[{to:"registered",label:"Registered",fields:[["reg_doc_no","Registered document no.","text",1],["reg_book","Book","text"],["reg_year","Year","num",1],["reg_date","Registration date","date",1]]},{to:"query",label:"Query / Returned by SRO",sec:1,fields:[["note","Query raised","area",1]]}],
+ query:[{to:"submitted",label:"Corrected and resubmitted",fields:[["submitted_on","Resubmitted on","date",1],["note","What was corrected","area"]]}],
+ registered:[{to:"delivered",label:"Delivered",fields:[["delivered_on","Delivered on","date",1],["delivered_to","Delivered to (bank / client, person)","text",1],["note","Remarks","area"]]}]};
+ return S[r.status]||[]}
+function payFields(p){p=p||{};const n=(k,l)=>`<div class="f"><label for="p_${k}">${l}</label><input type="text" inputmode="decimal" id="p_${k}" value="${esc(p[k]??"")}"></div>`;
+ return `<div class="grid">${n("stamp_duty","Stamp duty (₹)")}${n("reg_fee","Registration fee (₹)")}${n("other","Other charges – CD / scanning (₹)")}<div class="f"><label>Total</label><input type="text" id="p_total" readonly value="${esc(p.total??"")}"></div>
+ <div class="f" data-req="1" data-lab="Payment date"><label for="p_date">Payment date <span class="req">*</span></label><input type="date" id="p_date" value="${esc(p.date||today())}"></div>
+ <div class="f" data-req="1" data-lab="Payment mode"><label for="p_mode">Payment mode <span class="req">*</span></label><select id="p_mode">${optsHTML(PAYMODES,p.mode||"")}</select></div>
+ <div class="f" data-req="1" data-lab="Transaction / challan ref"><label for="p_ref">Transaction / challan ref. <span class="req">*</span></label><input type="text" id="p_ref" value="${esc(p.ref||"")}"></div>
+ <div class="f" data-req="1" data-lab="Paid by"><label for="p_by">Paid by <span class="req">*</span></label><select id="p_by">${optsHTML(PAIDBY,p.by||"")}</select></div>
+ <div class="f wide"><label for="p_note">Remarks</label><textarea id="p_note" style="min-height:60px">${esc(p.note||"")}</textarea></div></div>`}
+async function renderDetail(){const box=$("#detail");if(!box)return;const r=ROWS.find(x=>x.id===LIST.sel);if(!r){box.innerHTML="";return}
+ const ev=await sb.from("reg_doc_events").select("from_status,to_status,note,actor_email,at").eq("doc_id",r.id).order("at",{ascending:false});
+ const p=r.payment||{};const steps=nextSteps(r);
+ const kv=[["Document",typeOf(r.deed_type)],["Client",r.client],["Bank / branch",[r.bank,r.branch].filter(Boolean).join(" · ")],["SRO",r.sro],["Prepared by",(r.created_by_email||"")+" · "+fmtDT(r.created_at)],
+  r.approved_at&&["Approved by",(r.approved_by_email||"")+" · "+fmtDT(r.approved_at)],r.tp_no&&["TP number",r.tp_no+(r.tp_date?" · "+fmtD(r.tp_date):"")],
+  r.payment&&["Payment",[rupee(p.total)&&rupee(p.total)+" (stamp "+(rupee(p.stamp_duty)||"–")+", fee "+(rupee(p.reg_fee)||"–")+(p.other?", other "+rupee(p.other):"")+")",p.mode,p.ref,p.by&&"paid by "+p.by,fmtD(p.date)].filter(Boolean).join(" · ")],
+  r.submitted_on&&["Submitted to TNREGINET",fmtD(r.submitted_on)],r.reg_doc_no&&["Registered",r.reg_doc_no+"/"+(r.reg_year||"")+(r.reg_book?" · Book "+r.reg_book:"")+(r.reg_date?" · "+fmtD(r.reg_date):"")],
+  r.delivered_on&&["Delivered",fmtD(r.delivered_on)+" · "+(r.delivered_to||"")]].filter(Boolean);
+ box.innerHTML=`<div class="card" style="margin-top:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(r.file_ref||"File")} ${stPill(r.status)}</h2>
+  <div class="row"><button class="btn sm sec" type="button" id="dOpen">${EDITABLE.includes(r.status)?"Open and edit entry":"View entry screens"}</button>${r.drive_folder_url?`<a class="btn sm sec" href="${esc(r.drive_folder_url)}" target="_blank" rel="noopener">Drive folder</a>`:""}${ME.owner&&r.status!=="draft"?`<button class="btn sm sec" type="button" id="dBack">Move back a step</button>`:""}</div></div>
+  <div class="split" style="margin-top:12px"><div><dl class="kv">${kv.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v||"–")}</dd>`).join("")}</dl>
+   <h3>Next step</h3>${steps.length?`<div class="row">${steps.map((s,i)=>`<button class="btn sm${s.sec?" sec":""}" type="button" data-step="${i}">${esc(s.label)}</button>`).join("")}</div>`:`<p class="hint">${r.status==="delivered"?"File closed.":r.status==="awaiting_approval"?"Waiting for the advocate's approval.":"No action here."}</p>`}<div id="stepForm"></div></div>
+   <div><h3 style="margin-top:0">History</h3><ul class="hist">${(ev.data||[]).map(e=>`<li><b>${esc(STL[e.to_status]||e.to_status)}</b>${e.from_status?` <span class="hint">from ${esc(STL[e.from_status]||e.from_status)}</span>`:""}<br><span class="hint">${fmtDT(e.at)} · ${who(e.actor_email)}</span>${e.note?`<br>${esc(e.note)}`:""}</li>`).join("")||'<li class="hint">No history</li>'}</ul></div></div></div>`;
+ $("#dOpen").onclick=()=>openDoc(r.id,"entry");
+ const back=$("#dBack");if(back)back.onclick=()=>showStep(r,{to:prevStatus(r.status),label:"Move back to "+STL[prevStatus(r.status)],sec:1,fields:[["note","Reason","area",1]]});
+ $$("#detail [data-step]").forEach(b=>b.onclick=()=>showStep(r,steps[+b.dataset.step]));
+ box.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function prevStatus(s){const order=STATUSES.map(x=>x[0]);if(s==="query")return"submitted";if(s==="registered")return"submitted";const i=order.indexOf(s);let pv=order[Math.max(0,i-1)];if(pv==="query")pv="submitted";return pv}
+function showStep(r,s){const f=$("#stepForm");const val=k=>({tp_date:today(),submitted_on:today(),reg_date:"",reg_year:String(new Date().getFullYear()),delivered_on:today()})[k]||r[k]||"";
+ f.innerHTML=`<div class="card" style="margin-top:10px;background:var(--accent-soft);box-shadow:none"><h3 style="margin-top:0">${esc(s.label)}</h3>${s.pay?payFields(r.payment):`<div class="grid">${(s.fields||[]).map(([k,l,t,req])=>`<div class="f${t==="area"?" wide":""}"${req?` data-req="1" data-lab="${esc(l)}"`:""}><label for="s_${k}">${esc(l)}${req?' <span class="req">*</span>':""}</label>${t==="area"?`<textarea id="s_${k}" style="min-height:60px"></textarea>`:`<input type="${t==="date"?"date":"text"}" id="s_${k}"${t==="num"?' inputmode="numeric"':""} value="${esc(k==="note"?"":val(k))}">`}</div>`).join("")}</div>`}
+  <div class="row" style="margin-top:12px"><button class="btn${s.sec?" sec":""}" type="button" id="sGo">${esc(s.label)}</button><button class="btn sec" type="button" id="sCancel">Cancel</button></div><div id="sErr"></div></div>`;
+ if(s.pay){const tot=()=>{const n=k=>parseFloat(String($("#p_"+k).value).replace(/[,₹\s]/g,""))||0;$("#p_total").value=(n("stamp_duty")+n("reg_fee")+n("other")).toLocaleString("en-IN")};["stamp_duty","reg_fee","other"].forEach(k=>$("#p_"+k).oninput=tot);tot()}
+ $("#sCancel").onclick=()=>f.innerHTML="";
+ $("#sGo").onclick=async()=>{const er=requiredCheck(f);if(er.length)return showErr("#sErr",er);
+  const up={status:s.to,last_note:null};
+  if(s.pay){const n=k=>{const v=String($("#p_"+k).value).replace(/[,₹\s]/g,"");return v===""?null:+v};up.payment={stamp_duty:n("stamp_duty"),reg_fee:n("reg_fee"),other:n("other"),total:(n("stamp_duty")||0)+(n("reg_fee")||0)+(n("other")||0),date:$("#p_date").value,mode:$("#p_mode").value,ref:$("#p_ref").value.trim(),by:$("#p_by").value,note:$("#p_note").value.trim()};up.last_note="Payment "+rupee(up.payment.total)+" · "+up.payment.mode+" · "+up.payment.ref}
+  else for(const [k,,t] of s.fields||[]){const el=$("#s_"+k);const v=el.value.trim();if(k==="note")up.last_note=v||null;else up[k]=v===""?null:t==="num"?+v:v}
+  if(s.to==="tp_created")up.last_note=up.tp_no;
+  if(s.to==="registered")up.last_note="Registered "+up.reg_doc_no+"/"+up.reg_year;
+  $("#sGo").disabled=true;const {data,error}=await sb.from("reg_docs").update(up).eq("id",r.id).select(COLS).single();$("#sGo").disabled=false;
+  if(error)return showErr("#sErr",[error.message]);
+  ROWS=ROWS.map(x=>x.id===r.id?data:x);toast(STL[s.to]);renderList($("#stage"),"mydocs")}}
+
+/* ---------- dashboard ---------- */
+function renderDash(st){crumb("<b>Dashboard</b>"+(ME.owner?" · all staff":" · your files"));st.innerHTML=`<div id="dashBox"><div class="card"><p class="hint">Loading…</p></div></div>`;
+ loadRows().then(drawDash).catch(x=>$("#dashBox").innerHTML=`<div class="errbox">Could not load files: ${esc(x.message)}</div>`)}
+function drawDash(){const R=ROWS,now=new Date(),mStart=new Date(now.getFullYear(),now.getMonth(),1),tStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ const inM=d=>d&&new Date(d)>=mStart,inT=d=>d&&new Date(d)>=tStart;
+ const open=R.filter(r=>r.status!=="delivered");const stuck=open.filter(r=>daysSince(r.status_at)>3).sort((a,b)=>new Date(a.status_at)-new Date(b.status_at));
+ const paidM=R.filter(r=>r.payment&&inM(r.payment.date));const sum=k=>paidM.reduce((a,r)=>a+(+r.payment[k]||0),0);
+ const card=(n,l,cls)=>`<div class="stat${cls?" "+cls:""}"><b>${n}</b><span>${l}</span></div>`;
+ const types=[...TYPES.map(t=>t[0]),...(R.some(r=>typeOf(r.deed_type)==="Other")?["Other"]:[])];
+ const cnt=(t,s)=>R.filter(r=>(!t||typeOf(r.deed_type)===t)&&(!s||r.status===s)).length;
+ const cell=(t,s)=>{const n=cnt(t,s);return `<td class="cnt">${n?`<button type="button" data-t="${esc(t||"")}" data-s="${esc(s||"")}">${n}</button>`:'<span class="hint">0</span>'}</td>`};
+ const groupBy=(k)=>{const m={};open.forEach(r=>{const key=r[k]||"(not set)";m[key]=(m[key]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,12)};
+ $("#dashBox").innerHTML=`<div class="stats">
+  ${ME.owner?card(cnt("","awaiting_approval"),"Awaiting your approval",cnt("","awaiting_approval")?"warn":""):card(cnt("","awaiting_approval"),"Waiting for approval")}
+  ${card(R.filter(r=>inT(r.created_at)).length,"Files opened today")}${card(R.filter(r=>inM(r.created_at)).length,"Files opened this month")}
+  ${card(R.filter(r=>r.submitted_on&&inM(r.submitted_on)).length,"Submitted this month")}${card(R.filter(r=>r.reg_date&&inM(r.reg_date)).length,"Registered this month")}
+  ${card(stuck.length,"Stuck more than 3 days",stuck.length?"warn":"")}${card(rupee(sum("total"))||"₹0","Paid to Govt this month")}</div>
+ <div class="card"><h2 style="margin-top:0">Documents by status</h2><p class="sub">Click a number to see those files.</p><div class="tblwrap"><table><thead><tr><th>Document</th>${STATUSES.map(s=>`<th class="cnt">${esc(s[1])}</th>`).join("")}<th class="cnt">Total</th></tr></thead>
+  <tbody>${types.map(t=>`<tr><td><b>${esc(t)}</b></td>${STATUSES.map(s=>cell(t,s[0])).join("")}${cell(t,"")}</tr>`).join("")}<tr class="tot"><td>Total</td>${STATUSES.map(s=>cell("",s[0])).join("")}${cell("","")}</tr></tbody></table></div></div>
+ <div class="card" style="margin-top:16px"><h2 style="margin-top:0">Stuck files</h2><p class="sub">In the same status for more than 3 days, oldest first.</p>${stuck.length?`<div class="tblwrap"><table><thead><tr><th>File reference</th><th>Document</th><th>Client</th><th>Status</th><th class="cnt">Days</th>${ME.owner?"<th>Staff</th>":""}</tr></thead><tbody>${stuck.slice(0,25).map(r=>`<tr class="pick" data-id="${r.id}" data-st="${r.status}"><td class="mono">${esc(r.file_ref||"")}</td><td>${esc(typeOf(r.deed_type))}</td><td>${esc(r.client||"")}</td><td>${stPill(r.status)}</td><td class="cnt">${daysSince(r.status_at)}</td>${ME.owner?`<td>${who(r.created_by_email)}</td>`:""}</tr>`).join("")}</tbody></table></div>`:'<p class="hint">Nothing stuck.</p>'}</div>
+ <div class="split" style="margin-top:16px"><div class="card"><h2 style="margin-top:0">Open files by bank</h2><table><tbody>${groupBy("bank").map(([k,n])=>`<tr><td>${esc(k)}</td><td class="cnt">${n}</td></tr>`).join("")||'<tr><td class="empty">No open files</td></tr>'}</tbody></table></div>
+  <div class="card"><h2 style="margin-top:0">Open files by SRO</h2><table><tbody>${groupBy("sro").map(([k,n])=>`<tr><td>${esc(k)}</td><td class="cnt">${n}</td></tr>`).join("")||'<tr><td class="empty">No open files</td></tr>'}</tbody></table></div></div>
+ ${paidM.length?`<div class="card" style="margin-top:16px"><h2 style="margin-top:0">Payments this month</h2><dl class="kv"><dt>Stamp duty</dt><dd>${rupee(sum("stamp_duty"))||"₹0"}</dd><dt>Registration fee</dt><dd>${rupee(sum("reg_fee"))||"₹0"}</dd><dt>Other charges</dt><dd>${rupee(sum("other"))||"₹0"}</dd><dt><b>Total</b></dt><dd><b>${rupee(sum("total"))||"₹0"}</b> · ${paidM.length} file${paidM.length===1?"":"s"}</dd></dl></div>`:""}`;
+ $$("#dashBox td.cnt button").forEach(b=>b.onclick=()=>{if(b.dataset.s==="draft"){go("drafts");return}LIST.status=b.dataset.s;LIST.type=b.dataset.t;LIST.q="";LIST.sel=null;go("mydocs")});
+ $$("#dashBox tr.pick").forEach(tr=>tr.onclick=()=>{if(tr.dataset.st==="draft")return openDoc(tr.dataset.id);LIST.status="";LIST.type="";LIST.q="";LIST.sel=tr.dataset.id;go("mydocs")})}
+
+/* ---------- start ---------- */
+async function boot(){const st=$("#stage");
+ if(!window.supabase){st.innerHTML=`<div class="card"><h1>Could not load</h1><p class="sub">The sign-in library did not load. Check the internet and reload the page.</p></div>`;return}
+ sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{storage:window.sessionStorage,persistSession:true,autoRefreshToken:true}});
+ const {data}=await sb.auth.getSession();const ses=data&&data.session;
+ if(!ses){location.replace("/login/?next="+encodeURIComponent("/registration/"));return}
+ ME.id=ses.user.id;ME.email=ses.user.email||"";
+ const [o,s2]=await Promise.all([sb.rpc("reg_is_owner"),sb.rpc("reg_is_staff")]);ME.owner=!!o.data;
+ $("#whoami").textContent=(ME.owner?"Advocate":"Staff")+" · "+ME.email;
+ if(!s2.data){st.innerHTML=`<div class="card"><h1>Not a staff login</h1><p class="sub">${esc(ME.email)} is not set up as V Legal staff, so it can't use the registration desk. Ask the advocate to add you in Admin → Staff.</p></div>`;return}
+ try{const d=await fetch("screens.json").then(r=>r.json());SCR=d;OPTS=d.opts}catch(e){st.innerHTML=`<div class="card"><h1>Could not load the screen definitions</h1><p class="sub">Reload the page.</p></div>`;return}
+ go("dash")}
+
+boot();
 </script>
 
 </body>

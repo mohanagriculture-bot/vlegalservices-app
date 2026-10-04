@@ -80,6 +80,13 @@ th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertic
 th{background:var(--soft);font-weight:600;font-size:12.5px;white-space:nowrap;text-align:center;border-bottom:2px solid #e1e4ed}
 td.num{font-variant-numeric:tabular-nums;text-align:right}
 .empty{color:var(--muted);text-align:center;padding:14px}
+.docgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px 18px;margin-top:8px}
+.docrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.upl{position:relative;overflow:hidden;display:inline-flex;align-items:center}
+.upl input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upl:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.files{list-style:none;margin:0;padding:0;width:100%;font-size:12.5px}
+.files li{overflow-wrap:anywhere}.files a{color:var(--accent)}
 .tabs{display:flex;gap:2px;overflow-x:auto;margin-block:4px 10px;scrollbar-width:thin;background:var(--panel);border-bottom:2px solid #e0e0e0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .tabs button{flex:0 0 auto;border:0;border-bottom:4px solid transparent;margin-bottom:-2px;background:var(--panel);color:var(--tabgrey);padding:8px 12px;border-radius:0;font:inherit;font-size:15px;font-weight:500;cursor:pointer;display:flex;gap:6px;align-items:center;transition:color .2s}
 .tabs button:hover{color:var(--accent)}
@@ -117,7 +124,7 @@ iframe.prop{width:100%;height:1500px;border:1px solid var(--line);border-radius:
 </head>
 <body>
 <div class="topband"></div>
-<div class="ribbon">Practice replica for V Legal / MOD Desk staff training. This is <b>not</b> the TNREGINET portal: nothing here is sent to the Registration Department, and nothing is saved after you close the page.</div>
+<div class="ribbon">Practice replica for V Legal / MOD Desk staff training. This is <b>not</b> the TNREGINET portal: nothing here is sent to the Registration Department. Screen entries are cleared when you close the page; uploaded documents are kept in the firm's Google Drive.</div>
 <div class="wrap">
   <div class="top">
     <div class="brand">MOD Desk · Portal Practice<small>Presence-less registration screens</small></div>
@@ -186,12 +193,12 @@ const ENTRY_FIELDS=[
  ["Client & bank","h"],
  ["client","Mortgagor / Buyer name"],["clientMobile","Mobile number"],["bank","Bank / NBFC","bank"],["ifsc","Branch IFSC code","ifsc"],["branch","Branch"],["branchPin","Branch pincode"],["loanAc","Loan account no."],["sanction","Sanction / loan amount (₹)","num"],["branchAddr","Branch address (goes to Mortgagee address)","area"],
  ["Documents received","h"],
- ["docs","","checks",["Title / sale deed","Parent documents","Earlier MOD","Chitta / Patta","Encumbrance Certificate","KYC of all parties","Sanction letter","Loan closure letter (discharge)"]],
+ ["docs","","checks",["Title / sale deed","Parent documents","Earlier MOD","Chitta / Patta","Encumbrance Certificate","KYC of all parties","Sanction letter","Loan closure letter (discharge)","Other documents"]],
  ["Office tracking","h"],
  ["status","Status","sel",[["New","New"],["Documents pending","Documents pending"],["Ready for portal","Ready for portal"],["TP created","TP created"],["Registered","Registered"]]],["tpNo","TP number (after Create Document)"],["remarks","Remarks","area"]
 ];
 function bankCode(n){const w=(n||"").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(x=>x&&!/^(of|the|and|ltd|limited|pvt|private)$/i.test(x));return w.length>1?w.map(x=>x[0]).join("").toUpperCase().slice(0,5):(w[0]||"").slice(0,4).toUpperCase()}
-function fileRef(){const e=APP.entry;const b=e.bank?bankCode((findOpts("govtBodyList").find(o=>o[0]===e.bank)||[])[1]):"";const br=(e.branch||"").replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12);const nm=(e.client||"").trim().split(/\s+/)[0]?.replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12)||"";
+function fileRef(){const e=APP.entry;const b=e.bank&&e.bank!=="-1"?bankCode((findOpts("govtBodyList").find(o=>o[0]===e.bank)||[])[1]):"";const br=(e.branch||"").replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12);const nm=(e.client||"").trim().split(/\s+/)[0]?.replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12)||"";
  const d=e.emDate?new Date(e.emDate):new Date();const ds=String(d.getDate()).padStart(2,"0")+MON[d.getMonth()]+String(d.getFullYear()).slice(2);return [b,br,nm,ds].filter(Boolean).join("-")}
 function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on the portal");const e=APP.entry;if(!e.fileDate)e.fileDate=today();if(!e.status)e.status="New";
  const sros=findOpts("sub_reg_off"),banks=findOpts("govtBodyList");
@@ -206,17 +213,20 @@ function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on t
   else if(t==="ifsc")h+=`<div class="f"><label for="e_${k}">${l}</label><div class="row" style="flex-wrap:nowrap"><input type="text" id="e_${k}" maxlength="11" style="text-transform:uppercase" value="${esc(v)}"><button class="btn sm" type="button" id="e_ifscFind">Find</button></div><span class="note" id="e_ifscMsg">Fills bank, branch, address and pincode</span></div>`;
   else if(t==="num")h+=`<div class="f"><label for="e_${k}">${l}</label><input type="text" inputmode="numeric" id="e_${k}" value="${esc(v)}"></div>`;
   else if(t==="area")h+=`<div class="f wide"><label for="e_${k}">${l}</label><textarea id="e_${k}">${esc(v)}</textarea></div>`;
-  else if(t==="checks"){h+=`<div class="f wide"><div class="grid">`+o.map((d,i)=>`<label class="chk"><input type="checkbox" id="e_doc${i}" ${(e.docs||[]).includes(d)?"checked":""}> ${esc(d)}</label>`).join("")+`</div></div>`}
+  else if(t==="checks"){h+=`<div class="f wide"><p class="hint" style="margin:0">Tick what you received and upload the scan (PDF or photo, up to 20 MB each). Files go to Google Drive → <b>V Legal MOD Desk Files</b> → a folder named after the File reference.</p><div class="docgrid">`+o.map((d,i)=>`<div class="docrow"><label class="chk"><input type="checkbox" id="e_doc${i}" ${(e.docs||[]).includes(d)?"checked":""}> ${esc(d)}</label><label class="btn sm upl"><input type="file" data-doc="${i}" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">Upload</label><ul class="files" id="e_files${i}">${fileList(d)}</ul></div>`).join("")+`</div><span class="hint" id="e_upMsg"></span></div>`}
   else h+=`<div class="f"><label for="e_${k}">${l}</label><input type="text" id="e_${k}" value="${esc(v)}"></div>`}
  h+=`</div><div class="row" style="margin-top:18px"><button class="btn" type="button" id="e_go">Proceed to portal screens</button><button class="btn sec" type="button" id="e_copy">Copy entry as text</button><span class="hint" id="e_msg"></span></div></div>`;
  st.innerHTML=`<div id="entryRoot">${h}</div>`;const er=$("#entryRoot");
  const sync=()=>{for(const r of ENTRY_FIELDS){const el=$("#e_"+r[0]);if(el&&r[2]!=="ro")e[r[0]]=el.value}
    e.docs=(ENTRY_FIELDS.find(r=>r[0]==="docs")[3]).filter((d,i)=>$("#e_doc"+i)?.checked);$("#e_fileRef").value=fileRef()};
+ er.querySelectorAll("input[type=file][data-doc]").forEach(inp=>inp.addEventListener("change",async ev=>{ev.stopPropagation();const i=+inp.dataset.doc,cat=ENTRY_FIELDS.find(r=>r[0]==="docs")[3][i];const files=[...inp.files];inp.value="";if(!files.length)return;
+   sync();const msg=$("#e_upMsg");
+   for(const f of files){msg.textContent=`Uploading ${f.name}…`;try{const r=await driveUpload(f,cat,fileRef()||"Unfiled");(e.files=e.files||[]).push({cat,name:r.name,url:r.url,folderUrl:r.folderUrl});$("#e_doc"+i).checked=true;sync();$("#e_files"+i).innerHTML=fileList(cat);msg.innerHTML=`Saved <b>${esc(r.name)}</b> to Google Drive. <a href="${esc(r.folderUrl)}" target="_blank" rel="noopener">Open folder</a>`}catch(x){msg.textContent=f.name+": "+x.message;break}}}));
  er.addEventListener("input",sync);er.addEventListener("change",sync);
  $("#e_ifscFind").onclick=async()=>{sync();const m=$("#e_ifscMsg");m.textContent="Looking up…";try{const i=await ifscLookup(e.ifsc);
    const bk=matchBank(i.BANK);if(bk&&(!e.bank||e.bank==="-1"))e.bank=bk;e.branch=i.BRANCH||e.branch;e.branchAddr=i.ADDRESS||e.branchAddr;e.branchPin=pinOf(i.ADDRESS)||e.branchPin;e.branchDist=i.DISTRICT||"";e.branchCity=i.CITY||"";
    ["bank","branch","branchAddr","branchPin"].forEach(k=>{const el=$("#e_"+k);if(el)el.value=e[k]||""});$("#e_fileRef").value=fileRef();m.textContent=(i.BANK||"")+" · "+(i.BRANCH||"")+(bk?"":" (pick the bank from the list)")}catch(x){m.textContent=x.message}};
- $("#e_copy").onclick=()=>{sync();const txt=Object.entries({...e,fileRef:fileRef()}).map(([k,v])=>k+": "+(Array.isArray(v)?v.join(", "):v)).join("\n");copyText(txt,"#e_msg")};
+ $("#e_copy").onclick=()=>{sync();const txt=Object.entries({...e,fileRef:fileRef()}).map(([k,v])=>k+": "+(Array.isArray(v)?v.map(x=>x&&x.name?x.cat+": "+x.name+" "+x.url:x).join(", "):v)).join("\n");copyText(txt,"#e_msg")};
  $("#e_go").onclick=()=>{sync();if(e.work){APP.deedType="";}go("home")}}
 function copyText(t,msgSel){const done=()=>{if(msgSel)$(msgSel).textContent="Copied";toast("Copied")};try{navigator.clipboard.writeText(t).then(done,()=>fallback())}catch(_){fallback()}
  function fallback(){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");done()}catch(e){toast("Select and copy the text manually")}ta.remove()}}
@@ -509,6 +519,21 @@ function branchHelper(root){const blk=root.querySelector("#govtBodyList").closes
    const e={ifsc:d.querySelector("#h_ifsc").value.toUpperCase(),branch:i.BRANCH,branchAddr:i.ADDRESS,branchPin:pinOf(i.ADDRESS),branchDist:i.DISTRICT,branchCity:i.CITY};
    apply(Object.assign({govtBodyList:matchBank(i.BANK)},branchVals(e)))}catch(x){m.textContent=x.message}};
  d.querySelector("#h_entry").onclick=()=>{const e=APP.entry;if(!e.branchAddr&&!e.branch){$("#h_msg").textContent="No branch in Entry Details yet.";return}apply(Object.assign({govtBodyList:e.bank&&e.bank!=="-1"?e.bank:""},branchVals(e)))}}
+
+/* ---------- Documents received → Google Drive (through the firm's Apps Script; staff sign-in is checked there) ---------- */
+const DRIVE_URL="";   // the deployed Apps Script web app URL (…/exec)
+const SB_URL="https://tjvvqoomaptxscgiziks.supabase.co",SB_KEY="sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm",SB_TOK="sb-tjvvqoomaptxscgiziks-auth-token";
+function fileList(cat){return (APP.entry.files||[]).filter(f=>f.cat===cat).map(f=>`<li>✓ <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a></li>`).join("")}
+async function staffToken(){let s;try{s=JSON.parse(sessionStorage.getItem(SB_TOK)||"null")}catch(e){}if(!s||!s.access_token)throw new Error("Sign in to the website first (uploads need the staff sign-in).");
+ if(s.expires_at&&s.expires_at*1000<Date.now()+60000&&s.refresh_token){const r=await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});
+  if(!r.ok)throw new Error("Your sign-in has expired. Sign out and sign in again.");const n=await r.json();s=Object.assign(s,n);try{sessionStorage.setItem(SB_TOK,JSON.stringify(s))}catch(e){}}
+ return s.access_token}
+async function driveUpload(file,cat,folder){if(!DRIVE_URL)throw new Error("Google Drive upload is not connected yet.");if(file.size>20*1024*1024)throw new Error("File is larger than 20 MB.");
+ const token=await staffToken();
+ const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=()=>no(new Error("Could not read the file"));r.readAsDataURL(file)});
+ let res;try{res=await fetch(DRIVE_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({token,folder,category:cat,name:cat+" - "+file.name,mime:file.type||"application/octet-stream",data})})}catch(x){throw new Error("Could not reach Google Drive. Check the internet and try again.")}
+ let j;try{j=await res.json()}catch(x){throw new Error("Google Drive did not answer properly.")}
+ if(!j.ok)throw new Error(j.error||"Upload failed");return j}
 
 /* ---------- sign out ---------- */
 $("#signOut").onclick=()=>{try{sessionStorage.clear()}catch(e){}location.replace("/login/")};

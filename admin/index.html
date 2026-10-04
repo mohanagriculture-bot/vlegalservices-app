@@ -81,7 +81,6 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
     <button role="tab" data-t="tasks" aria-selected="false">Task board</button>
     <button role="tab" data-t="clients" aria-selected="false">Clients</button>
     <button role="tab" data-t="registration" aria-selected="false">Registration</button>
-    <button role="tab" data-t="users" aria-selected="false">Users</button>
   </nav>
   <span class="who" id="who"></span>
   <button class="out" id="out">Sign out</button>
@@ -92,25 +91,6 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
   <iframe id="f-tasks" title="Task board" data-src="/admin/tasks/"></iframe>
   <iframe id="f-clients" title="Clients" data-src="/admin/clients/"></iframe>
   <iframe id="f-registration" title="Registration desk" data-src="/registration/"></iframe>
-  <section class="pane" id="f-users" aria-labelledby="uH"><div class="in" style="max-width:1040px">
-    <h2 id="uH">Registration Desk User IDs</h2>
-    <p class="lede">These User IDs open <b>only the Registration Desk</b>. Staff sign in on the Login Portal (Internal) with the User ID and land straight on the desk. To let someone also use the Practice system, tick their <b>Practice system</b> box below.</p>
-    <div class="cl" style="margin-bottom:18px"><h3>New User ID</h3>
-      <form id="uNew" class="uform" autocomplete="off">
-        <label>Staff name<input name="name" required maxlength="80"></label>
-        <label>User ID<input name="login_id" required maxlength="30" pattern="[a-z0-9][a-z0-9._\-]{2,29}" placeholder="e.g. ishwarya" autocapitalize="none" spellcheck="false"></label>
-        <label>Designation<input name="designation" maxlength="60" placeholder="optional"></label>
-        <label>Mobile<input name="phone" maxlength="15" inputmode="tel" placeholder="optional"></label>
-        <label>Password<span class="pw"><input name="password" required minlength="8" maxlength="64" autocomplete="new-password"><button type="button" class="gen">Generate</button></span></label>
-        <div class="act"><button type="submit" class="pri">Create User ID</button></div>
-      </form>
-      <p class="umsg" id="uNewMsg" role="status"></p>
-    </div>
-    <div class="cl"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Staff logins</h3><button type="button" class="sec" id="uReload">Refresh</button></div>
-      <div class="tw"><table class="ut"><thead><tr><th>Name</th><th>User ID</th><th>Designation</th><th>Status</th><th>Access</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody id="uRows"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody></table></div>
-      <p class="umsg" id="uMsg" role="status"></p>
-    </div>
-  </div></section>
 </div>
 
 <script>
@@ -137,63 +117,12 @@ function show(t){
   if(!owner){ location.replace('/portal/'); return; }
   document.getElementById('who').textContent = 'MKR · ' + s.user.email;
   var t = 'practice'; try { t = sessionStorage.getItem('adm_tab') || 'practice'; } catch(e){}
-  show(t); if(t==='users') loadUsers();
+  if(!document.getElementById('f-'+t)) t = 'practice';
+  show(t);
   document.getElementById('gate').remove();
 })();
 
-document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.t); if(b.dataset.t==='users') loadUsers(); }); });
-
-/* ---------- Users: staff User IDs (Edge Function staff-logins, advocate only) ---------- */
-var USERS = [];
-function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-function genPw(){ var a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', s='', r=new Uint32Array(10); crypto.getRandomValues(r); for(var i=0;i<10;i++) s+=a[r[i]%a.length]; return s; }
-async function callStaff(body){
-  var res = await sb.functions.invoke('staff-logins', { body: body });
-  if(res.error){ var m = res.error.message; try { var c = await res.error.context.json(); if(c && c.error) m = c.error; } catch(e){} throw new Error(m); }
-  if(res.data && res.data.error) throw new Error(res.data.error);
-  return res.data;
-}
-function fmt(d){ if(!d) return 'Never'; var x=new Date(d); return x.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+x.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
-function credBox(id, pw, what){ return '<div class="cred">'+what+'<br>User ID: <b>'+esc(id)+'</b> &nbsp; Password: <b>'+esc(pw)+'</b><br><span class="muted">Give these to the staff member now. The password is not shown again.</span> <button type="button" class="sec cp" data-t="User ID: '+esc(id)+'  Password: '+esc(pw)+'">Copy</button></div>'; }
-function wireCopy(root){ root.querySelectorAll('.cp').forEach(function(b){ b.onclick=function(){ try{ navigator.clipboard.writeText(b.dataset.t); b.textContent='Copied'; }catch(e){} }; }); }
-async function loadUsers(){
-  var tb=document.getElementById('uRows'); tb.innerHTML='<tr><td colspan="7" class="muted">Loading…</td></tr>';
-  try { USERS = (await callStaff({ action:'list' })).rows || []; drawUsers(); }
-  catch(e){ tb.innerHTML='<tr><td colspan="7" class="muted">Could not load: '+esc(e.message)+'</td></tr>'; }
-}
-function drawUsers(){
-  var tb=document.getElementById('uRows');
-  if(!USERS.length){ tb.innerHTML='<tr><td colspan="7" class="muted">No User IDs yet. Create one above.</td></tr>'; return; }
-  tb.innerHTML = USERS.map(function(u,i){
-    return '<tr><td>'+esc(u.name||'–')+(u.phone?'<br><span class="muted">'+esc(u.phone)+'</span>':'')+'</td><td class="mono">'+esc(u.login_id)+'</td><td>'+esc(u.designation||'')+'</td><td><span class="tag'+(u.active?'':' off')+'">'+(u.active?'Active':'Switched off')+'</span></td><td><span class="muted">Registration Desk</span><br><label class="px"><input type="checkbox" data-px="'+i+'"'+(u.practice?' checked':'')+'> Practice system</label></td><td>'+fmt(u.last_sign_in)+'</td>'
-      +'<td><div class="acts"><button type="button" data-rs="'+i+'">Reset password</button>'+(u.active?'<button type="button" class="warn" data-off="'+i+'">Switch off</button>':'<button type="button" data-on="'+i+'">Switch on</button>')+'</div><div id="rp'+i+'"></div></td></tr>';
-  }).join('');
-  tb.querySelectorAll('[data-rs]').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.rs, u=USERS[i], box=document.getElementById('rp'+i);
-    box.innerHTML='<div class="rp"><input value="'+genPw()+'" minlength="8" maxlength="64" aria-label="New password for '+esc(u.login_id)+'"><button type="button" class="sec gen2">Generate</button><button type="button" class="pri sv" style="background:var(--navy);color:#fff;border-color:var(--navy)">Set password</button></div>';
-    var inp=box.querySelector('input'); box.querySelector('.gen2').onclick=function(){ inp.value=genPw(); };
-    box.querySelector('.sv').onclick=async function(){ var pw=inp.value.trim(); if(pw.length<8){ inp.focus(); return; } this.disabled=true;
-      try { await callStaff({ action:'reset', user_id:u.user_id, password:pw }); box.innerHTML=credBox(u.login_id,pw,'Password reset for '+esc(u.name||u.login_id)+'.'); wireCopy(box); }
-      catch(e){ this.disabled=false; box.insertAdjacentHTML('beforeend','<p class="umsg err">'+esc(e.message)+'</p>'); } };
-  }; });
-  tb.querySelectorAll('[data-px]').forEach(function(c){ c.onchange=async function(){ var u=USERS[+c.dataset.px], on=c.checked, msg=document.getElementById('uMsg'); c.disabled=true;
-    try { await callStaff({ action:'practice', user_id:u.user_id, on:on }); u.practice=on; msg.className='umsg'; msg.textContent=(u.name||u.login_id)+(on?' can now also use the Practice system.':' can no longer use the Practice system (Registration Desk only).'); }
-    catch(e){ c.checked=!on; msg.className='umsg err'; msg.textContent=e.message; }
-    c.disabled=false; }; });
-  tb.querySelectorAll('[data-off],[data-on]').forEach(function(b){ b.onclick=async function(){ var off=b.hasAttribute('data-off'), u=USERS[+(b.dataset.off||b.dataset.on)];
-    if(off && b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirm switch off'; setTimeout(function(){ b.dataset.armed=''; b.textContent='Switch off'; },4000); return; }
-    b.disabled=true; var msg=document.getElementById('uMsg');
-    try { await callStaff({ action: off?'deactivate':'reactivate', user_id:u.user_id }); msg.className='umsg'; msg.textContent=(u.name||u.login_id)+(off?' can no longer sign in.':' can sign in again.'); await loadUsers(); }
-    catch(e){ b.disabled=false; msg.className='umsg err'; msg.textContent=e.message; } }; });
-}
-document.getElementById('uReload').onclick=loadUsers;
-document.querySelector('#uNew .gen').onclick=function(){ document.querySelector('#uNew [name=password]').value=genPw(); };
-document.querySelector('#uNew [name=login_id]').addEventListener('input',function(e){ var v=e.target.value.toLowerCase().replace(/\s+/g,''); if(v!==e.target.value) e.target.value=v; });
-document.getElementById('uNew').addEventListener('submit', async function(ev){ ev.preventDefault(); var f=ev.target, msg=document.getElementById('uNewMsg'), btn=f.querySelector('.pri');
-  var body={ action:'create', name:f.name.value.trim(), login_id:f.login_id.value.trim().toLowerCase(), designation:f.designation.value.trim(), phone:f.phone.value.trim(), password:f.password.value };
-  btn.disabled=true; msg.className='umsg'; msg.textContent='Creating…';
-  try { await callStaff(body); msg.innerHTML=credBox(body.login_id, body.password, 'User ID created for '+esc(body.name)+'.'); wireCopy(msg); f.reset(); await loadUsers(); }
-  catch(e){ msg.className='umsg err'; msg.textContent=e.message; }
-  btn.disabled=false; });
+document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.t); }); });
 document.getElementById('out').addEventListener('click', async function(){
   await sb.auth.signOut();
   try { sessionStorage.clear(); } catch(e){}

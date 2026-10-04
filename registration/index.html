@@ -82,6 +82,8 @@ td.num{font-variant-numeric:tabular-nums;text-align:right}
 .empty{color:var(--muted);text-align:center;padding:14px}
 .embed .brand,.embed #signOut,.embed .topband{display:none}
 .embed .top{justify-content:flex-start}
+.btn.danger{color:var(--err);border-color:var(--err);background:linear-gradient(to right,var(--err) 50%,transparent 50%);background-size:200% 100%;background-position:right bottom}
+.btn.danger:hover:not(:disabled){color:#fff}
 .subnav{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
 .subnav .tabs{margin:0;flex:1 1 auto}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:16px}
@@ -151,6 +153,7 @@ iframe.prop{width:100%;height:1500px;border:1px solid var(--line);border-radius:
     <nav class="nav" aria-label="Pages">
       <button type="button" data-go="dash" aria-current="page">Dashboard</button>
       <button type="button" data-go="docreg">Document Registration</button>
+      <button type="button" data-go="users" id="navUsers" hidden>Users</button>
       <button type="button" id="signOut">Sign out</button>
     </nav>
   </div>
@@ -188,14 +191,15 @@ const PARTY_COLS=["Sr. No.","Name","Age","Gender","Party Type","Contact Details"
 /* ---------- navigation ---------- */
 const GROUP={entry:"new",create:"new",wizard:"new",drafts:"drafts",mydocs:"mydocs"};
 function go(p){if(APP.page==="wizard")saveScreen();if(APP.page!==p)scheduleSave(true);APP.page=p;
- $$(".nav button[data-go]").forEach(b=>b.setAttribute("aria-current",(b.dataset.go==="dash"?p==="dash":p!=="dash")?"page":"false"));
- $("#subnav").hidden=p==="dash";$$("#subnav [data-sub]").forEach(b=>b.setAttribute("aria-selected",GROUP[p]===b.dataset.sub));
+ $$(".nav button[data-go]").forEach(b=>b.setAttribute("aria-current",(b.dataset.go==="docreg"?!!GROUP[p]:b.dataset.go===p)?"page":"false"));
+ $("#subnav").hidden=!GROUP[p];$$("#subnav [data-sub]").forEach(b=>b.setAttribute("aria-selected",GROUP[p]===b.dataset.sub));
  render();window.scrollTo(0,0)}
-$$(".nav button[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go==="dash"?"dash":"mydocs"));
+$$(".nav button[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go==="docreg"?"mydocs":b.dataset.go));
 $$("#subnav [data-sub]").forEach(b=>b.onclick=()=>{const k=b.dataset.sub;if(k==="new")return newFile();go(k)});
 function crumb(t){$("#crumb").innerHTML=t}
 function render(){const p=APP.page;const st=$("#stage");
  if(p==="dash")return renderDash(st);
+ if(p==="users")return ME.owner?renderUsers(st):go("dash");
  if(p==="drafts")return renderList(st,"drafts");
  if(p==="entry")return renderEntry(st);
  if(p==="create")return renderCreate(st);
@@ -700,6 +704,49 @@ function drawDash(){const R=ROWS,now=new Date(),mStart=new Date(now.getFullYear(
  $$("#dashBox td.cnt button").forEach(b=>b.onclick=()=>{if(b.dataset.s==="draft"){go("drafts");return}LIST.status=b.dataset.s;LIST.type=b.dataset.t;LIST.q="";LIST.sel=null;go("mydocs")});
  $$("#dashBox tr.pick").forEach(tr=>tr.onclick=()=>{if(tr.dataset.st==="draft")return openDoc(tr.dataset.id);LIST.status="";LIST.type="";LIST.q="";LIST.sel=tr.dataset.id;go("mydocs")})}
 
+/* ---------- Users (advocate only): Registration Desk User IDs via Edge Function staff-logins ---------- */
+let USERS=[];
+function genPw(){const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789",r=new Uint32Array(10);crypto.getRandomValues(r);return [...r].map(x=>a[x%a.length]).join("")}
+async function callStaff(body){const res=await sb.functions.invoke("staff-logins",{body});if(res.error){let m=res.error.message;try{const c=await res.error.context.json();if(c&&c.error)m=c.error}catch(e){}throw new Error(m)}if(res.data&&res.data.error)throw new Error(res.data.error);return res.data}
+function credBox(id,pw,what){return `<div class="errbox" style="border-color:var(--accent);color:var(--ink);background:var(--accent-soft)">${what}<br>User ID: <b class="mono">${esc(id)}</b> &nbsp; Password: <b class="mono">${esc(pw)}</b><br><span class="hint">Give these to the staff member now. The password is not shown again.</span> <button type="button" class="btn sm" data-cp="User ID: ${esc(id)}  Password: ${esc(pw)}">Copy</button></div>`}
+function wireCopy(root){root.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>copyText(b.dataset.cp))}
+function renderUsers(st){crumb("<b>Users</b> · Registration Desk User IDs");
+ st.innerHTML=`<div class="card"><h1>Registration Desk User IDs</h1><p class="sub">These User IDs open <b>only the Registration Desk</b>. Staff sign in on the Login Portal (Internal) with the User ID. Tick <b>Practice system</b> for anyone who should also use the Practice system.</p>
+  <h2>New User ID</h2><form id="uNew" autocomplete="off"><div class="grid">
+   <div class="f" data-req="1" data-lab="Staff name"><label for="u_name">Staff name <span class="req">*</span></label><input type="text" id="u_name" maxlength="80"></div>
+   <div class="f" data-req="1" data-lab="User ID"><label for="u_id">User ID <span class="req">*</span></label><input type="text" id="u_id" maxlength="30" placeholder="e.g. ishwarya" autocapitalize="none" spellcheck="false"><span class="note">Small letters, numbers, dot, dash or underscore</span></div>
+   <div class="f"><label for="u_des">Designation</label><input type="text" id="u_des" maxlength="60"></div>
+   <div class="f"><label for="u_ph">Mobile</label><input type="text" id="u_ph" maxlength="15" inputmode="tel"></div>
+   <div class="f" data-req="1" data-lab="Password"><label for="u_pw">Password <span class="req">*</span></label><div class="row" style="flex-wrap:nowrap"><input type="text" id="u_pw" maxlength="64" autocomplete="new-password"><button type="button" class="btn sm sec" id="u_gen">Generate</button></div><span class="note">At least 8 characters</span></div>
+  </div><div class="row" style="margin-top:14px"><button type="submit" class="btn">Create User ID</button></div></form><div id="uNewMsg" role="status"></div></div>
+  <div class="card" style="margin-top:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">User IDs</h2><button type="button" class="btn sm sec" id="uReload">Refresh</button></div>
+  <div class="tblwrap"><table><thead><tr><th>Name</th><th>User ID</th><th>Designation</th><th>Status</th><th>Access</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody id="uRows"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody></table></div><div id="uMsg" role="status"></div></div>`;
+ $("#u_gen").onclick=()=>$("#u_pw").value=genPw();
+ $("#u_id").oninput=e=>{const v=e.target.value.toLowerCase().replace(/\s+/g,"");if(v!==e.target.value)e.target.value=v};
+ $("#uReload").onclick=loadUsers;
+ $("#uNew").onsubmit=async ev=>{ev.preventDefault();const f=ev.target,msg=$("#uNewMsg"),er=requiredCheck(f);if($("#u_pw").value&&$("#u_pw").value.length<8)er.push("Password must be at least 8 characters");if(er.length)return showErr("#uNewMsg",er);
+  const body={action:"create",name:$("#u_name").value.trim(),login_id:$("#u_id").value.trim().toLowerCase(),designation:$("#u_des").value.trim(),phone:$("#u_ph").value.trim(),password:$("#u_pw").value};
+  const btn=f.querySelector("[type=submit]");btn.disabled=true;msg.innerHTML='<p class="hint">Creating…</p>';
+  try{await callStaff(body);msg.innerHTML=credBox(body.login_id,body.password,"User ID created for "+esc(body.name)+".");wireCopy(msg);f.reset();loadUsers()}catch(x){showErr("#uNewMsg",[x.message])}btn.disabled=false};
+ loadUsers()}
+async function loadUsers(){const tb=$("#uRows");if(!tb)return;tb.innerHTML='<tr><td colspan="7" class="empty">Loading…</td></tr>';
+ try{USERS=(await callStaff({action:"list"})).rows||[];drawUsers()}catch(x){tb.innerHTML=`<tr><td colspan="7" class="empty">Could not load: ${esc(x.message)}</td></tr>`}}
+function drawUsers(){const tb=$("#uRows");
+ if(!USERS.length){tb.innerHTML='<tr><td colspan="7" class="empty">No User IDs yet. Create one above.</td></tr>';return}
+ tb.innerHTML=USERS.map((u,i)=>`<tr><td>${esc(u.name||"–")}${u.phone?`<br><span class="hint">${esc(u.phone)}</span>`:""}</td><td class="mono">${esc(u.login_id)}</td><td>${esc(u.designation||"")}</td><td><span class="st ${u.active?"registered":"query"}">${u.active?"Active":"Switched off"}</span></td>
+  <td><span class="hint">Registration Desk</span><br><label class="chk"><input type="checkbox" data-px="${i}"${u.practice?" checked":""}> Practice system</label></td><td>${u.last_sign_in?fmtDT(u.last_sign_in):"Never"}</td>
+  <td><div class="row" style="flex-wrap:nowrap"><button type="button" class="btn sm sec" data-rs="${i}">Reset password</button>${u.active?`<button type="button" class="btn sm danger" data-off="${i}">Switch off</button>`:`<button type="button" class="btn sm sec" data-on="${i}">Switch on</button>`}</div><div id="rp${i}"></div></td></tr>`).join("");
+ tb.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rs,u=USERS[i],box=$("#rp"+i);
+  box.innerHTML=`<div class="row" style="margin-top:8px;flex-wrap:nowrap"><input type="text" value="${genPw()}" maxlength="64" aria-label="New password for ${esc(u.login_id)}" style="max-width:170px"><button type="button" class="btn sm sec" data-g>Generate</button><button type="button" class="btn sm" data-set>Set password</button></div>`;
+  const inp=box.querySelector("input");box.querySelector("[data-g]").onclick=()=>inp.value=genPw();
+  box.querySelector("[data-set]").onclick=async ev=>{const pw=inp.value.trim();if(pw.length<8){toast("Password must be at least 8 characters");return}ev.target.disabled=true;
+   try{await callStaff({action:"reset",user_id:u.user_id,password:pw});box.innerHTML=credBox(u.login_id,pw,"Password reset for "+esc(u.name||u.login_id)+".");wireCopy(box)}catch(x){ev.target.disabled=false;toast(x.message)}}});
+ tb.querySelectorAll("[data-px]").forEach(c=>c.onchange=async()=>{const u=USERS[+c.dataset.px],on=c.checked;c.disabled=true;
+  try{await callStaff({action:"practice",user_id:u.user_id,on});u.practice=on;toast((u.name||u.login_id)+(on?" can now also use the Practice system":" – Registration Desk only"))}catch(x){c.checked=!on;toast(x.message)}c.disabled=false});
+ tb.querySelectorAll("[data-off],[data-on]").forEach(b=>b.onclick=async()=>{const off=b.hasAttribute("data-off"),u=USERS[+(b.dataset.off||b.dataset.on)];
+  if(off&&b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Confirm switch off";setTimeout(()=>{b.dataset.armed="";b.textContent="Switch off"},4000);return}
+  b.disabled=true;try{await callStaff({action:off?"deactivate":"reactivate",user_id:u.user_id});toast((u.name||u.login_id)+(off?" can no longer sign in":" can sign in again"));loadUsers()}catch(x){b.disabled=false;toast(x.message)}})}
+
 /* ---------- start ---------- */
 async function boot(){const st=$("#stage");
  if(!window.supabase){st.innerHTML=`<div class="card"><h1>Could not load</h1><p class="sub">The sign-in library did not load. Check the internet and reload the page.</p></div>`;return}
@@ -708,7 +755,7 @@ async function boot(){const st=$("#stage");
  if(!ses){location.replace("/login/?next="+encodeURIComponent("/registration/"));return}
  ME.id=ses.user.id;ME.email=ses.user.email||"";
  const [o,s2]=await Promise.all([sb.rpc("reg_is_owner"),sb.rpc("reg_is_staff")]);ME.owner=!!o.data;
- $("#whoami").textContent=(ME.owner?"Advocate":"Staff")+" · "+ME.email;
+ $("#whoami").textContent=(ME.owner?"Advocate":"Staff")+" · "+(ME.email.endsWith("@staff.vlegalservices.in")?ME.email.split("@")[0]:ME.email);if(ME.owner)$("#navUsers").hidden=false;
  if(!s2.data){st.innerHTML=`<div class="card"><h1>Not a staff login</h1><p class="sub">${esc(ME.email)} does not have a Registration Desk User ID, or it has been switched off. Ask the advocate (Admin → Users).</p></div>`;return}
  try{const d=await fetch("screens.json").then(r=>r.json());SCR=d;OPTS=d.opts}catch(e){st.innerHTML=`<div class="card"><h1>Could not load the screen definitions</h1><p class="sub">Reload the page.</p></div>`;return}
  go("dash")}

@@ -184,7 +184,7 @@ const ENTRY_FIELDS=[
  ["work","Work type","sel",[["","- Select -"],["7","Deposit of Title Deeds (MOD)"],["DOR","Deed of Receipt (MOD Discharge)"],["1","Sale Deed (first sale of plot / flat)"],["28","Further Charge – without possession"],["22","Further Charge – with possession"]]],
  ["lang","Document language","sel",[["en","English"],["ta","Tamil"]]],["sro","Sub Registrar Office","sro"],["emDate","EM / execution date","date"],
  ["Client & bank","h"],
- ["client","Mortgagor / Buyer name"],["clientMobile","Mobile number"],["bank","Bank / NBFC","bank"],["branch","Branch"],["loanAc","Loan account no."],["sanction","Sanction / loan amount (₹)","num"],
+ ["client","Mortgagor / Buyer name"],["clientMobile","Mobile number"],["bank","Bank / NBFC","bank"],["ifsc","Branch IFSC code","ifsc"],["branch","Branch"],["branchPin","Branch pincode"],["loanAc","Loan account no."],["sanction","Sanction / loan amount (₹)","num"],["branchAddr","Branch address (goes to Mortgagee address)","area"],
  ["Documents received","h"],
  ["docs","","checks",["Title / sale deed","Parent documents","Earlier MOD","Chitta / Patta","Encumbrance Certificate","KYC of all parties","Sanction letter","Loan closure letter (discharge)"]],
  ["Office tracking","h"],
@@ -203,6 +203,7 @@ function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on t
   else if(t==="sel")h+=`<div class="f"><label for="e_${k}">${l}</label><select id="e_${k}">${optsHTML(o,v)}</select></div>`;
   else if(t==="sro")h+=`<div class="f"><label for="e_${k}">${l}</label><select id="e_${k}">${optsHTML(sros,v||"-1")}</select></div>`;
   else if(t==="bank")h+=`<div class="f"><label for="e_${k}">${l}</label><select id="e_${k}">${optsHTML(banks,v||"-1")}</select><span class="note">List as on the portal's bank master</span></div>`;
+  else if(t==="ifsc")h+=`<div class="f"><label for="e_${k}">${l}</label><div class="row" style="flex-wrap:nowrap"><input type="text" id="e_${k}" maxlength="11" style="text-transform:uppercase" value="${esc(v)}"><button class="btn sm" type="button" id="e_ifscFind">Find</button></div><span class="note" id="e_ifscMsg">Fills bank, branch, address and pincode</span></div>`;
   else if(t==="num")h+=`<div class="f"><label for="e_${k}">${l}</label><input type="text" inputmode="numeric" id="e_${k}" value="${esc(v)}"></div>`;
   else if(t==="area")h+=`<div class="f wide"><label for="e_${k}">${l}</label><textarea id="e_${k}">${esc(v)}</textarea></div>`;
   else if(t==="checks"){h+=`<div class="f wide"><div class="grid">`+o.map((d,i)=>`<label class="chk"><input type="checkbox" id="e_doc${i}" ${(e.docs||[]).includes(d)?"checked":""}> ${esc(d)}</label>`).join("")+`</div></div>`}
@@ -212,6 +213,9 @@ function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on t
  const sync=()=>{for(const r of ENTRY_FIELDS){const el=$("#e_"+r[0]);if(el&&r[2]!=="ro")e[r[0]]=el.value}
    e.docs=(ENTRY_FIELDS.find(r=>r[0]==="docs")[3]).filter((d,i)=>$("#e_doc"+i)?.checked);$("#e_fileRef").value=fileRef()};
  er.addEventListener("input",sync);er.addEventListener("change",sync);
+ $("#e_ifscFind").onclick=async()=>{sync();const m=$("#e_ifscMsg");m.textContent="Looking up…";try{const i=await ifscLookup(e.ifsc);
+   const bk=matchBank(i.BANK);if(bk&&(!e.bank||e.bank==="-1"))e.bank=bk;e.branch=i.BRANCH||e.branch;e.branchAddr=i.ADDRESS||e.branchAddr;e.branchPin=pinOf(i.ADDRESS)||e.branchPin;e.branchDist=i.DISTRICT||"";e.branchCity=i.CITY||"";
+   ["bank","branch","branchAddr","branchPin"].forEach(k=>{const el=$("#e_"+k);if(el)el.value=e[k]||""});$("#e_fileRef").value=fileRef();m.textContent=(i.BANK||"")+" · "+(i.BRANCH||"")+(bk?"":" (pick the bank from the list)")}catch(x){m.textContent=x.message}};
  $("#e_copy").onclick=()=>{sync();const txt=Object.entries({...e,fileRef:fileRef()}).map(([k,v])=>k+": "+(Array.isArray(v)?v.join(", "):v)).join("\n");copyText(txt,"#e_msg")};
  $("#e_go").onclick=()=>{sync();if(e.work){APP.deedType="";}go("home")}}
 function copyText(t,msgSel){const done=()=>{if(msgSel)$(msgSel).textContent="Copied";toast("Copied")};try{navigator.clipboard.writeText(t).then(done,()=>fallback())}catch(_){fallback()}
@@ -280,7 +284,7 @@ function prefill(){const e=APP.entry,D=DEEDS[APP.deedType];if(!D)return;
  const isDOR=APP.deedType==="DOR";
  const person=isDOR?cl:ex,bankScr=isDOR?ex:cl;
  if(e.client&&!APP.vals[person])APP.vals[person]={partyType:"7000006",fullName:e.client,mobileNo:e.clientMobile||""};
- if(e.bank&&e.bank!=="-1"&&APP.deedType!=="1"&&!APP.vals[bankScr])APP.vals[bankScr]={partyType:"7000008",govtBodyList:e.bank};
+ if(e.bank&&e.bank!=="-1"&&APP.deedType!=="1"&&!APP.vals[bankScr])APP.vals[bankScr]=Object.assign({partyType:"7000008",govtBodyList:e.bank},branchVals(e));
  if(APP.deedType!=="1"&&e.sanction){const k=APP.deedType==="DOR"?"receipt#":"d7_tab3#";APP.vals[k]=Object.assign({loanAmount:e.sanction},APP.vals[k]||{})}}
 
 /* ---------- 4. Wizard ---------- */
@@ -323,8 +327,9 @@ function tabCheck(){const D=DEEDS[APP.deedType],t=D.tabs[APP.tab][1];
  if(t==="party"){const er=[];D.parties.forEach(c=>er.push(...partyChildCheck(c)));const p=APP.vals[D.parties[4][1]+"#pre"];if(!p||!p.cmb_presenter||p.cmb_presenter==="-1")er.push("Select the Presenter (Presenter Details)");return er}
  if(t==="property"){const pf=$("#propFrame");try{const w=pf&&pf.contentWindow;if(w&&w.S&&!w.S.props.length&&!w.S.surveys.length)return["Add the property in Property Details (press Add / Save and Continue inside the property screen)"]}catch(e){}return[]}
  if(["preview","valuation","agreement"].includes(t))return[];
+ if(t==="d7_tab4"&&!(APP.grids["d7_tab4#"]||[]).length)return["Add at least one document of title to the list (press Add)"].concat(requiredCheck($("#screen")).filter(x=>!/Description|Document Number|Date of Document|Document Deposited/.test(x)));
  return requiredCheck($("#screen"))}
-function requiredCheck(root){const er=[];root.querySelectorAll(".f[data-req]").forEach(b=>{if(b.closest("[hidden]"))return;const el=b.querySelector("input:not([type=checkbox]):not([type=radio]):not([type=button]),select,textarea");if(!el||el.closest("[hidden]"))return;const v=el.value;if(!v||v==="-1")er.push(b.dataset.alert||("Please enter "+b.dataset.lab))});return er}
+function requiredCheck(root,upto){const er=[];const simul=root.querySelector("#simultaneousSaleDeedid");root.querySelectorAll(".f[data-req]").forEach(b=>{if(b.closest("[hidden]"))return;if(upto&&(b.compareDocumentPosition(upto)&Node.DOCUMENT_POSITION_PRECEDING))return;if(simul&&!simul.checked&&/txtLinkCons|usingTpNo/.test(b.dataset.fid||""))return;const el=b.querySelector("input:not([type=checkbox]):not([type=radio]):not([type=button]),select,textarea");if(!el||el.closest("[hidden]"))return;const v=el.value;if(!v||v==="-1")er.push(b.dataset.alert||("Please enter "+b.dataset.lab))});return er}
 
 /* ---------- generic screen renderer (labels, order and options as read from the portal) ---------- */
 const PERSONAL=["divId_Salutation","divId_FullName","divId_FullNameLL","divId_RelatedTo","divId_FirstRelativeName","divId_FirstRelativeNameLL","divId_SecondRelatedTo","divId_SecondRelativeName","divId_SecondRelativeNameLL","divId_Dob","divId_Age","divId_Gender","divId_MaritalStatus","divId_IdentificationType","divId_IdentificationNumber","divId_Profession"];
@@ -362,10 +367,10 @@ function renderSpec(root,page,key,partyCfg){const items=(SCR.pages[page]||[]);co
     const vis=x.fs.filter(f=>!(f.type==="button"&&/update|cancel|^copy/i.test(f.id||"")));
     if(!vis.length){if(x.hid)continue;const t=(x.lab+" "+x.note).trim();if(!t)continue;
       if(/^(Personal Details|Address Details)/.test(t)||/^Sr\.No\./.test(t))h+=/^Sr\.No/.test(t)?"":`<div class="heading">${esc(t)}</div>`;else h+=`<p class="pnote">${esc(t)}</p>`;continue}
-    const fids=vis.map(f=>f.id).filter(Boolean);const hideBlock=x.hid&&!fids.some(id=>ORGF.includes(id)||GOVF.includes(id));
+    const fids=vis.map(f=>f.id).filter(Boolean);const vOther=/^divId_VillageOther/.test(x.id||"");const hideBlock=x.hid&&!vOther&&!fids.some(id=>ORGF.includes(id)||GOVF.includes(id));
     if(hideBlock)continue;
     const isOrg=fids.some(id=>ORGF.includes(id)),isGov=fids.some(id=>GOVF.includes(id));
-    const pt=vals.partyType||"";const hidNow=(isOrg&&pt!=="7000007")||(isGov&&pt!=="7000008")||(PERSONAL.includes(x.id)&&(pt==="7000007"||pt==="7000008"));
+    const pt=vals.partyType||"";const hidNow=(vOther&&vals.cmb_Village!=="0")||(isOrg&&pt!=="7000007")||(isGov&&pt!=="7000008")||(PERSONAL.includes(x.id)&&(pt==="7000007"||pt==="7000008"));
     const lab=x.lab||"";const single=vis.length===1;const f0=vis[0];
     const wide=vis.length>3||f0.type==="textarea";
     const attrs=`data-fid="${esc(fids.join(" "))}" data-blk="${esc(x.id||"")}"${x.req?` data-req="1" data-lab="${esc(lab)}" data-alert="${esc(x.alert||"")}"`:""}${hidNow?" hidden":""}`;
@@ -395,7 +400,7 @@ function selText(el){return el&&el.tagName==="SELECT"?(el.value==="-1"?"":el.sel
 function rowFrom(root,page,pc){const g=id=>root.querySelector("#"+id);
  if(pc&&pc[2]==="rep")return[selText(g("representedParty")),"",selText(g("representationBy")),g("fullName")?.value||""];
  if(pc){const pt=g("partyType")?.value;const name=pt==="7000008"?selText(g("govtBodyList")):pt==="7000007"?g("txt_OrgName")?.value:(selText(g("salutationId"))+" "+(g("fullName")?.value||"")).trim();
-   return[name,g("age")?.value||"",selText(g("genderId")),selText(g("partyType")),[g("mobileNo")?.value,g("email")?.value].filter(Boolean).join(" · "),[g("txt_FullAddress")?.value,selText(g("cmb_District")),g("txt_PinCode")?.value].filter(Boolean).join(", ")]}
+   return[name,g("age")?.value||"",selText(g("genderId")),selText(g("partyType")),[g("mobileNo")?.value,g("email")?.value].filter(Boolean).join(" · "),[g("txt_FullAddress")?.value,g("cmb_Village")?.value==="0"?g("txt_othr_village_name")?.value:selText(g("cmb_Village")),selText(g("cmb_Taluk")),selText(g("cmb_District")),g("txt_PinCode")?.value].filter(Boolean).join(", ")]}
  if(page.startsWith("d7")&&/_tab4$/.test(page))return[g("txtDesc")?.value||"",g("txtDocNoId")?.value||"",g("dtDoc")?.value||"",selText(g("cmbDepositedDoc"))];
  if(page==="d1_tab3")return[selText(g("PaymentMode")),g("PaymentDate")?.value||"",g("PaymentAmount")?.value||"",selText(g("ReceivingParty"))];
  if(/_tab8$/.test(page))return[selText(g("PartyName")),selText(g("representedPartyNames")),[selText(g("pattaLayoutNumber")),selText(g("cmb_otherDocs")),selText(g("cmb_prevDocument"))].filter(Boolean).join(" ")];
@@ -403,6 +408,8 @@ function rowFrom(root,page,pc){const g=id=>root.querySelector("#"+id);
 function wireSpec(root,page,key,pc,grid){
  const pt=root.querySelector("#partyType");
  const applyPT=()=>{const v=pt.value;root.querySelectorAll("[data-fid]").forEach(b=>{const ids=b.dataset.fid.split(" ");if(ids.some(i=>ORGF.includes(i)))b.hidden=v!=="7000007";else if(ids.some(i=>GOVF.includes(i)))b.hidden=v!=="7000008";else if(PERSONAL.includes(b.dataset.blk))b.hidden=v==="7000007"||v==="7000008"})};
+ wireAddress(root,key);
+ if(root.querySelector("#govtBodyList"))branchHelper(root);
  if(pt){pt.onchange=applyPT;applyPT()}
  const prof=root.querySelector("#professionId");if(prof)prof.onchange=()=>{};
  const dob=root.querySelector("#dob"),age=root.querySelector("#age");if(dob&&age)dob.onchange=()=>{const d=new Date(dob.value);if(!isNaN(d)){age.value=Math.floor((Date.now()-d)/3.15576e10)}};
@@ -412,10 +419,10 @@ function wireSpec(root,page,key,pc,grid){
   tb.querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.rdel,1);draw()})};
  draw();
  root.querySelectorAll("button[id]").forEach(b=>{
-  if(ADD_IDS.includes(b.id)&&grid)b.onclick=()=>{const er=requiredCheck(root);if(pc&&pt&&pt.value==="-1")er.unshift("Please select Party Type");
+  if(ADD_IDS.includes(b.id)&&grid)b.onclick=()=>{const er=requiredCheck(root,pc?null:b);if(!pc&&/^d7_tab4$/.test(page)){const g=id=>root.querySelector("#"+id);if(!g("txtDesc").value.trim())er.push("Please enter Description");if(!g("txtDocNoId").value.trim())er.push("Please enter Document Number");if(!g("dtDoc").value.trim())er.push("Please enter Date of Document");if(g("cmbDepositedDoc").value==="-1")er.push("Please select Document Deposited")}if(pc&&pt&&pt.value==="-1")er.unshift("Please select Party Type");
     if(er.length)return showErr("#scrErr",[...new Set(er)]);$("#scrErr").innerHTML="";
-    (APP.grids[key]=APP.grids[key]||[]).push(rowFrom(root,page,pc));draw();clearFields(root);delete APP.vals[key];toast("Added to the list")};
-  if(RESET_IDS.includes(b.id))b.onclick=()=>{clearFields(root);$("#scrErr").innerHTML=""}});
+    (APP.grids[key]=APP.grids[key]||[]).push(rowFrom(root,page,pc));draw();clearFields(root);root.addrSync&&root.addrSync();delete APP.vals[key];toast("Added to the list")};
+  if(RESET_IDS.includes(b.id))b.onclick=()=>{clearFields(root);root.addrSync&&root.addrSync();$("#scrErr").innerHTML=""}});
  root.addEventListener("change",()=>saveScreen())}
 function clearFields(root){root.querySelectorAll("input[type=text],textarea").forEach(i=>{if(!i.readOnly)i.value=""});root.querySelectorAll("select").forEach(s=>{if(s.id!=="partyType"&&s.id!=="cmb_Country"&&s.id!=="cmb_State")s.value="-1"});root.querySelectorAll("input[type=checkbox]").forEach(c=>{if(!/^chk_/.test(c.id))c.checked=false})}
 function saveScreen(){const scr=$("#screen");if(!scr||APP.page!=="wizard")return;const key=curKey();const o={};scr.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{if(el.type==="button")return;o[el.id]=el.type==="checkbox"||el.type==="radio"?el.checked:el.value});APP.vals[key]=o}
@@ -462,9 +469,51 @@ function renderMyDocs(st){crumb("Home &gt; <b>My Documents</b>");st.innerHTML=`<
  <div class="row" style="margin-top:12px">${["Sign of all Parties","Upload Documents","Photo biometric capture","Pay","View Document Valuation"].map(b=>`<button class="btn sm sec" type="button" disabled title="Done on the portal by the parties">${b}</button>`).join("")}</div>
  <p class="hint">E-sign, biometric capture and payment happen only on the real portal, by the parties.</p></div>`}
 
+/* ---------- address: District → Taluk → Village, lists as loaded by the portal (all 38 districts) ---------- */
+let ADDR=null;
+const norm=t=>String(t||"").toLowerCase().replace(/\[.*?\]/g,"").replace(/[^a-z]/g,"");
+function addrOpts(list){return [["-1","- Select -"],...(list||[])]}
+function wireAddress(root,key){const dS=root.querySelector("#cmb_District"),tS=root.querySelector("#cmb_Taluk"),vS=root.querySelector("#cmb_Village");if(!dS||!tS||!vS)return;
+ const v=APP.vals[key]||{};
+ const fillT=sel=>{tS.innerHTML=optsHTML(addrOpts(ADDR&&ADDR.T[dS.value]),sel||"-1")};
+ const fillV=sel=>{vS.innerHTML=optsHTML(addrOpts(ADDR&&ADDR.V[tS.value]),sel||"-1")};
+ const other=()=>root.querySelectorAll('[data-blk^="divId_VillageOther"]').forEach(b=>b.hidden=vS.value!=="0");
+ fillT(v.cmb_Taluk);fillV(v.cmb_Village);other();
+ dS.addEventListener("change",()=>{fillT();fillV();other()});tS.addEventListener("change",()=>{fillV();other()});vS.addEventListener("change",other);
+ root.addrSync=()=>{fillT(tS.value);fillV(vS.value);other()};
+ root.setAddr=(d,t,vl)=>{if(d){dS.value=d;fillT(t);fillV(vl);other()}}}
+function matchAddr(dist,city,addr){if(!ADDR)return{};const dn=norm(dist),words=[city,dist,...String(addr||"").split(/[,\s]+/)].map(norm).filter(w=>w.length>3);
+ const ds=findOpts("cmb_District").filter(o=>o[0]!=="-1");
+ const dc=[dn,...words];const d=(ds.find(o=>dc.includes(norm(o[1])))||ds.find(o=>dn&&(norm(o[1]).startsWith(dn.slice(0,5))||dn.startsWith(norm(o[1]).slice(0,5))))||[])[0];if(!d)return{};
+ const pick=L=>{const ex=L.filter(o=>words.includes(norm(o[1])));if(ex.length===1)return ex[0][0];const pre=L.filter(o=>norm(o[1])&&words.some(w=>norm(o[1]).startsWith(w)));return pre.length===1?pre[0][0]:undefined};
+ const t=pick(ADDR.T[d]||[]);const vl=t?pick(ADDR.V[t]||[]):undefined;
+ return{d,t,v:vl}}
+const pinOf=a=>(String(a||"").match(/\b6\d{5}\b/)||[])[0]||"";
+function branchVals(e){if(!e.branchAddr&&!e.branch)return{};const m=matchAddr(e.branchDist,e.branchCity,(e.branch||"")+", "+(e.branchAddr||""));
+ const o={h_ifsc:e.ifsc||"",txt_FullAddress:[e.branch?e.branch+" Branch":"",e.branchAddr].filter(Boolean).join(", "),txt_PinCode:e.branchPin||pinOf(e.branchAddr)};
+ if(m.d)o.cmb_District=m.d;if(m.t)o.cmb_Taluk=m.t;if(m.v)o.cmb_Village=m.v;return o}
+async function ifscLookup(code){code=String(code||"").trim().toUpperCase();if(!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(code))throw new Error("Enter a valid 11-character IFSC (e.g. SBIN0001234)");
+ let r;try{r=await fetch("https://ifsc.razorpay.com/"+code)}catch(x){throw new Error("Could not reach the IFSC lookup. Type the branch details by hand.")}
+ if(r.status===404)throw new Error("IFSC not found. Check the code.");if(!r.ok)throw new Error("IFSC lookup failed ("+r.status+")");return r.json()}
+function matchBank(name){const n=norm(name).replace(/limited|ltd/g,"");if(!n)return"";const b=findOpts("govtBodyList").filter(o=>o[0]!=="-1");
+ return(b.find(o=>norm(o[1]).replace(/limited|ltd/g,"")===n)||b.find(o=>norm(o[1]).startsWith(n)||n.startsWith(norm(o[1]).replace(/limited|ltd/g,"")))||[])[0]||""}
+function branchHelper(root){const blk=root.querySelector("#govtBodyList").closest(".f");const v=APP.vals[curKey()]||{};
+ const d=document.createElement("div");d.className="f wide";d.dataset.fid="govtBodyList h_ifsc";d.dataset.blk="";
+ d.innerHTML=`<span class="lab">Branch details <span class="pill warn">practice helper · not on the portal</span></span><div class="row"><input type="text" id="h_ifsc" maxlength="11" placeholder="Branch IFSC code" style="max-width:220px;text-transform:uppercase" value="${esc(v.h_ifsc||APP.entry.ifsc||"")}"><button class="btn sm" type="button" id="h_find">Find branch by IFSC</button><button class="btn sm" type="button" id="h_entry">Use Entry Details</button><span class="hint" id="h_msg">Fills Address, District, Taluk, Village and Pincode. You can edit them after.</span></div>`;
+ blk.after(d);
+ const apply=o=>{const g=id=>root.querySelector("#"+id);if(o.govtBodyList&&g("govtBodyList"))g("govtBodyList").value=o.govtBodyList;
+  if(o.txt_FullAddress)g("txt_FullAddress").value=o.txt_FullAddress;if(o.txt_PinCode)g("txt_PinCode").value=o.txt_PinCode;
+  if(o.cmb_District&&root.setAddr)root.setAddr(o.cmb_District,o.cmb_Taluk,o.cmb_Village);saveScreen();
+  $("#h_msg").textContent=o.cmb_District?(o.cmb_Taluk?(o.cmb_Village?"Filled. Check the Village before Add.":"Filled. Select the Village."):"Filled. Select the Taluk and Village."):"Address filled. Select District, Taluk and Village."};
+ d.querySelector("#h_find").onclick=async()=>{const m=$("#h_msg");m.textContent="Looking up…";try{const i=await ifscLookup(d.querySelector("#h_ifsc").value);
+   const e={ifsc:d.querySelector("#h_ifsc").value.toUpperCase(),branch:i.BRANCH,branchAddr:i.ADDRESS,branchPin:pinOf(i.ADDRESS),branchDist:i.DISTRICT,branchCity:i.CITY};
+   apply(Object.assign({govtBodyList:matchBank(i.BANK)},branchVals(e)))}catch(x){m.textContent=x.message}};
+ d.querySelector("#h_entry").onclick=()=>{const e=APP.entry;if(!e.branchAddr&&!e.branch){$("#h_msg").textContent="No branch in Entry Details yet.";return}apply(Object.assign({govtBodyList:e.bank&&e.bank!=="-1"?e.bank:""},branchVals(e)))}}
+
 /* ---------- sign out ---------- */
 $("#signOut").onclick=()=>{try{sessionStorage.clear()}catch(e){}location.replace("/login/")};
 /* ---------- boot ---------- */
+fetch("data/address.json").then(r=>r.json()).then(d=>{ADDR=d;if(APP.page==="wizard")render()}).catch(()=>{});
 fetch("screens.json").then(r=>r.json()).then(d=>{SCR=d;OPTS=d.opts;render()}).catch(()=>{$("#stage").innerHTML=`<div class="card"><h1>Could not load the screen definitions</h1><p class="sub">Reload the page. If it keeps failing, ask Claude to republish the practice portal.</p></div>`});
 </script>
 

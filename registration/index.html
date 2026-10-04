@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/assets/idle.js"></script>
+<script>
+/* Staff only: sign in through the Login Portal first */
+(function(){var ok=false;try{ok=!!sessionStorage.getItem('sb-tjvvqoomaptxscgiziks-auth-token');}catch(e){}
+if(!ok){var d='/login/?next='+encodeURIComponent('/registration/');try{window.top.location.replace(d);}catch(e){location.replace(d);}}})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
@@ -107,6 +113,7 @@ iframe.prop{width:100%;height:1500px;border:1px solid var(--line);border-radius:
       <button type="button" data-go="create">Create Document</button>
       <button type="button" data-go="wizard">Document</button>
       <button type="button" data-go="mydocs">My Documents</button>
+      <button type="button" id="signOut">Sign out</button>
     </nav>
   </div>
   <div class="crumb" id="crumb"></div>
@@ -139,7 +146,7 @@ const PARTY_COLS=["Sr. No.","Name","Age","Gender","Party Type","Contact Details"
 
 /* ---------- navigation ---------- */
 function go(p){APP.page=p;$$(".nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===p?"page":"false"));render();window.scrollTo(0,0)}
-$$(".nav button").forEach(b=>b.onclick=()=>{if(b.dataset.go==="wizard"&&!APP.deedType){toast("Choose the Nature of Document and press Proceed first");return go("create")}go(b.dataset.go)});
+$$(".nav button[data-go]").forEach(b=>b.onclick=()=>{if(b.dataset.go==="wizard"&&!APP.deedType){toast("Choose the Nature of Document and press Proceed first");return go("create")}go(b.dataset.go)});
 function crumb(t){$("#crumb").innerHTML=t}
 function render(){const p=APP.page;const st=$("#stage");
  if(p==="entry")return renderEntry(st);
@@ -441,6 +448,8 @@ function renderMyDocs(st){crumb("Home &gt; <b>My Documents</b>");st.innerHTML=`<
  <div class="row" style="margin-top:12px">${["Sign of all Parties","Upload Documents","Photo biometric capture","Pay","View Document Valuation"].map(b=>`<button class="btn sm sec" type="button" disabled title="Done on the portal by the parties">${b}</button>`).join("")}</div>
  <p class="hint">E-sign, biometric capture and payment happen only on the real portal, by the parties.</p></div>`}
 
+/* ---------- sign out ---------- */
+$("#signOut").onclick=()=>{try{sessionStorage.clear()}catch(e){}location.replace("/login/")};
 /* ---------- boot ---------- */
 fetch("screens.json").then(r=>r.json()).then(d=>{SCR=d;OPTS=d.opts;render()}).catch(()=>{$("#stage").innerHTML=`<div class="card"><h1>Could not load the screen definitions</h1><p class="sub">Reload the page. If it keeps failing, ask Claude to republish the practice portal.</p></div>`});
 </script>

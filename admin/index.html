@@ -101,7 +101,7 @@ function show(t){
   document.querySelectorAll('.stage > *').forEach(function(el){
     var on = el.id === 'f-'+t;
     el.classList.toggle('on', on);
-    if(on && el.tagName==='IFRAME' && !el.src) el.src = el.dataset.src;
+    if(on && el.tagName==='IFRAME' && !el.src) el.src = el.dataset.src + (el.dataset.src.indexOf('?')>-1?'&':'?') + 'v=' + Date.now();
   });
   try { sessionStorage.setItem('adm_tab', t); } catch(e){}
 }

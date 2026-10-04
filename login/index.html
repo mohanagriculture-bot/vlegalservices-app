@@ -177,6 +177,7 @@ async function internalLogin(id, pw){
   if(!owner && user.email === 'vlegal2025@gmail.com') owner = true;
   var nx = new URLSearchParams(location.search).get('next') || '';
   if(/^\/registration\//.test(nx) && nx.indexOf('//') === -1){ window.location.href = nx; return; }
+  if(!owner){ try { var ac = (await sb.rpc('my_portal_access')).data || {}; if(ac.registration && !ac.practice){ window.location.href = '/registration/'; return; } } catch(e){} }
   window.location.href = owner ? '/admin/' : '/portal/';
 }
 

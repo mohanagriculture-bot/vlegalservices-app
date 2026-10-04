@@ -60,6 +60,7 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
 .ut td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top}
 .ut td .acts{display:flex;gap:6px;flex-wrap:wrap}
 .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:#e3f4ea;color:#1f6b42}.tag.off{background:#f1e3e3;color:#9b2c2c}
+.px{display:inline-flex;gap:6px;align-items:center;font-size:13px;margin-top:4px;cursor:pointer}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
 .muted{color:#5E6573}
 .umsg{font-size:14px;margin:10px 0 0;min-height:1em}.umsg.err{color:#9b2c2c}
@@ -92,8 +93,8 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
   <iframe id="f-clients" title="Clients" data-src="/admin/clients/"></iframe>
   <iframe id="f-registration" title="Registration desk" data-src="/registration/"></iframe>
   <section class="pane" id="f-users" aria-labelledby="uH"><div class="in" style="max-width:1040px">
-    <h2 id="uH">Staff User IDs</h2>
-    <p class="lede">Create a User ID and password for each staff member, reset a forgotten password, or switch a login off. Staff sign in on the Login Portal (Internal) with the User ID.</p>
+    <h2 id="uH">Registration Desk User IDs</h2>
+    <p class="lede">These User IDs open <b>only the Registration Desk</b>. Staff sign in on the Login Portal (Internal) with the User ID and land straight on the desk. To let someone also use the Practice system, tick their <b>Practice system</b> box below.</p>
     <div class="cl" style="margin-bottom:18px"><h3>New User ID</h3>
       <form id="uNew" class="uform" autocomplete="off">
         <label>Staff name<input name="name" required maxlength="80"></label>
@@ -106,7 +107,7 @@ body{font-family:var(--sans);background:var(--paper);display:flex;flex-direction
       <p class="umsg" id="uNewMsg" role="status"></p>
     </div>
     <div class="cl"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>Staff logins</h3><button type="button" class="sec" id="uReload">Refresh</button></div>
-      <div class="tw"><table class="ut"><thead><tr><th>Name</th><th>User ID</th><th>Designation</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody id="uRows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div>
+      <div class="tw"><table class="ut"><thead><tr><th>Name</th><th>User ID</th><th>Designation</th><th>Status</th><th>Access</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody id="uRows"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody></table></div>
       <p class="umsg" id="uMsg" role="status"></p>
     </div>
   </div></section>
@@ -156,15 +157,15 @@ function fmt(d){ if(!d) return 'Never'; var x=new Date(d); return x.toLocaleDate
 function credBox(id, pw, what){ return '<div class="cred">'+what+'<br>User ID: <b>'+esc(id)+'</b> &nbsp; Password: <b>'+esc(pw)+'</b><br><span class="muted">Give these to the staff member now. The password is not shown again.</span> <button type="button" class="sec cp" data-t="User ID: '+esc(id)+'  Password: '+esc(pw)+'">Copy</button></div>'; }
 function wireCopy(root){ root.querySelectorAll('.cp').forEach(function(b){ b.onclick=function(){ try{ navigator.clipboard.writeText(b.dataset.t); b.textContent='Copied'; }catch(e){} }; }); }
 async function loadUsers(){
-  var tb=document.getElementById('uRows'); tb.innerHTML='<tr><td colspan="6" class="muted">Loading…</td></tr>';
+  var tb=document.getElementById('uRows'); tb.innerHTML='<tr><td colspan="7" class="muted">Loading…</td></tr>';
   try { USERS = (await callStaff({ action:'list' })).rows || []; drawUsers(); }
-  catch(e){ tb.innerHTML='<tr><td colspan="6" class="muted">Could not load: '+esc(e.message)+'</td></tr>'; }
+  catch(e){ tb.innerHTML='<tr><td colspan="7" class="muted">Could not load: '+esc(e.message)+'</td></tr>'; }
 }
 function drawUsers(){
   var tb=document.getElementById('uRows');
-  if(!USERS.length){ tb.innerHTML='<tr><td colspan="6" class="muted">No staff logins yet. Create one above.</td></tr>'; return; }
+  if(!USERS.length){ tb.innerHTML='<tr><td colspan="7" class="muted">No User IDs yet. Create one above.</td></tr>'; return; }
   tb.innerHTML = USERS.map(function(u,i){
-    return '<tr><td>'+esc(u.name||'–')+(u.phone?'<br><span class="muted">'+esc(u.phone)+'</span>':'')+'</td><td class="mono">'+esc(u.login_id)+'</td><td>'+esc(u.designation||'')+'</td><td><span class="tag'+(u.active?'':' off')+'">'+(u.active?'Active':'Switched off')+'</span></td><td>'+fmt(u.last_sign_in)+'</td>'
+    return '<tr><td>'+esc(u.name||'–')+(u.phone?'<br><span class="muted">'+esc(u.phone)+'</span>':'')+'</td><td class="mono">'+esc(u.login_id)+'</td><td>'+esc(u.designation||'')+'</td><td><span class="tag'+(u.active?'':' off')+'">'+(u.active?'Active':'Switched off')+'</span></td><td><span class="muted">Registration Desk</span><br><label class="px"><input type="checkbox" data-px="'+i+'"'+(u.practice?' checked':'')+'> Practice system</label></td><td>'+fmt(u.last_sign_in)+'</td>'
       +'<td><div class="acts"><button type="button" data-rs="'+i+'">Reset password</button>'+(u.active?'<button type="button" class="warn" data-off="'+i+'">Switch off</button>':'<button type="button" data-on="'+i+'">Switch on</button>')+'</div><div id="rp'+i+'"></div></td></tr>';
   }).join('');
   tb.querySelectorAll('[data-rs]').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.rs, u=USERS[i], box=document.getElementById('rp'+i);
@@ -174,6 +175,10 @@ function drawUsers(){
       try { await callStaff({ action:'reset', user_id:u.user_id, password:pw }); box.innerHTML=credBox(u.login_id,pw,'Password reset for '+esc(u.name||u.login_id)+'.'); wireCopy(box); }
       catch(e){ this.disabled=false; box.insertAdjacentHTML('beforeend','<p class="umsg err">'+esc(e.message)+'</p>'); } };
   }; });
+  tb.querySelectorAll('[data-px]').forEach(function(c){ c.onchange=async function(){ var u=USERS[+c.dataset.px], on=c.checked, msg=document.getElementById('uMsg'); c.disabled=true;
+    try { await callStaff({ action:'practice', user_id:u.user_id, on:on }); u.practice=on; msg.className='umsg'; msg.textContent=(u.name||u.login_id)+(on?' can now also use the Practice system.':' can no longer use the Practice system (Registration Desk only).'); }
+    catch(e){ c.checked=!on; msg.className='umsg err'; msg.textContent=e.message; }
+    c.disabled=false; }; });
   tb.querySelectorAll('[data-off],[data-on]').forEach(function(b){ b.onclick=async function(){ var off=b.hasAttribute('data-off'), u=USERS[+(b.dataset.off||b.dataset.on)];
     if(off && b.dataset.armed!=='1'){ b.dataset.armed='1'; b.textContent='Confirm switch off'; setTimeout(function(){ b.dataset.armed=''; b.textContent='Switch off'; },4000); return; }
     b.disabled=true; var msg=document.getElementById('uMsg');

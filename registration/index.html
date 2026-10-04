@@ -709,7 +709,7 @@ async function boot(){const st=$("#stage");
  ME.id=ses.user.id;ME.email=ses.user.email||"";
  const [o,s2]=await Promise.all([sb.rpc("reg_is_owner"),sb.rpc("reg_is_staff")]);ME.owner=!!o.data;
  $("#whoami").textContent=(ME.owner?"Advocate":"Staff")+" · "+ME.email;
- if(!s2.data){st.innerHTML=`<div class="card"><h1>Not a staff login</h1><p class="sub">${esc(ME.email)} is not set up as V Legal staff, so it can't use the registration desk. Ask the advocate to add you in Admin → Staff.</p></div>`;return}
+ if(!s2.data){st.innerHTML=`<div class="card"><h1>Not a staff login</h1><p class="sub">${esc(ME.email)} does not have a Registration Desk User ID, or it has been switched off. Ask the advocate (Admin → Users).</p></div>`;return}
  try{const d=await fetch("screens.json").then(r=>r.json());SCR=d;OPTS=d.opts}catch(e){st.innerHTML=`<div class="card"><h1>Could not load the screen definitions</h1><p class="sub">Reload the page.</p></div>`;return}
  go("dash")}
 

@@ -1177,6 +1177,10 @@ async function initApp(){
       const ca = await sb.from('client_accounts').select('id').eq('auth_user_id', currentUser.id).maybeSingle();
       if(ca.data){ location.replace('/client/' + (needsPasswordSetup ? '?setpw=1' : '')); return; }
     } catch(e){}
+    try {
+      const ac = (await sb.rpc('my_portal_access')).data || {};
+      if(ac.registration_only){ location.replace('/registration/'); return; }
+    } catch(e){}
   }
   sb.auth.onAuthStateChange((event, session)=>{
     const wasLoggedIn = !!currentUser;

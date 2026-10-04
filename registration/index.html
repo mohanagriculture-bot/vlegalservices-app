@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://www.vlegalservices.in/registration/">
+<title>MOD Desk Portal Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,600&display=swap">
+<style>
+/* Layout: practice banner → top bar → page stage; wizard = main tab strip + child tab strip + form card + sticky action bar */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --ink:#1d2a2a; --muted:#5b6b6a; --line:#cfd9d7; --soft:#e3ebe9;
+  --accent:#0f6b63; --accent-ink:#ffffff; --accent-soft:#d7ece9; --warn:#9a5b00; --warn-soft:#fdf1dc; --err:#b42318; --ok:#1f7a4d; --req:#c0262d;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-disp:"Literata",Georgia,serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1716; --panel:#162221; --ink:#e3ecea; --muted:#9db0ad; --line:#2b3c3a; --soft:#1d2c2a;
+  --accent:#43b3a6; --accent-ink:#06201d; --accent-soft:#173a36; --warn:#f0b354; --warn-soft:#2c2414; --err:#ff8a80; --ok:#62c995; --req:#ff7b7f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1716; --panel:#162221; --ink:#e3ecea; --muted:#9db0ad; --line:#2b3c3a; --soft:#1d2c2a;
+  --accent:#43b3a6; --accent-ink:#06201d; --accent-soft:#173a36; --warn:#f0b354; --warn-soft:#2c2414; --err:#ff8a80; --ok:#62c995; --req:#ff7b7f; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:0 96px}
+.ribbon{background:var(--warn-soft);color:var(--warn);border-bottom:1px solid var(--line);font-size:13px;padding-block:6px;padding-inline:16px;text-align:center}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-block:14px}
+.brand{font-family:var(--f-disp);font-size:20px;color:var(--ink)}
+.brand small{display:block;font-family:var(--f-body);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.nav{display:flex;flex-wrap:wrap;gap:6px}
+.nav button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+.nav button[aria-current="page"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.crumb{font-size:13px;color:var(--muted);margin-block:4px 12px}
+.crumb b{color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+h1{font-family:var(--f-disp);font-size:24px;margin:0 0 4px;text-wrap:balance}
+h2{font-size:18px;margin:18px 0 8px}
+h3{font-size:16px;margin:14px 0 6px;color:var(--ink)}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px 18px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.wide{grid-column:1/-1}
+.f label,.lab{font-weight:600;font-size:14px}
+.req{color:var(--req)}
+.f .note{font-size:12.5px;color:var(--muted)}
+.f .alert{font-size:12.5px;color:var(--err)}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;font:inherit;font-size:14.5px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
+textarea{min-height:90px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.chk input{margin-top:3px}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer}
+.btn.sec{background:var(--panel);color:var(--accent)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.heading{grid-column:1/-1;font-weight:700;font-size:15px;border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:6px}
+.pnote{grid-column:1/-1;font-size:13.5px;color:var(--muted);margin:0}
+.tblwrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:600;white-space:nowrap}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.empty{color:var(--muted);text-align:center;padding:14px}
+.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;margin-block:4px 10px;scrollbar-width:thin}
+.tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:8px 8px 0 0;font:inherit;font-size:13.5px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tabs .dot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.tabs .dot.ok{background:var(--ok)}
+.tabs.child button{border-radius:999px;font-size:13px}
+.actions{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;border-radius:0 0 12px 12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px;text-align:left;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;gap:6px}
+.tile b{font-size:16px}
+.tile span{font-size:13px;color:var(--muted)}
+.tile.primary{border-color:var(--accent);background:var(--accent-soft)}
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pill.warn{color:var(--warn);background:var(--warn-soft);border-color:transparent}
+.pill.ok{color:var(--ok)}
+.mono{font-family:var(--f-mono);font-size:13px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:90vw}
+.errbox{border:1px solid var(--err);color:var(--err);border-radius:8px;padding:10px 12px;font-size:13.5px;margin-top:12px}
+.errbox ul{margin:4px 0 0;padding-left:18px}
+iframe.prop{width:100%;height:1500px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.preview{white-space:pre-wrap;font-family:var(--f-body);font-size:14.5px;line-height:1.6;border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--soft);max-height:640px;overflow:auto}
+.kv{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.hint{font-size:13px;color:var(--muted)}
+@media (max-width:640px){.kv{grid-template-columns:1fr}.card{padding:14px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="ribbon">Practice replica for V Legal / MOD Desk staff training. This is <b>not</b> the TNREGINET portal: nothing here is sent to the Registration Department, and nothing is saved after you close the page.</div>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">MOD Desk · Portal Practice<small>Presence-less registration screens</small></div>
+    <nav class="nav" aria-label="Pages">
+      <button type="button" data-go="entry" aria-current="page">Entry Details</button>
+      <button type="button" data-go="home">Home</button>
+      <button type="button" data-go="create">Create Document</button>
+      <button type="button" data-go="wizard">Document</button>
+      <button type="button" data-go="mydocs">My Documents</button>
+    </nav>
+  </div>
+  <div class="crumb" id="crumb"></div>
+  <main id="stage"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2600)}
+let SCR=null,OPTS={};
+const APP={page:"entry",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},done:{},docs:[]};
+
+/* ---------- deed configuration (tab names exactly as on the portal; unverified ones flagged) ---------- */
+const DEEDS={
+ "7":{name:"Deposit Of Title Deeds",verified:true,parties:[["Mortgagor/ Depositor","d7_tab1_childTab1","exe"],["Mortgagee","d7_tab1_childTab2","cla"],["Representative Details","d7_tab1_childTab3","rep"],["Witness Details","d7_tab1_childTab4","wit"],["Presenter Details","d7_tab1_childTab5","pre"]],
+   tabs:[["Party Details","party"],["Property Details","property"],["Mortgage and Security Details","d7_tab3"],["Details of Documents of Titles Deposited","d7_tab4"],["Possession Remarks","d7_tab5"],["Legal Condition","d7_tab6"],["Reasons for availing Loan","d7_tab7"],["Supporting Details","d7_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]},
+ "1":{name:"Sale deed",verified:true,parties:[["Executant Details","d1_tab1_childTab1","exe"],["Claimant Details","d1_tab1_childTab2","cla"],["Representative Details","d1_tab1_childTab3","rep"],["Witness Details","d1_tab1_childTab4","wit"],["Presenter Details","d1_tab1_childTab5","pre"]],
+   tabs:[["Party Details","party"],["Property Details","property"],["Consideration Value","d1_tab3"],["Agreement Detail","agreement"],["Possession Remarks","d1_tab5"],["Legal Condition","d1_tab6"],["Reason For Sale","d1_tab7"],["Supporting Details","d1_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]},
+ "28":{name:"Further Charge Mortgage Without Possession Deed",verified:false,parties:[["Mortgagor/ Depositor","d7_tab1_childTab1","exe"],["Mortgagee","d7_tab1_childTab2","cla"],["Representative Details","d7_tab1_childTab3","rep"],["Witness Details","d7_tab1_childTab4","wit"],["Presenter Details","d7_tab1_childTab5","pre"]],
+   tabs:[["Party Details","party"],["Property Details","property"],["Mortgage and Security Details","d7_tab3"],["Possession Remarks","d7_tab5"],["Legal Condition","d7_tab6"],["Reasons for availing Loan","d7_tab7"],["Supporting Details","d7_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]},
+ "22":{name:"Further Charge Mortgage With Possession Deed",verified:false,parties:[["Mortgagor/ Depositor","d7_tab1_childTab1","exe"],["Mortgagee","d7_tab1_childTab2","cla"],["Representative Details","d7_tab1_childTab3","rep"],["Witness Details","d7_tab1_childTab4","wit"],["Presenter Details","d7_tab1_childTab5","pre"]],
+   tabs:[["Party Details","party"],["Property Details","property"],["Mortgage and Security Details","d7_tab3"],["Possession Remarks","d7_tab5"],["Legal Condition","d7_tab6"],["Reasons for availing Loan","d7_tab7"],["Supporting Details","d7_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]},
+ "DOR":{name:"Deed of Receipt (MOD Discharge)",verified:false,parties:[["Executant Details (Bank / Mortgagee)","d1_tab1_childTab2","exe"],["Claimant Details (Mortgagor)","d1_tab1_childTab1","cla"],["Representative Details","d7_tab1_childTab3","rep"],["Witness Details","d7_tab1_childTab4","wit"],["Presenter Details","d7_tab1_childTab5","pre"]],
+   tabs:[["Party Details","party"],["Property Details","property"],["Receipt Details","receipt"],["Possession Remarks","d7_tab5"],["Supporting Details","d7_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]}
+};
+const PARTY_COLS=["Sr. No.","Name","Age","Gender","Party Type","Contact Details","Full Address","Action"];
+
+/* ---------- navigation ---------- */
+function go(p){APP.page=p;$$(".nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.go===p?"page":"false"));render();window.scrollTo(0,0)}
+$$(".nav button").forEach(b=>b.onclick=()=>{if(b.dataset.go==="wizard"&&!APP.deedType){toast("Choose the Nature of Document and press Proceed first");return go("create")}go(b.dataset.go)});
+function crumb(t){$("#crumb").innerHTML=t}
+function render(){const p=APP.page;const st=$("#stage");
+ if(p==="entry")return renderEntry(st);
+ if(p==="home")return renderHome(st);
+ if(p==="create")return renderCreate(st);
+ if(p==="wizard")return renderWizard(st);
+ if(p==="mydocs")return renderMyDocs(st)}
+
+/* ---------- helpers ---------- */
+function optsHTML(list,sel){return (list||[]).map(([v,t])=>`<option value="${esc(v)}"${String(sel)===String(v)?" selected":""}>${esc(t)}</option>`).join("")}
+function opts(ref){return typeof ref==="string"?OPTS[ref]||[]:ref||[]}
+function findOpts(id){for(const k in SCR.pages)for(const x of SCR.pages[k]){const fs=x.k==="f"?x.fs:x.k==="x"?[x.f]:[];for(const f of fs)if(f.id===id&&f.opts)return opts(f.opts)}return[]}
+const today=()=>{const d=new Date();return d.toISOString().slice(0,10)};
+const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+/* ---------- 1. Entry details (internal) ---------- */
+const ENTRY_FIELDS=[
+ ["File","h"],
+ ["fileRef","File reference","ro"],["fileDate","File date","date"],["preparedBy","Prepared by"],["checkedBy","Checked by"],
+ ["Work","h"],
+ ["work","Work type","sel",[["","- Select -"],["7","Deposit of Title Deeds (MOD)"],["DOR","Deed of Receipt (MOD Discharge)"],["1","Sale Deed (first sale of plot / flat)"],["28","Further Charge – without possession"],["22","Further Charge – with possession"]]],
+ ["lang","Document language","sel",[["en","English"],["ta","Tamil"]]],["sro","Sub Registrar Office","sro"],["emDate","EM / execution date","date"],
+ ["Client & bank","h"],
+ ["client","Mortgagor / Buyer name"],["clientMobile","Mobile number"],["bank","Bank / NBFC","bank"],["branch","Branch"],["loanAc","Loan account no."],["sanction","Sanction / loan amount (₹)","num"],
+ ["Documents received","h"],
+ ["docs","","checks",["Title / sale deed","Parent documents","Earlier MOD","Chitta / Patta","Encumbrance Certificate","KYC of all parties","Sanction letter","Loan closure letter (discharge)"]],
+ ["Office tracking","h"],
+ ["status","Status","sel",[["New","New"],["Documents pending","Documents pending"],["Ready for portal","Ready for portal"],["TP created","TP created"],["Registered","Registered"]]],["tpNo","TP number (after Create Document)"],["remarks","Remarks","area"]
+];
+function bankCode(n){const w=(n||"").replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(x=>x&&!/^(of|the|and|ltd|limited|pvt|private)$/i.test(x));return w.length>1?w.map(x=>x[0]).join("").toUpperCase().slice(0,5):(w[0]||"").slice(0,4).toUpperCase()}
+function fileRef(){const e=APP.entry;const b=e.bank?bankCode((findOpts("govtBodyList").find(o=>o[0]===e.bank)||[])[1]):"";const br=(e.branch||"").replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12);const nm=(e.client||"").trim().split(/\s+/)[0]?.replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,12)||"";
+ const d=e.emDate?new Date(e.emDate):new Date();const ds=String(d.getDate()).padStart(2,"0")+MON[d.getMonth()]+String(d.getFullYear()).slice(2);return [b,br,nm,ds].filter(Boolean).join("-")}
+function renderEntry(st){crumb("<b>Entry Details</b> · internal, not typed on the portal");const e=APP.entry;if(!e.fileDate)e.fileDate=today();if(!e.status)e.status="New";
+ const sros=findOpts("sub_reg_off"),banks=findOpts("govtBodyList");
+ let h=`<div class="card"><h1>Entry Details</h1><p class="sub">Fill this before opening the portal screens. Proceed carries the work type, SRO, client and bank into the document.</p><div class="grid">`;
+ for(const r of ENTRY_FIELDS){if(r[1]==="h"){h+=`<div class="heading">${esc(r[0])}</div>`;continue}
+  const [k,l,t,o]=r;const v=e[k]??"";
+  if(t==="ro")h+=`<div class="f"><label for="e_${k}">${l}</label><input type="text" id="e_${k}" readonly class="mono" value="${esc(fileRef())}"></div>`;
+  else if(t==="date")h+=`<div class="f"><label for="e_${k}">${l}</label><input type="date" id="e_${k}" value="${esc(v)}"></div>`;
+  else if(t==="sel")h+=`<div class="f"><label for="e_${k}">${l}</label><select id="e_${k}">${optsHTML(o,v)}</select></div>`;
+  else if(t==="sro")h+=`<div class="f"><label for="e_${k}">${l}</label><select id="e_${k}">${optsHTML(sros,v||"-1")}</select></div>`;
+  else if(t==="bank")h+=`<div class="f"><label for="e_${k}">${l}</label><select id="e_${k}">${optsHTML(banks,v||"-1")}</select><span class="note">List as on the portal's bank master</span></div>`;
+  else if(t==="num")h+=`<div class="f"><label for="e_${k}">${l}</label><input type="text" inputmode="numeric" id="e_${k}" value="${esc(v)}"></div>`;
+  else if(t==="area")h+=`<div class="f wide"><label for="e_${k}">${l}</label><textarea id="e_${k}">${esc(v)}</textarea></div>`;
+  else if(t==="checks"){h+=`<div class="f wide"><div class="grid">`+o.map((d,i)=>`<label class="chk"><input type="checkbox" id="e_doc${i}" ${(e.docs||[]).includes(d)?"checked":""}> ${esc(d)}</label>`).join("")+`</div></div>`}
+  else h+=`<div class="f"><label for="e_${k}">${l}</label><input type="text" id="e_${k}" value="${esc(v)}"></div>`}
+ h+=`</div><div class="row" style="margin-top:18px"><button class="btn" type="button" id="e_go">Proceed to portal screens</button><button class="btn sec" type="button" id="e_copy">Copy entry as text</button><span class="hint" id="e_msg"></span></div></div>`;
+ st.innerHTML=`<div id="entryRoot">${h}</div>`;const er=$("#entryRoot");
+ const sync=()=>{for(const r of ENTRY_FIELDS){const el=$("#e_"+r[0]);if(el&&r[2]!=="ro")e[r[0]]=el.value}
+   e.docs=(ENTRY_FIELDS.find(r=>r[0]==="docs")[3]).filter((d,i)=>$("#e_doc"+i)?.checked);$("#e_fileRef").value=fileRef()};
+ er.addEventListener("input",sync);er.addEventListener("change",sync);
+ $("#e_copy").onclick=()=>{sync();const txt=Object.entries({...e,fileRef:fileRef()}).map(([k,v])=>k+": "+(Array.isArray(v)?v.join(", "):v)).join("\n");copyText(txt,"#e_msg")};
+ $("#e_go").onclick=()=>{sync();if(e.work){APP.deedType="";}go("home")}}
+function copyText(t,msgSel){const done=()=>{if(msgSel)$(msgSel).textContent="Copied";toast("Copied")};try{navigator.clipboard.writeText(t).then(done,()=>fallback())}catch(_){fallback()}
+ function fallback(){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");done()}catch(e){toast("Select and copy the text manually")}ta.remove()}}
+
+/* ---------- 2. Home (after login) ---------- */
+function renderHome(st){crumb("Home");st.innerHTML=`<div class="card"><h1>Welcome</h1><p class="sub">The portal's home screen after login, reduced to the services the office uses.</p>
+ <div class="tiles">
+  <button class="tile primary" type="button" data-t="create"><b>Presence Less Registration</b><span>Create Document · Deposit of Title Deeds, Sale deed, Further Charge</span></button>
+  <button class="tile" type="button" data-t="mydocs"><b>My Documents</b><span>Temporary Deed Numbers created in this practice session</span></button>
+  <button class="tile" type="button" data-t="entry"><b>Entry Details</b><span>Internal file sheet for this work</span></button>
+ </div>
+ <h2>Create Document in Just 4 Steps</h2><div class="row"><span class="pill">Buyer/Seller Details</span><span class="pill">Property Details</span><span class="pill">Deed Drafting</span><span class="pill">Pay &amp; Book Appointment</span></div></div>`;
+ $$(".tile").forEach(t=>t.onclick=()=>go(t.dataset.t))}
+
+/* ---------- 3. Create Document ---------- */
+function renderCreate(st){crumb("Home &gt; Registration &gt; Document Registration &gt; <b>Presenceless Registration</b>");
+ const e=APP.entry;if(!APP.deedType&&e.work)APP.deedType=e.work;
+ const deedOpts=[["-1","- Select -"],["1","Sale deed"],["7","Deposit Of Title Deeds"],["28","Further Charge Mortgage Without Possession Deed"],["22","Further Charge Mortgage With Possession Deed"],["DOR","Deed of Receipt (needs Bankers/NBFC login)"]];
+ const sros=findOpts("sub_reg_off"),years=findOpts("sub_year"),books=findOpts("sub_book_no"),dtypes=findOpts("cmb_doc_type");
+ st.innerHTML=`<div class="card"><h1>Create Document</h1><p class="sub">All fields marked with <span class="req">*</span> are mandatory</p>
+ <div class="grid">
+  <div class="f"><label for="deedType">Nature of Document <span class="req">*</span></label><select id="deedType">${optsHTML(deedOpts,APP.deedType||"-1")}</select><span class="note" id="deedNote"></span></div>
+  <div class="f wide"><label for="doc_desc">Document Description</label><textarea id="doc_desc">${esc(APP.docDesc)}</textarea></div>
+  <div class="f wide"><label class="chk"><input type="checkbox" id="linkPrevDoc" ${APP.linked.length?"checked":""}> Link Previous Document</label></div>
+ </div>
+ <div id="linkBox" ${APP.linked.length?"":"hidden"}>
+  <h3>Search Previous Document</h3>
+  <div class="grid">
+   <div class="f"><label for="sub_reg_off">Sub Registrar Office</label><select id="sub_reg_off">${optsHTML(sros,APP.entry.sro||"-1")}</select></div>
+   <div class="f"><label for="sub_book_no">Book No.</label><select id="sub_book_no">${optsHTML(books)}</select></div>
+   <div class="f"><label for="sub_doc_no">Document No.</label><input type="text" id="sub_doc_no" maxlength="10"></div>
+   <div class="f"><label for="sub_year">Year</label><select id="sub_year">${optsHTML(years)}</select></div>
+   <div class="f"><label for="cmb_doc_type">Document Type</label><select id="cmb_doc_type">${optsHTML(dtypes)}</select></div>
+   <div class="f"><label for="sub_deedType">Nature of Deed</label><select id="sub_deedType">${optsHTML(findOpts("sub_deedType"))}</select></div>
+  </div>
+  <div class="row" style="margin-top:10px"><label class="chk"><input type="checkbox" id="isPrincipalDeed"> Principal Deed</label><button class="btn sm" type="button" id="createDocSearch">Add</button><button class="btn sm sec" type="button" id="createDocReset">Reset</button></div>
+  <div class="tblwrap"><table><thead><tr><th>Sr. No.</th><th>Sub Registrar Office</th><th>Book No.</th><th>Document No.</th><th>Year</th><th>Document Type</th><th>Nature of Deed</th><th>Principal Deed</th><th>Action</th></tr></thead><tbody id="linkRows"></tbody></table></div>
+ </div>
+ <div class="grid" style="margin-top:14px"><div class="f wide"><label class="chk"><input type="checkbox" id="isTpNoCheck" ${APP.tpCopy?"checked":""}> Copy Data from Previously Created Document</label></div>
+  <div class="f" id="tpBox" ${APP.tpCopy?"":"hidden"}><label for="tpNo">Temporary Deed Number</label><input type="text" id="tpNo" placeholder="TP/312583247/2026" value="${esc(APP.tpCopy)}"><span class="note">Practice only: nothing is copied</span></div></div>
+ <div class="row" style="margin-top:18px"><button class="btn sec" type="button" id="btnRst">Reset</button><button class="btn" type="button" id="createDocProceed">Proceed</button></div>
+ <div id="cdErr"></div></div>`;
+ const note=()=>{const v=$("#deedType").value,n=$("#deedNote");n.textContent=v==="DOR"?"Not offered on an individual login. These screens are a best guess until checked with a bank login.":v==="28"||v==="22"?"Linking the earlier mortgage document is mandatory for Further Charge. Screens follow the Deposit of Title Deeds layout; not yet checked on the portal.":v==="7"?"Link the title / sale deed as the previous document.":""};note();
+ $("#deedType").onchange=note;
+ $("#linkPrevDoc").onchange=e=>$("#linkBox").hidden=!e.target.checked;
+ $("#isTpNoCheck").onchange=e=>$("#tpBox").hidden=!e.target.checked;
+ const drawLinks=()=>{$("#linkRows").innerHTML=APP.linked.length?APP.linked.map((l,i)=>`<tr><td>${i+1}</td><td>${esc(l.sro)}</td><td>${esc(l.book)}</td><td>${esc(l.no)}</td><td>${esc(l.year)}</td><td>${esc(l.type)}</td><td>${esc(l.deed)}</td><td>${l.principal?"Yes":"No"}</td><td><button class="btn sm sec" type="button" data-del="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="9" class="empty">No document linked yet</td></tr>`;
+  $$("#linkRows [data-del]").forEach(b=>b.onclick=()=>{APP.linked.splice(+b.dataset.del,1);drawLinks()})};drawLinks();
+ const txt=id=>{const s=$("#"+id);return s.selectedOptions[0]?.text||""};
+ $("#createDocSearch").onclick=()=>{const er=[];if($("#sub_reg_off").value==="-1")er.push("Select Sub Registrar Office");if(!$("#sub_doc_no").value.trim())er.push("Enter Document No.");if($("#sub_year").value==="-1")er.push("Select Year");if($("#cmb_doc_type").value==="-1")er.push("Select Document Type");
+  if(er.length)return showErr("#cdErr",er);$("#cdErr").innerHTML="";
+  APP.linked.push({sro:txt("sub_reg_off"),sroId:$("#sub_reg_off").value,book:txt("sub_book_no"),no:$("#sub_doc_no").value.trim(),year:$("#sub_year").value,type:txt("cmb_doc_type"),deed:$("#sub_deedType").value==="-1"?"":txt("sub_deedType"),principal:$("#isPrincipalDeed").checked});drawLinks();toast("Document added to the list")};
+ $("#createDocReset").onclick=()=>{["sub_doc_no"].forEach(i=>$("#"+i).value="");["sub_reg_off","sub_year","cmb_doc_type","sub_deedType"].forEach(i=>$("#"+i).value="-1")};
+ $("#btnRst").onclick=()=>{APP.deedType="";APP.linked=[];APP.docDesc="";APP.tpCopy="";renderCreate(st)};
+ $("#createDocProceed").onclick=()=>{const v=$("#deedType").value,er=[];if(v==="-1")er.push("Please select Nature of Document");
+  if(["7","28","22","DOR"].includes(v)&&!APP.linked.length)er.push(v==="7"?"Please Link a Document (title / sale deed) before Proceed":"Please Link a Document (the earlier mortgage) before Proceed");
+  if(er.length)return showErr("#cdErr",er);
+  if(APP.deedType!==v){APP.vals={};APP.grids={};APP.done={}}
+  APP.deedType=v;APP.docDesc=$("#doc_desc").value;APP.tpCopy=$("#isTpNoCheck").checked?$("#tpNo").value:"";APP.tab=0;APP.child=0;prefill();go("wizard")}}
+function showErr(sel,list){$(sel).innerHTML=`<div class="errbox" role="alert"><b>Please correct the following</b><ul>${list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`}
+
+/* prefill party screens from Entry Details */
+function prefill(){const e=APP.entry,D=DEEDS[APP.deedType];if(!D)return;
+ const ex=D.parties[0][1]+"#"+D.parties[0][2],cl=D.parties[1][1]+"#"+D.parties[1][2];
+ const isDOR=APP.deedType==="DOR";
+ const person=isDOR?cl:ex,bankScr=isDOR?ex:cl;
+ if(e.client&&!APP.vals[person])APP.vals[person]={partyType:"7000006",fullName:e.client,mobileNo:e.clientMobile||""};
+ if(e.bank&&e.bank!=="-1"&&APP.deedType!=="1"&&!APP.vals[bankScr])APP.vals[bankScr]={partyType:"7000008",govtBodyList:e.bank};
+ if(APP.deedType!=="1"&&e.sanction){const k=APP.deedType==="DOR"?"receipt#":"d7_tab3#";APP.vals[k]=Object.assign({loanAmount:e.sanction},APP.vals[k]||{})}}
+
+/* ---------- 4. Wizard ---------- */
+function curKey(){const D=DEEDS[APP.deedType],t=D.tabs[APP.tab][1];if(t==="party"){const c=D.parties[APP.child];return c[1]+"#"+c[2]}return t+"#"}
+function renderWizard(st){const D=DEEDS[APP.deedType];if(!D)return go("create");
+ crumb(`Presenceless Registration &gt; <b>${esc(D.name)}</b>${D.verified?"":` <span class="pill warn">screens not yet checked on the portal</span>`}`);
+ const t=D.tabs[APP.tab];
+ let h=`<div class="tabs" role="tablist">${D.tabs.map((x,i)=>`<button type="button" role="tab" data-tab="${i}" aria-selected="${i===APP.tab}"><span class="dot ${APP.done[x[1]]?"ok":""}"></span>${esc(x[0])}</button>`).join("")}</div>`;
+ h+=`<div class="card" style="border-radius:12px 12px 0 0">`;
+ if(t[1]==="party")h+=`<div class="tabs child">${D.parties.map((c,i)=>`<button type="button" data-child="${i}" aria-selected="${i===APP.child}"><span class="dot ${(APP.grids[c[1]+"#"+c[2]]||[]).length||(c[2]==="pre"&&APP.vals[c[1]+"#"+c[2]]?.cmb_presenter>"")?"ok":""}"></span>${esc(c[0])}</button>`).join("")}</div>`;
+ h+=`<div id="screen"></div><div id="scrErr"></div></div>
+  <div class="actions"><div class="row">${t[1]==="party"?`<button class="btn sec" type="button" id="btnChildPrev">Previous</button><button class="btn sec" type="button" id="btnChildNext">Next</button>`:""}</div>
+  <div class="row"><button class="btn sec" type="button" id="btnMainPrev">Back</button><button class="btn sec" type="button" id="btnMainSaveAsDraft">Save as Draft</button>${APP.tab===D.tabs.length-1?`<button class="btn" type="button" id="btnCreateDocument">Create Document</button>`:`<button class="btn" type="button" id="btnMainNext">Save and Continue</button>`}</div></div>`;
+ st.innerHTML=h;
+ $$("[data-tab]").forEach(b=>b.onclick=()=>{saveScreen();APP.tab=+b.dataset.tab;APP.child=0;render()});
+ $$("[data-child]").forEach(b=>b.onclick=()=>{saveScreen();APP.child=+b.dataset.child;render()});
+ const scr=$("#screen");const key=t[1];
+ if(key==="party"){const c=D.parties[APP.child];renderSpec(scr,c[1],curKey(),c)}
+ else if(key==="property")renderProperty(scr);
+ else if(key==="preview")renderPreview(scr);
+ else if(key==="valuation")renderValuation(scr);
+ else if(key==="agreement")scr.innerHTML=`<h2>Agreement Detail</h2><p class="sub">This tab opens on the portal only after earlier tabs are saved, so its fields could not be read. Ask Claude to read it the next time a sale deed draft is open.</p>`;
+ else if(key==="receipt")renderReceipt(scr);
+ else renderSpec(scr,key,curKey());
+ const bp=$("#btnChildPrev"),bn=$("#btnChildNext");
+ if(bp)bp.onclick=()=>{saveScreen();if(APP.child>0){APP.child--;render()}};
+ if(bn)bn.onclick=()=>{saveScreen();const c=D.parties[APP.child];const er=partyChildCheck(c);if(er.length)return showErr("#scrErr",er);if(APP.child<D.parties.length-1){APP.child++;render()}else toast("Last party screen. Press Save and Continue")};
+ $("#btnMainPrev").onclick=()=>{saveScreen();if(APP.tab>0){APP.tab--;APP.child=0;render()}};
+ $("#btnMainSaveAsDraft").onclick=()=>{saveScreen();toast("Saved as draft (practice: kept only while this page is open)")};
+ const nx=$("#btnMainNext");if(nx)nx.onclick=()=>{saveScreen();const er=tabCheck();if(er.length)return showErr("#scrErr",er);APP.done[D.tabs[APP.tab][1]]=1;APP.tab++;APP.child=0;render();toast("Saved")};
+ const cd=$("#btnCreateDocument");if(cd)cd.onclick=createDoc}
+
+/* checks before leaving a tab */
+function partyChildCheck(c){const g=APP.grids[c[1]+"#"+c[2]]||[];
+ if(c[2]==="exe"&&!g.length)return["Add at least one "+c[0].replace(" Details","")+" to the list (press Add)"];
+ if(c[2]==="cla"&&!g.length)return["Add the "+c[0].replace(" Details","")+" to the list (press Add)"];
+ if(c[2]==="wit"&&g.length<2&&APP.deedType!=="1")return["Two attesting witnesses are mandatory. Added: "+g.length];
+ return[]}
+function tabCheck(){const D=DEEDS[APP.deedType],t=D.tabs[APP.tab][1];
+ if(t==="party"){const er=[];D.parties.forEach(c=>er.push(...partyChildCheck(c)));const p=APP.vals[D.parties[4][1]+"#pre"];if(!p||!p.cmb_presenter||p.cmb_presenter==="-1")er.push("Select the Presenter (Presenter Details)");return er}
+ if(t==="property"){const pf=$("#propFrame");try{const w=pf&&pf.contentWindow;if(w&&w.S&&!w.S.props.length&&!w.S.surveys.length)return["Add the property in Property Details (press Add / Save and Continue inside the property screen)"]}catch(e){}return[]}
+ if(["preview","valuation","agreement"].includes(t))return[];
+ return requiredCheck($("#screen"))}
+function requiredCheck(root){const er=[];root.querySelectorAll(".f[data-req]").forEach(b=>{if(b.closest("[hidden]"))return;const el=b.querySelector("input:not([type=checkbox]):not([type=radio]):not([type=button]),select,textarea");if(!el||el.closest("[hidden]"))return;const v=el.value;if(!v||v==="-1")er.push(b.dataset.alert||("Please enter "+b.dataset.lab))});return er}
+
+/* ---------- generic screen renderer (labels, order and options as read from the portal) ---------- */
+const PERSONAL=["divId_Salutation","divId_FullName","divId_FullNameLL","divId_RelatedTo","divId_FirstRelativeName","divId_FirstRelativeNameLL","divId_SecondRelatedTo","divId_SecondRelativeName","divId_SecondRelativeNameLL","divId_Dob","divId_Age","divId_Gender","divId_MaritalStatus","divId_IdentificationType","divId_IdentificationNumber","divId_Profession"];
+const ORGF=["txt_OrgName","txt_TAN","ChkForForm80g","txt_OrgNameLL","personNameDrpdwn"];
+const GOVF=["govtBodyList"];
+const ADD_IDS=["addExecutantDetailsInGrid","addReperstativeDtls","btnAdd","AddData","btnAddCons"];
+const RESET_IDS=["resetExecutantDetailsInGrid","btnReset","resetData","ResetData","btnRst"];
+const DEF={cmb_Country:"India",cmb_State:"Tamil Nadu"};
+function fieldHTML(f,val,note){const id=f.id||"";const nm=esc(f.name||id);let v=val??f.val??"";
+ if(!v&&DEF[id]){const o=opts(f.opts).find(x=>x[1]===DEF[id]);if(o)v=o[0]}
+ if(f.type==="select"){let o=opts(f.opts);if(id==="firstRelationTypeId"&&o.length<2)o=findOpts("secondRelationTypeId");if(id==="cmb_presenter")o=presenterOpts();if(id==="SroSelecttionCombo"&&o.length<2)o=[["-1","- Select -"],...(APP.entry.sro&&APP.entry.sro!=="-1"?[[APP.entry.sro,(findOpts("sub_reg_off").find(x=>x[0]===APP.entry.sro)||[])[1]||""]]:[])];
+  return `<select id="${esc(id)}" name="${nm}"${f.dis?" disabled":""}>${optsHTML(o,v||"-1")}</select>`}
+ if(f.type==="textarea"&&/<\w/.test(v)){const d=document.createElement("div");d.innerHTML=v.replace(/<br\s*\/?>/gi,"\n").replace(/<\/p>/gi,"\n\n");v=d.textContent.replace(/\n{3,}/g,"\n\n").trim()}
+ if(f.type==="textarea")return `<textarea id="${esc(id)}" name="${nm}"${f.max?` maxlength="${f.max}"`:""}${f.ro?" readonly":""}>${esc(v)}</textarea>`;
+ if(f.type==="checkbox"||f.type==="radio"){const on=val!==undefined?!!val:!!f.chk;return `<label class="chk"><input type="${f.type}" id="${esc(id)}" name="${nm}" value="${esc(f.value||"on")}"${on?" checked":""}> ${esc(note||"")}</label>`}
+ if(f.type==="button"||f.type==="submit"){return `<button class="btn sm ${ADD_IDS.includes(id)?"":"sec"}" type="button" id="${esc(id)}">${esc(f.value||f.text||"Button")}</button>`}
+ return `<input type="text" id="${esc(id)}" name="${nm}"${f.max?` maxlength="${f.max}"`:""}${f.ro?" readonly":""} value="${esc(v)}">`}
+function renderSpec(root,page,key,partyCfg){const items=(SCR.pages[page]||[]);const vals=APP.vals[key]||{};
+ let h=`<div class="grid" id="spec">`;let titleDone=false;
+ for(const x of items){
+  if(x.k==="t"){if(x.hid)continue;const t=x.t;if(/^(Sr\.? ?No\.?|Name|Age|Gender|Party Type|Action|Contact Details|Full Address|Is Index Created|Party Type \*)$/.test(t))continue;
+    if(/mandatory/.test(t)){h+=`<p class="pnote">All fields marked with <span class="req">*</span> are mandatory</p>`;continue}
+    if(!titleDone){titleDone=true;h+=`<h2 class="heading" style="border:0;font-size:19px;margin-top:0">${esc(partyCfg?partyCfg[0]:t)}</h2>`;continue}
+    h+=`<p class="pnote">${esc(t)}</p>`;continue}
+  if(x.k==="h"){if(x.hid)continue;if(!titleDone){titleDone=true;h+=`<h2 class="heading" style="border:0;font-size:19px;margin-top:0">${esc(partyCfg?partyCfg[0]:x.t)}</h2>`;continue}h+=`<div class="heading">${esc(x.t)}</div>`;continue}
+  if(x.k==="grid"){if(x.hid)continue;continue}
+  if(x.k==="x"){const f=x.f;if(x.hid&&!["partyType"].includes(f.id))continue;
+    if(f.type==="button"&&(/update|cancel|Search|^copy/i.test(f.id||"")))continue;
+    if(f.type==="textarea"){h+=`<div class="f wide" data-fid="${esc(f.id)}"><label for="${esc(f.id)}">${esc(lblFor(f.id))}</label>${fieldHTML(f,vals[f.id])}</div>`;continue}
+    if(f.type==="checkbox"){h+=`<div class="f wide" data-fid="${esc(f.id)}">${fieldHTML(f,vals[f.id],(f.value||"").trim())}</div>`;continue}
+    if(f.type==="select"&&f.id==="partyType"){h+=`<div class="f" data-fid="partyType" data-req="1" data-lab="Party Type" data-alert="Please select Party Type"><label for="partyType">Party Type <span class="req">*</span></label>${fieldHTML(f,vals.partyType)}</div>`;continue}
+    if(f.type==="button")h+=`<div class="f" style="justify-content:flex-end">${fieldHTML(f)}</div>`;
+    continue}
+  if(x.k==="f"){
+    const vis=x.fs.filter(f=>!(f.type==="button"&&/update|cancel|^copy/i.test(f.id||"")));
+    if(!vis.length){if(x.hid)continue;const t=(x.lab+" "+x.note).trim();if(!t)continue;
+      if(/^(Personal Details|Address Details)/.test(t)||/^Sr\.No\./.test(t))h+=/^Sr\.No/.test(t)?"":`<div class="heading">${esc(t)}</div>`;else h+=`<p class="pnote">${esc(t)}</p>`;continue}
+    const fids=vis.map(f=>f.id).filter(Boolean);const hideBlock=x.hid&&!fids.some(id=>ORGF.includes(id)||GOVF.includes(id));
+    if(hideBlock)continue;
+    const isOrg=fids.some(id=>ORGF.includes(id)),isGov=fids.some(id=>GOVF.includes(id));
+    const pt=vals.partyType||"";const hidNow=(isOrg&&pt!=="7000007")||(isGov&&pt!=="7000008")||(PERSONAL.includes(x.id)&&(pt==="7000007"||pt==="7000008"));
+    const lab=x.lab||"";const single=vis.length===1;const f0=vis[0];
+    const wide=vis.length>3||f0.type==="textarea";
+    const attrs=`data-fid="${esc(fids.join(" "))}" data-blk="${esc(x.id||"")}"${x.req?` data-req="1" data-lab="${esc(lab)}" data-alert="${esc(x.alert||"")}"`:""}${hidNow?" hidden":""}`;
+    if(single&&(f0.type==="checkbox"||f0.type==="radio")){h+=`<div class="f${wide?" wide":""}" ${attrs}>${lab?`<span class="lab">${esc(lab)}${x.req?' <span class="req">*</span>':""}</span>`:""}${fieldHTML(f0,vals[f0.id],x.note||lab)}</div>`;continue}
+    if(vis.every(f=>f.type==="button")){h+=`<div class="f wide" ${attrs}><div class="row">${vis.map(f=>fieldHTML(f)).join("")}</div></div>`;continue}
+    if(vis.length>1){const labs=lab.split(/\s{2,}/);
+      const yn=(lab.match(/\b(Yes|No)\b/g)||[]);let ri=0;
+      const parts=vis.filter(f=>!f.hid).map((f,i)=>f.type==="radio"?fieldHTML(f,vals[f.id],f.id==="mortgagor"?"Yes":f.id==="not_mortgagor"?"No":(yn[ri++]||f.value)):f.type==="button"?fieldHTML(f):`<div class="f"><span class="note">${esc(fLabel(f,labs,i))}</span>${fieldHTML(f,vals[f.id])}</div>`).join("");
+      const allLab=vis.every(f=>f.type!=="radio"&&f.type!=="button");const head=vis.some(f=>f.type==="radio")?lab.replace(/\s*\b(Yes|No)\b/g,"").trim():"";
+      h+=`<div class="f wide" ${attrs}>${!allLab&&head?`<span class="lab">${esc(head)}${x.req?' <span class="req">*</span>':""}</span>`:""}<div class="row" style="align-items:flex-end">${parts}</div></div>`;continue}
+    h+=`<div class="f${wide?" wide":""}" ${attrs}><label for="${esc(f0.id||"")}">${esc(lab)}${x.req?' <span class="req">*</span>':""}</label>${fieldHTML(f0,vals[f0.id])}${x.note&&!/^Please/.test(x.note)?`<span class="note">${esc(x.note.replace(/Please (enter|select)[^.]*$/,""))}</span>`:""}</div>`}
+ }
+ h+=`</div>`;
+ // list grid for Add screens
+ const grid=gridColsFor(page,partyCfg);
+ if(grid)h+=`<div class="tblwrap"><table><thead><tr>${grid.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody id="gridRows"></tbody></table></div>`;
+ root.innerHTML=h;
+ wireSpec(root,page,key,partyCfg,grid)}
+function lblFor(id){return({PropertyRemarks:"Possession of Property Remarks",Conditions:"Legal Conditions",ReasonForSale:APP.deedType==="1"?"Reason For Sale":"Reason for Availing Loan",cke_OnlinePdfDataContentEng:"Document"})[id]||""}
+function fLabel(f,labs,i){const m={rateOfInterest:"Rate of Interest (%)",combo_RateOfInterest:"Frequency of Interest Payment",txtYears:"Years",txtMonth:"Months",txtDays:"Days",txtLinkCons:"Temporary Deed Number / Registration Number",pattaLayoutNumber:"Patta No.",cmb_otherDocs:"Layout/Building Approval Number",cmb_prevDocument:"Previous Document No"};return m[f.id]||labs[i+1]||labs[i]||f.name||""}
+function gridColsFor(page,pc){if(pc&&pc[2]!=="pre")return pc[2]==="rep"?["Sr. No.","Represented Party","Party Name(s)","Representation By","Representative Name","Action"]:PARTY_COLS;
+ if(/_tab4$/.test(page)&&page.startsWith("d7"))return["Sr.No.","Description","Document Number","Date of Document","Document Deposited","Action"];
+ if(page==="d1_tab3")return["Sr. No.","Payment Mode","Payment Date","Payment Amount (₹)","Receiving Party","Action"];
+ if(/_tab8$/.test(page))return["Sr. No.","Document for","Party Name","Document","Action"];
+ return null}
+function selText(el){return el&&el.tagName==="SELECT"?(el.value==="-1"?"":el.selectedOptions[0]?.text||""):el?el.value:""}
+function rowFrom(root,page,pc){const g=id=>root.querySelector("#"+id);
+ if(pc&&pc[2]==="rep")return[selText(g("representedParty")),"",selText(g("representationBy")),g("fullName")?.value||""];
+ if(pc){const pt=g("partyType")?.value;const name=pt==="7000008"?selText(g("govtBodyList")):pt==="7000007"?g("txt_OrgName")?.value:(selText(g("salutationId"))+" "+(g("fullName")?.value||"")).trim();
+   return[name,g("age")?.value||"",selText(g("genderId")),selText(g("partyType")),[g("mobileNo")?.value,g("email")?.value].filter(Boolean).join(" · "),[g("txt_FullAddress")?.value,selText(g("cmb_District")),g("txt_PinCode")?.value].filter(Boolean).join(", ")]}
+ if(page.startsWith("d7")&&/_tab4$/.test(page))return[g("txtDesc")?.value||"",g("txtDocNoId")?.value||"",g("dtDoc")?.value||"",selText(g("cmbDepositedDoc"))];
+ if(page==="d1_tab3")return[selText(g("PaymentMode")),g("PaymentDate")?.value||"",g("PaymentAmount")?.value||"",selText(g("ReceivingParty"))];
+ if(/_tab8$/.test(page))return[selText(g("PartyName")),selText(g("representedPartyNames")),[selText(g("pattaLayoutNumber")),selText(g("cmb_otherDocs")),selText(g("cmb_prevDocument"))].filter(Boolean).join(" ")];
+ return[]}
+function wireSpec(root,page,key,pc,grid){
+ const pt=root.querySelector("#partyType");
+ const applyPT=()=>{const v=pt.value;root.querySelectorAll("[data-fid]").forEach(b=>{const ids=b.dataset.fid.split(" ");if(ids.some(i=>ORGF.includes(i)))b.hidden=v!=="7000007";else if(ids.some(i=>GOVF.includes(i)))b.hidden=v!=="7000008";else if(PERSONAL.includes(b.dataset.blk))b.hidden=v==="7000007"||v==="7000008"})};
+ if(pt){pt.onchange=applyPT;applyPT()}
+ const prof=root.querySelector("#professionId");if(prof)prof.onchange=()=>{};
+ const dob=root.querySelector("#dob"),age=root.querySelector("#age");if(dob&&age)dob.onchange=()=>{const d=new Date(dob.value);if(!isNaN(d)){age.value=Math.floor((Date.now()-d)/3.15576e10)}};
+ const cp=root.querySelector("#btnCopyData");if(cp)cp.onclick=()=>{const t=[...root.querySelectorAll("input[id^=chk_]:checked")].map(c=>c.value.trim()).join("\n\n");const ta=root.querySelector("#Conditions");if(ta){ta.value=t;toast("Legal conditions copied")}};
+ const draw=()=>{const tb=root.querySelector("#gridRows");if(!tb)return;const rows=APP.grids[key]||[];
+  tb.innerHTML=rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map(c=>`<td>${esc(c)}</td>`).join("")}<td><button class="btn sm sec" type="button" data-rdel="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="${grid.length}" class="empty">No record added</td></tr>`;
+  tb.querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.rdel,1);draw()})};
+ draw();
+ root.querySelectorAll("button[id]").forEach(b=>{
+  if(ADD_IDS.includes(b.id)&&grid)b.onclick=()=>{const er=requiredCheck(root);if(pc&&pt&&pt.value==="-1")er.unshift("Please select Party Type");
+    if(er.length)return showErr("#scrErr",[...new Set(er)]);$("#scrErr").innerHTML="";
+    (APP.grids[key]=APP.grids[key]||[]).push(rowFrom(root,page,pc));draw();clearFields(root);delete APP.vals[key];toast("Added to the list")};
+  if(RESET_IDS.includes(b.id))b.onclick=()=>{clearFields(root);$("#scrErr").innerHTML=""}});
+ root.addEventListener("change",()=>saveScreen())}
+function clearFields(root){root.querySelectorAll("input[type=text],textarea").forEach(i=>{if(!i.readOnly)i.value=""});root.querySelectorAll("select").forEach(s=>{if(s.id!=="partyType"&&s.id!=="cmb_Country"&&s.id!=="cmb_State")s.value="-1"});root.querySelectorAll("input[type=checkbox]").forEach(c=>{if(!/^chk_/.test(c.id))c.checked=false})}
+function saveScreen(){const scr=$("#screen");if(!scr||APP.page!=="wizard")return;const key=curKey();const o={};scr.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{if(el.type==="button")return;o[el.id]=el.type==="checkbox"||el.type==="radio"?el.checked:el.value});APP.vals[key]=o}
+function presenterOpts(){const D=DEEDS[APP.deedType];const o=[["-1","- Select -"]];if(!D)return o;D.parties.forEach(c=>(APP.grids[c[1]+"#"+c[2]]||[]).forEach((r,i)=>{if(r[0])o.push([c[2]+i,r[0]+" ("+c[0].replace(" Details","")+")"])}));return o}
+
+/* Property tab = the verified Property Tab replica (21 + 19 + 14 SROs) */
+function renderProperty(root){root.innerHTML=`<p class="sub">Property Details uses the checked Property Tab replica (Coimbatore, Erode and Tiruppur SROs) with the same tabs as the portal: Property, Survey, Boundary, Building, Remarks, Property Items.</p><iframe class="prop" id="propFrame" src="property.html" title="Property Details"></iframe>`}
+
+/* Receipt details (Deed of Receipt – unverified) */
+function renderReceipt(root){const v=APP.vals["receipt#"]||{};root.innerHTML=`<h2>Receipt Details</h2><p class="sub">Best-guess screen for MOD Discharge until checked with a Bankers/NBFC login.</p>
+ <div class="grid">
+  <div class="f" data-req="1" data-lab="Amount received (₹)"><label for="loanAmount">Amount received / loan discharged (₹) <span class="req">*</span></label><input type="text" id="loanAmount" inputmode="numeric" value="${esc(v.loanAmount||"")}"></div>
+  <div class="f" data-req="1" data-lab="Date of closure"><label for="closureDate">Date of loan closure <span class="req">*</span></label><input type="date" id="closureDate" value="${esc(v.closureDate||"")}"></div>
+  <div class="f"><label for="loanAc">Loan account no.</label><input type="text" id="loanAc" value="${esc(v.loanAc||APP.entry.loanAc||"")}"></div>
+  <div class="f wide"><label>Mortgage document discharged</label><div class="hint">${APP.linked.length?APP.linked.map(l=>`${esc(l.no)}/${esc(l.year)} · ${esc(l.sro)} (${esc(l.book)})`).join("<br>"):"Link the MOD document on Create Document"}</div></div>
+ </div>`;root.addEventListener("change",()=>saveScreen())}
+
+/* Preview (practice draft text) */
+function partyNames(kind){const D=DEEDS[APP.deedType];const c=D.parties.find(p=>p[2]===kind);return (APP.grids[c[1]+"#"+kind]||[]).map(r=>r[0]).filter(Boolean)}
+function propSummary(){try{const w=$("#propFrame")?.contentWindow||window._propWin;if(w&&w.entryObj){const e=w.entryObj();return e}}catch(e){}return null}
+function renderPreview(root){const D=DEEDS[APP.deedType];const ex=partyNames("exe"),cl=partyNames("cla"),wi=partyNames("wit");
+ const v3=APP.vals["d7_tab3#"]||{},cons=APP.vals["d1_tab3#"]||{},rem=APP.vals[(APP.deedType==="1"?"d1":"d7")+"_tab5#"]||{},lc=APP.vals[(APP.deedType==="1"?"d1":"d7")+"_tab6#"]||{};
+ const docs=APP.grids["d7_tab4#"]||[];const lk=APP.linked.map(l=>`${l.no}/${l.year} (${l.book}, ${l.sro})`).join("; ");
+ const amt=APP.deedType==="1"?cons.TotConsiderationValue:(v3.loanAmount||(APP.vals["receipt#"]||{}).loanAmount);
+ let t=`${D.name.toUpperCase()}\n\nThis ${D.name} is executed on ${new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"})}\n\nBY\n${ex.join("\n")||"[Party 1 – add in Party Details]"}\n(${D.parties[0][0].replace(" Details","")})\n\nIN FAVOUR OF\n${cl.join("\n")||"[Party 2 – add in Party Details]"}\n(${D.parties[1][0].replace(" Details","")})\n\n`;
+ if(lk)t+=`Previous document linked: ${lk}\n\n`;
+ if(amt)t+=`${APP.deedType==="1"?"Consideration":"Amount"}: ₹${Number(String(amt).replace(/,/g,"")).toLocaleString("en-IN")}\n\n`;
+ if(docs.length)t+=`DOCUMENTS OF TITLE DEPOSITED\n${docs.map((r,i)=>`${i+1}. ${r[0]} – ${r[1]} dated ${r[2]} (${r[3]})`).join("\n")}\n\n`;
+ if(rem.PropertyRemarks)t+=`${rem.PropertyRemarks}\n\n`;if(lc.Conditions)t+=`${lc.Conditions}\n\n`;
+ t+=`SCHEDULE OF PROPERTY\n[Generated by the portal from Property Details]\n\nWITNESSES\n${wi.map((w,i)=>`${i+1}. ${w}`).join("\n")||"[Add two witnesses]"}`;
+ root.innerHTML=`<h2>Document Preview</h2><p class="sub">Practice outline built from what you entered. The portal generates the real deed text; read it there before Create Document.</p><div class="preview">${esc(t)}</div>`}
+function renderValuation(root){const D=DEEDS[APP.deedType];root.innerHTML=`<h2>Stamp Duty and Fees Detail</h2><p class="sub">Note: All amounts are in INR. The portal calculates stamp duty, registration fee, computer fee and other charges; this practice screen does not.</p>
+ <dl class="kv"><dt>Temporary Deed Number :</dt><dd>–</dd><dt>Nature of Deed :</dt><dd>${esc(D.name)}</dd></dl>
+ <div class="tblwrap"><table><thead><tr><th>Schedule(s)</th><th>Sub Registrar Office</th><th>Village</th></tr></thead><tbody><tr><td>1</td><td>${esc((findOpts("sub_reg_off").find(x=>x[0]===APP.entry.sro)||[])[1]||"–")}</td><td>From Property Details</td></tr></tbody></table></div>`}
+function createDoc(){const D=DEEDS[APP.deedType];const er=[];D.parties.forEach(c=>er.push(...partyChildCheck(c)));if(er.length){APP.tab=0;render();return showErr("#scrErr",er)}
+ const no="PRACTICE/"+String(Math.floor(1e8+Math.random()*9e8))+"/"+new Date().getFullYear();
+ APP.docs.unshift({tp:no,deed:D.name,date:new Date().toLocaleDateString("en-IN"),status:"Document Created (practice)",ref:fileRef()});APP.entry.tpNo=no;APP.entry.status="TP created";
+ $("#screen").innerHTML=`<div class="card" style="border-color:var(--ok)"><h2 style="color:var(--ok)">Document Created Successfully!</h2><p>Temporary Document Number: <b class="mono">${esc(no)}</b></p><p class="sub">Practice number only. On the portal, Create Document needs the advocate's go-ahead, then payment and Aadhaar authentication by the parties.</p><button class="btn" type="button" id="toDocs">Go to My Documents</button></div>`;$("#toDocs").onclick=()=>go("mydocs")}
+
+/* ---------- My Documents ---------- */
+function renderMyDocs(st){crumb("Home &gt; <b>My Documents</b>");st.innerHTML=`<div class="card"><h1>My Documents</h1><p class="sub">Kindly take Colour Printout of the Document within 30 Days For Paperless and Online flow. (Practice list for this session.)</p>
+ <div class="tblwrap"><table><thead><tr><th>Select</th><th>Temporary Deed Number</th><th>Nature of Deed</th><th>Registration Number</th><th>Created Date</th><th>View</th><th>Status</th><th>Document Type</th><th>Remarks</th><th>Action</th></tr></thead>
+ <tbody>${APP.docs.length?APP.docs.map(d=>`<tr><td><input type="radio" name="sel" aria-label="Select ${esc(d.tp)}"></td><td class="mono">${esc(d.tp)}</td><td>${esc(d.deed)}</td><td>–</td><td>${esc(d.date)}</td><td>–</td><td>${esc(d.status)}</td><td>Fully Online Doc</td><td>${esc(d.ref)}</td><td>–</td></tr>`).join(""):`<tr><td colspan="10" class="empty">No document created in this session yet</td></tr>`}</tbody></table></div>
+ <div class="row" style="margin-top:12px">${["Sign of all Parties","Upload Documents","Photo biometric capture","Pay","View Document Valuation"].map(b=>`<button class="btn sm sec" type="button" disabled title="Done on the portal by the parties">${b}</button>`).join("")}</div>
+ <p class="hint">E-sign, biometric capture and payment happen only on the real portal, by the parties.</p></div>`}
+
+/* ---------- boot ---------- */
+fetch("screens.json").then(r=>r.json()).then(d=>{SCR=d;OPTS=d.opts;render()}).catch(()=>{$("#stage").innerHTML=`<div class="card"><h1>Could not load the screen definitions</h1><p class="sub">Reload the page. If it keeps failing, ask Claude to republish the practice portal.</p></div>`});
+</script>
+
+</body>
+</html>

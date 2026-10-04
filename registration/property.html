@@ -1,0 +1,628 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"><title>Property Tab Replica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: portal-faithful wizard card (breadcrumb band, white card, pill radios, sub-tab strip), demo check panel set apart below */
+:root{
+  --bg:#eef3f6; --band:#d8f0fb; --card:#ffffff; --fg:#1f2a37; --muted:#5d6b7a; --line:#c9d6e0;
+  --accent:#0b6fd6; --accent-ink:#ffffff; --pill:#3aa6c8; --teal:#0f8f8a;
+  --ok:#1f7a4d; --warn:#a15c00; --err:#c0262d; --chip:#e6f2fb; --demo:#fff7e6; --demo-line:#e8c27a;
+  --f-body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --band:#13303d; --card:#17212a; --fg:#e4ecf2; --muted:#9aabba; --line:#2c3d4b;
+  --accent:#4a9df0; --accent-ink:#071422; --pill:#4fb6d6; --teal:#3cc2bb;
+  --ok:#5cc58f; --warn:#f0b354; --err:#ff7b7f; --chip:#1d3346; --demo:#2a2312; --demo-line:#7a6330; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --band:#13303d; --card:#17212a; --fg:#e4ecf2; --muted:#9aabba; --line:#2c3d4b;
+  --accent:#4a9df0; --accent-ink:#071422; --pill:#4fb6d6; --teal:#3cc2bb;
+  --ok:#5cc58f; --warn:#f0b354; --err:#ff7b7f; --chip:#1d3346; --demo:#2a2312; --demo-line:#7a6330; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 48px}
+.band{background:var(--band);padding:18px 16px;margin:0 -16px 20px}
+.crumb{font-size:14px;color:var(--fg)}
+.crumb span{color:var(--muted)}
+.demo-tag{display:inline-block;margin-left:8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:var(--demo);border:1px solid var(--demo-line);color:var(--warn);padding:2px 8px;border-radius:99px;vertical-align:middle}
+.card{background:var(--card);border-radius:14px;padding:22px 20px;border:1px solid var(--line)}
+h1{font-size:20px;font-weight:600;margin:0 0 4px;text-wrap:balance}
+.mand{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+.req{color:var(--err)}
+.link-u{text-decoration:underline;font-weight:500;cursor:pointer;color:var(--fg);background:none;border:0;font:inherit;padding:0}
+.ptype{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.pill{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--pill);border-radius:99px;padding:6px 14px;cursor:pointer;font-size:14px}
+.pill input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+.pill:has(input:checked){background:var(--chip)}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:8px 18px;font:600 14px var(--f-body);cursor:pointer}
+.btn.sec{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{font-weight:600;margin:14px 0 6px}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid var(--line);margin:18px 0 0;scrollbar-width:thin}
+.tab{flex:0 0 auto;background:transparent;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 14px;font:500 13.5px var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.tab .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;background:var(--line);vertical-align:middle}
+.tab .dot.ok{background:var(--ok)} .tab .dot.err{background:var(--err)}
+.pane{padding:18px 0 4px}
+.pane h2{font-size:16px;font-weight:600;margin:0 0 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px 18px;margin-top:12px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label,.lbl{font-size:13.5px}
+.f.wide{grid-column:1/-1}
+input[type=text],input[type=number],select,textarea{font:14px var(--f-body);color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-width:0}
+input[readonly]{background:var(--bg);color:var(--muted)}
+select:disabled{background:var(--bg);color:var(--muted)}
+textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>input{flex:1 1 140px}
+.radios{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.radios label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.radios input{accent-color:var(--accent)}
+.err-msg{color:var(--err);font-size:12px;min-height:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--chip);border-radius:99px;padding:3px 10px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}
+.chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0}
+.ext{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ext.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ext.one{grid-template-columns:minmax(0,1fr)}
+.ext small{font-size:11.5px;color:var(--muted)}
+.conv{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gv{border:1px dashed var(--demo-line);background:var(--demo);border-radius:8px;padding:10px 12px;font-size:13px;display:grid;gap:4px}
+.gv b{font-variant-numeric:tabular-nums}
+.gv .cls{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sect{font-weight:600;margin:18px 0 0;font-size:14px}
+.navbtns{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
+.foot{display:flex;justify-content:space-between;gap:10px;margin-top:22px;border-top:1px solid var(--line);padding-top:16px;flex-wrap:wrap}
+.tblwrap{overflow-x:auto;margin-top:10px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--band);font-weight:500}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{color:var(--muted);text-align:center;padding:16px}
+.demo{margin-top:22px;background:var(--demo);border:1px solid var(--demo-line);border-radius:14px;padding:18px 20px}
+.demo h3{margin:0 0 2px;font-size:15px;font-weight:600}
+.demo p.sub{margin:0 0 12px;color:var(--muted);font-size:12.5px}
+.sheet{display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:4px 14px;font-size:13px}
+.sheet dt{color:var(--muted)} .sheet dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.mono{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.checks{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:6px;font-size:13px}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.badge{flex:0 0 auto;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:4px;color:var(--card)}
+.b-err{background:var(--err)} .b-warn{background:var(--warn)} .b-ok{background:var(--ok)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--card);padding:10px 16px;border-radius:8px;font-size:13px}
+@media (max-width:560px){.sheet{grid-template-columns:1fr}.sheet dt{margin-top:6px}.card{padding:18px 14px}}
+.compass{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:". n ." "w p e" ". s .";gap:14px;margin-top:14px;align-items:center}
+.bnd{display:grid;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.b-north{grid-area:n}.b-west{grid-area:w}.b-east{grid-area:e}.b-south{grid-area:s}
+.b-prop{grid-area:p;border:0;padding:0;justify-items:center}.b-prop input{text-align:center;font-weight:600}
+.geo{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px 18px;margin-top:10px}
+@media (max-width:760px){.compass{grid-template-columns:minmax(0,1fr);grid-template-areas:"n" "w" "p" "e" "s"}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.rep{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.rep h3{margin:0 0 4px;font-size:16px}.rep .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.rep textarea{width:100%;min-height:60px;box-sizing:border-box}
+.rep .ctx{font-family:var(--f-mono);font-size:12px;background:var(--chip);border-radius:8px;padding:8px 10px;margin-top:10px;white-space:pre-wrap;word-break:break-word}
+.rlist{list-style:none;padding:0;margin:14px 0 0}.rlist li{border-top:1px solid var(--line);padding:10px 0;font-size:13px}
+.rlist .st{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;margin-right:6px;border:1px solid var(--line)}
+.rlist .st.open{color:var(--warn);border-color:var(--demo-line);background:var(--demo)}.rlist .st.fixed{color:var(--ok)}
+.rlist .meta{color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <div class="band"><div class="crumb">Home <span>/</span> Create Presenceless Document <span>/</span> Property Details <span class="demo-tag">Demo replica · Coimbatore district</span></div></div>
+
+  <div class="card">
+    <button class="link-u" type="button" id="goList">List of all added property</button>
+    <div class="lbl" style="margin-top:10px">Property Type<span class="req">*</span></div>
+    <div class="ptype" id="ptype"></div>
+    <div class="err-msg" id="e_ptype"></div>
+    <p class="note">• Please verify whether property type is Rural/Natham</p>
+    <label class="row" style="gap:8px"><input type="checkbox" id="copy_prop_from_link_doc" disabled> Copy Property From Linked Document <span class="mono">(portal only)</span></label>
+
+    <div class="tabs" role="tablist" id="tabs"></div>
+
+    <!-- 1 Property Details -->
+    <section class="pane" id="p1" role="tabpanel">
+      <h1>Property Details</h1>
+      <p class="mand">All fields marked with <span class="req">*</span> are mandatory</p>
+      <div class="grid">
+        <div class="f"><label for="cmb_sub_registrar_office">Sub Registrar Office<span class="req">*</span></label><select id="cmb_sub_registrar_office"></select><div class="err-msg" id="e_sro"></div></div>
+        <div class="f"><label for="cmb_reg_village">Registration Village<span class="req">*</span></label><select id="cmb_reg_village"></select><div class="err-msg" id="e_village"></div></div>
+        <div class="f"><label for="cmb_guideline_village">Guideline Village<span class="req">*</span></label><select id="cmb_guideline_village"></select></div>
+        <div class="f"><label for="txt_PinCode">Pincode</label><input type="text" id="txt_PinCode" inputmode="numeric" maxlength="6"><div class="err-msg" id="e_pin"></div></div>
+        <div class="f"><label for="cmb_reg_dist">Registration District</label><select id="cmb_reg_dist" disabled></select></div>
+        <div class="f"><label for="cmb_revenue_dist">Revenue District</label><select id="cmb_revenue_dist" disabled></select></div>
+        <div class="f"><label for="cmb_taluk">Taluk</label><select id="cmb_taluk" disabled></select></div>
+        <div class="f"><label for="cmb_local_body">Local Body</label><select id="cmb_local_body"></select></div>
+        <div class="f"><label for="cmb_reg_town_revenue">Town</label><select id="cmb_reg_town_revenue"><option value="-1">- Select -</option></select></div>
+        <div class="f"><label for="txt_PattaNo">Patta No.</label><div class="row"><input type="text" id="txt_PattaNo"><button class="btn sm" type="button" id="btnAddPattaNo">Add</button></div><div class="chips" id="pattaChips"></div></div>
+        <div class="f"><label for="txt_OtherTitleNo">Housing Board, Urban Habitat Development Board Allotment No. etc</label><div class="row"><input type="text" id="txt_OtherTitleNo"><button class="btn sm" type="button" id="btnAddOtherTitleNo">Add</button></div><div class="chips" id="otherChips"></div></div>
+      </div>
+      <div class="navbtns"><button class="btn" type="button" data-next="2">Next</button></div>
+    </section>
+
+    <!-- 2 Survey Details -->
+    <section class="pane" id="p2" role="tabpanel" hidden>
+      <h2>Property Survey Details</h2>
+      <p class="mand">All fields marked with <span class="req">*</span> are mandatory</p>
+      <div class="grid">
+        <div class="f"><label for="cmb_unit">Unit of Measurement<span class="req">*</span></label>
+          <select id="cmb_unit"><option value="HA">Hectare - Ares - Square Meters</option><option value="AC">Acre - Cents</option><option value="SF">Square Feet</option><option value="SM">Square Meters</option></select></div>
+        <div class="f"><span class="lbl">Undivided Share(UDS) Property</span><div class="radios"><label><input type="radio" name="uds" value="Y"> Yes</label><label><input type="radio" name="uds" value="N" checked> No</label></div></div>
+        <div class="f"><span class="lbl">Area Type<span class="req">*</span></span><div class="radios" id="areaType"><label><input type="radio" name="areaType" value="Urban"> Urban</label><label><input type="radio" name="areaType" value="Natham"> Natham</label><label><input type="radio" name="areaType" value="Rural"> Rural</label></div><div class="err-msg" id="e_area"></div></div>
+        <div class="f"><span class="lbl">Survey Type</span><div class="radios"><label><input type="radio" name="survType" value="Single Survey" checked> Single Survey</label><label><input type="radio" name="survType" value="Linked Survey"> Linked Survey</label></div></div>
+      </div>
+
+      <h2 style="margin-top:18px">Survey Detail</h2>
+      <div class="grid">
+        <div class="f" id="uTownBox" hidden><label for="cmb_u_town">Town<span class="req">*</span></label><select id="cmb_u_town"></select></div>
+        <div class="f" id="uWardBox" hidden><label for="cmb_ward_no_revenue">Ward No<span class="req">*</span></label><select id="cmb_ward_no_revenue"></select><div class="conv" id="uWardHint"></div></div>
+        <div class="f" id="uBlockBox" hidden><label for="cmb_block_revenue">Block No<span class="req">*</span></label><select id="cmb_block_revenue"></select></div>
+        <div class="f" id="uTsBox" hidden><label for="txt_ts">Survey No./Sub Division No.<span class="req">*</span></label><input type="text" id="txt_ts" list="tsList" placeholder="Type to search T.S. No., e.g. 10/1" autocomplete="off"><datalist id="tsList"></datalist><div class="conv" id="tsHint"></div></div>
+        <div class="f" id="wardBox"><label for="cmb_reg_ward">Ward No.</label><select id="cmb_reg_ward"></select><input type="text" id="txt_WardNo" hidden placeholder="Type the Ward No."><div class="conv" id="wardHint"></div></div>
+        <div class="f" id="blockBox"><label for="cmb_reg_block">Block No.</label><select id="cmb_reg_block"></select><input type="text" id="txt_BlockNo" hidden placeholder="Type the Block No."></div>
+        <div class="f" id="rSurvBox"><label for="txt_survey">Survey No.<span class="req">*</span></label>
+          <input type="text" id="txt_survey" list="surveyList" placeholder="Type to search" autocomplete="off"><datalist id="surveyList"></datalist>
+          <div class="conv" id="survCount"></div><div class="err-msg" id="e_survey"></div></div>
+        <div class="f" id="rSubBox"><label for="cmb_SubDivNo">Sub Divison No.<span class="req">*</span></label><select id="cmb_SubDivNo"></select><input type="text" id="txt_subdiv_free" hidden placeholder="Type sub-division as on patta"><div class="conv" id="subHint"></div><div class="err-msg" id="e_subdiv"></div></div>
+        <div class="f wide"><label class="row" style="gap:8px;font-size:13px"><input type="checkbox" id="manualSurvey"> Survey / sub-division not in the list – enter manually (file will be flagged)</label>
+          <div class="grid" id="manualBox" hidden style="margin-top:4px"><div class="f"><label for="man_survey">Survey No. (manual)</label><input type="text" id="man_survey"></div><div class="f"><label for="man_subdiv">Sub Divison No. (manual)</label><input type="text" id="man_subdiv"></div></div></div>
+        <div class="f wide" id="gvBox" hidden><div class="gv" id="gvInfo"></div></div>
+        <div class="f"><label for="cmb_street_type">Street Name</label><select id="cmb_street_type"></select><input type="text" id="txt_street" hidden placeholder="Type the street name"><div class="conv" id="streetHint"></div></div>
+        <div class="f"><label for="cmb_land_type">Land Type</label><select id="cmb_land_type"><option value="">- Select -</option><option>Nanjai</option><option>Punjai</option><option>Manavari</option><option>Natham</option><option>Others</option></select></div>
+        <div class="f"><label for="txt_oldSurveyNo">Old Survey No.</label><div class="row"><input type="text" id="txt_oldSurveyNo"><button class="btn sm" type="button" id="btnAddOldSurvey">Add</button></div><div class="chips" id="oldChips"></div></div>
+        <div class="f"><label for="txt_pymash">Pymash No.</label><input type="text" id="txt_pymash"></div>
+      </div>
+
+      <div class="sect">Total Survey Extent(of Survey No.)</div>
+      <div class="ext" id="extTotal"></div><div class="conv" id="convTotal" hidden></div>
+      <div class="sect">Mortgaged Survey Extent<span class="req">*</span></div>
+      <div class="ext" id="extMort"></div><div class="conv" id="convMort" hidden></div><div class="err-msg" id="e_ext"></div>
+      <div class="grid">
+        <div class="f"><label for="txt_mvalue">Market Value of Mortgaged Survey Extent (₹)</label><input type="text" id="txt_mvalue" inputmode="numeric"><div class="conv" id="mvHint"></div></div>
+      </div>
+
+      <div class="sect">Layout Details</div>
+      <div class="grid">
+        <div class="f"><label for="txt_layoutName">Layout Name / Approval No.</label><input type="text" id="txt_layoutName" placeholder="e.g. DTCP No. 123/2021"></div>
+        <div class="f"><label for="txt_rera">RERA Number</label><input type="text" id="txt_rera"></div>
+        <div class="f"><label for="txt_plot">Plot Number</label><input type="text" id="txt_plot"></div>
+      </div>
+      <div class="navbtns"><button class="btn sec" type="button" id="btnAddSurvey">Add</button><button class="btn sec" type="button" data-next="1">Previous</button><button class="btn" type="button" data-next="3">Next</button></div>
+      <div class="tblwrap"><table><thead><tr><th>Sr. No.</th><th>Survey No.</th><th>Sub Div.</th><th>Area Type</th><th>Total Extent</th><th>Mortgaged Extent</th><th>Market Value (₹)</th><th>Action</th></tr></thead><tbody id="survRows"></tbody></table></div>
+    </section>
+
+    <!-- 3 Boundary Details -->
+    <section class="pane" id="p3" role="tabpanel" hidden>
+      <h2>Property Boundary Detail</h2>
+      <p class="mand">All fields marked with<span class="req">*</span> are mandatory</p>
+      <div class="radios" style="margin-top:6px"><label><input type="radio" name="rad_boundaryType" id="rad_boundaryType_regular" value="7000204" checked> Regular Boundary</label><label><input type="radio" name="rad_boundaryType" id="rad_boundaryType_irregular" value="7000205"> Irregular Boundary</label></div>
+      <div class="compass" id="bndGrid"></div>
+      <div class="sect">Geo-Coordinates</div>
+      <div class="geo">
+        <div class="f"><span class="lbl">Longitude</span><div class="ext"><div class="f"><input type="text" id="Lo-D" inputmode="numeric" aria-label="Longitude degree"><small>Degree</small></div><div class="f"><input type="text" id="Lo-M" inputmode="numeric" aria-label="Longitude minute"><small>Minute</small></div><div class="f"><input type="text" id="Lo-S" inputmode="decimal" aria-label="Longitude second"><small>Second</small></div></div></div>
+        <div class="f"><span class="lbl">Latitude</span><div class="ext"><div class="f"><input type="text" id="La-D" inputmode="numeric" aria-label="Latitude degree"><small>Degree</small></div><div class="f"><input type="text" id="La-M" inputmode="numeric" aria-label="Latitude minute"><small>Minute</small></div><div class="f"><input type="text" id="La-S" inputmode="decimal" aria-label="Latitude second"><small>Second</small></div></div></div>
+      </div>
+      <p class="conv">Geo-coordinates are optional; on the portal Claude does not press Add for this part.</p>
+      <div class="navbtns"><button class="btn sec" type="button" id="btnResetBoundary">Reset</button></div>
+      <div class="navbtns"><button class="btn sec" type="button" data-next="2">Previous</button><button class="btn" type="button" data-next="4">Next</button></div>
+    </section>
+
+    <!-- 4 Linear Measurement -->
+    <section class="pane" id="p4" role="tabpanel" hidden>
+      <h2>Linear Measurement</h2>
+      <p class="mand">Shown for property types without a building. Labels still to be matched with the portal.</p>
+      <div class="grid" id="linGrid"></div>
+      <div class="navbtns"><button class="btn sec" type="button" data-next="3">Previous</button><button class="btn" type="button" data-next="5">Next</button></div>
+    </section>
+
+    <!-- 4b Building Details (types with a building) -->
+    <section class="pane" id="p4b" role="tabpanel" hidden>
+      <h2>Building Details</h2>
+      <p class="mand">All fields marked with <span class="req">*</span> are mandatory</p>
+      <label class="row" style="gap:8px;margin-top:6px"><input type="checkbox" id="chk_uds"> Undivided Share(UDS) Property</label>
+      <div class="grid">
+        <div class="f"><label for="txtDoorNo">Door No.</label><input type="text" id="txtDoorNo"></div>
+        <div class="f"><label for="txtOldDoorNo">Old Door No.</label><input type="text" id="txtOldDoorNo"></div>
+        <div class="f"><label for="txtFlatNo">Flat No.</label><input type="text" id="txtFlatNo"></div>
+        <div class="f"><label for="txtTaxReceiptNo">Tax Receipt No.</label><input type="text" id="txtTaxReceiptNo"></div>
+        <div class="f"><label for="txtWaterTaxNo">Water Tax No.</label><input type="text" id="txtWaterTaxNo"></div>
+        <div class="f"><label for="txtEleBoardNo">Electricity Board No.</label><input type="text" id="txtEleBoardNo"></div>
+        <div class="f"><label for="txtFloorNo">Floor No.</label><input type="text" id="txtFloorNo"></div>
+        <div class="f"><label for="txtBuildingName">Building Name</label><input type="text" id="txtBuildingName"></div>
+        <div class="f"><label for="txtBuildingNameLL">Building Name in Tamil</label><input type="text" id="txtBuildingNameLL" lang="ta" placeholder="Claude fills the Tamil"></div>
+        <div class="f"><label for="txtBuildingValue">Building Value (₹)</label><input type="text" id="txtBuildingValue" inputmode="numeric"></div>
+        <div class="f"><span class="lbl">Building Plan<span class="req">*</span></span><div class="radios"><label><input type="radio" name="isBuldingPlanApproved" id="idIsBuldingPlanApproved" value="1"> Approved</label><label><input type="radio" name="isBuldingPlanApproved" id="idIsNotBuldingPlanApproved" value="0" checked> Not Approved</label></div></div>
+      </div>
+      <p class="conv" style="margin-top:12px"><b>NOTE:-</b> Selecting lift and car parking implies that there would be no inspection for the building</p>
+      <div class="navbtns"><button class="btn sec" type="button" id="btnResetBuilding">Reset</button><button class="btn sec" type="button" data-next="3">Previous</button><button class="btn" type="button" data-next="5">Next</button></div>
+    </section>
+
+    <!-- 5 Property Remarks -->
+    <section class="pane" id="p5" role="tabpanel" hidden>
+      <h2>Property Remarks (if any)</h2>
+      <div class="grid">
+        <div class="f wide"><label for="rem_en">Remarks</label><textarea id="rem_en"></textarea></div>
+        <div class="f wide"><label for="rem_ta">Remarks (in Tamil)</label><textarea id="rem_ta" lang="ta" placeholder="Claude fills the Tamil translation when filing"></textarea></div>
+      </div>
+      <div class="navbtns"><button class="btn sec" type="button" data-next="4">Previous</button><button class="btn" type="button" data-next="6">Next</button></div>
+    </section>
+
+    <!-- 6 Property Items -->
+    <section class="pane" id="p6" role="tabpanel" hidden>
+      <h2>Property Items</h2>
+      <p class="mand">Usually skipped for MOD files.</p>
+      <div class="grid">
+        <div class="f"><label for="item_desc">Item Description</label><input type="text" id="item_desc"></div>
+        <div class="f"><label for="item_qty">Quantity</label><input type="text" id="item_qty"></div>
+      </div>
+      <div class="navbtns"><button class="btn sec" type="button" data-next="5">Previous</button></div>
+    </section>
+
+    <!-- List -->
+    <section class="pane" id="p7" role="tabpanel" hidden>
+      <h2>List of all added property</h2>
+      <div class="tblwrap"><table><thead><tr><th>Sr. No.</th><th>Property Type</th><th>Sub Registrar Office</th><th>Registration District</th><th>Registration Village</th><th>Undivided Share(UDS) Property</th><th>Total Survey Extent(of Survey No.)</th><th>Mortgaged Survey Extent</th><th>Survey No.</th><th>Market Value (₹)</th><th>Action</th></tr></thead><tbody id="propRows"></tbody></table></div>
+    </section>
+
+    <div class="foot"><button class="btn sec" type="button" id="btnBack">Back</button><div class="row"><button class="btn sec" type="button" id="btnNew">New property</button><button class="btn" type="button" id="btnSave">Save and Continue</button></div></div>
+  </div>
+
+  <!-- demo-only panel -->
+  <section class="demo" aria-labelledby="demoH">
+    <h3 id="demoH">Portal entry sheet</h3>
+    <p class="sub" id="loadMsg" style="color:var(--warn)"></p><p class="sub">Demo only – not on the portal. Shows what Claude will key in, with the portal's internal IDs, and any problems to fix first.</p>
+    <dl class="sheet" id="sheet"></dl>
+    <ul class="checks" id="checks"></ul>
+    <div class="row" style="margin-top:14px"><button class="btn sm" type="button" id="copyTxt">Copy entry sheet</button><button class="btn sm sec" type="button" id="copyJson">Copy as JSON</button></div>
+    <textarea id="copyFallback" hidden readonly style="margin-top:10px;min-height:120px;font-family:var(--f-mono);font-size:12px"></textarea>
+    <p class="sub" style="margin-top:12px">Data: TNREGINET – TP-screen village, survey and ward lists plus the guideline-value register for 21 Coimbatore, 19 Erode and 14 Tiruppur district SROs – about 29 lakh survey/sub-division rows, read on 04-Oct-2026.</p>
+  </section>
+  <section class="rep" aria-labelledby="repH" id="repSec">
+    <h3 id="repH">Report a data mistake</h3>
+    <p class="sub">Found a wrong survey, sub-division, ward, block, T.S. No., street or value? Report it here. The current selection above is attached automatically. Claude reads these reports, checks the portal and corrects the data.</p>
+    <div class="grid2">
+      <div class="f"><label for="rep_field">What is wrong</label><select id="rep_field"><option>Village missing / wrong</option><option>Guideline village / Local body / Town</option><option>Survey No. missing / wrong</option><option>Sub Division missing / wrong</option><option>Ward / Block missing / wrong</option><option>T.S. No. missing / wrong</option><option>Street name missing / wrong</option><option>Guideline value wrong</option><option>Taluk / District wrong</option><option>Other</option></select></div>
+      <div class="f"><label for="rep_correct">Correct value (as per portal / document)</label><input type="text" id="rep_correct" placeholder="e.g. Sub Division 2A1 exists"></div>
+    </div>
+    <div class="f" style="margin-top:10px"><label for="rep_note">Note</label><textarea id="rep_note" placeholder="Where you saw it – portal screen, patta, parent document no."></textarea></div>
+    <div class="ctx" id="rep_ctx"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" type="button" id="rep_send">Send report</button><span class="sub" id="rep_msg"></span></div>
+    <h3 style="margin-top:18px;font-size:14px">Reports <span class="sub" id="rep_count"></span></h3>
+    <ul class="rlist" id="rep_list"><li class="sub">Loading reports…</li></ul>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const SROS=[["20156", "Ammapettai_Erode"], ["20125", "Anaimalai"], ["20112", "Annur"], ["20143", "Anthiyur"], ["20152", "Avalpoondurai"], ["20113", "Avinasi"], ["20150", "Bhavani"], ["20148", "Chennimalai"], ["20115", "Coimbatore North Joint 1"], ["22592", "Coimbatore South Joint 1"], ["20138", "Coonoor_Uthagamandalam"], ["20155", "Dharapuram"], ["20144", "Erode Joint I"], ["20122", "Ganapathy"], ["20114", "Gandhipuram"], ["20161", "Gobichettipalayam Joint I"], ["20162", "Gobichettipalayam Joint II"], ["20129", "Gomangalam"], ["20139", "Goodaloor"], ["20153", "Kangeyam"], ["20127", "Kaniyur"], ["22607", "Karumathampatti"], ["20159", "Kavundapadi"], ["20128", "Kinathukkadavu"], ["20146", "Kodumudi"], ["20140", "Kothagiri"], ["20160", "Kunnathur"], ["20120", "Madukkarai"], ["20121", "Mettupalayam"], ["20157", "Moolanur"], ["20136", "Nallur_Tiruppur"], ["20166", "Nambiyur"], ["20133", "Negamam"], ["20134", "Palladam"], ["20123", "Peelamedu"], ["20119", "Periyanayakkan Palayam"], ["20151", "Perundurai"], ["20135", "Pollachi"], ["22598", "Pongalur"], ["20167", "Punchaipuliyampatti"], ["22610", "Sarkarsamakulam"], ["20163", "Sathyamangalam"], ["20117", "Singanallur"], ["20147", "Sivagiri_Erode"], ["20130", "Sulur"], ["20154", "Surampatti"], ["20164", "Thalavadi"], ["20149", "Thingalur"], ["20118", "Thondamuthur"], ["20165", "Thookanaicken Palayam"], ["20137", "Thottipalayam"], ["20131", "Tiruppur Joint I"], ["20132", "Tiruppur Joint II"], ["20126", "Udumalpettai"], ["20141", "Uthagamandalam -Joint I"], ["20142", "Uthagamandalam -Joint II"], ["20145", "Uthukuli"], ["20124", "Vadavalli"], ["20158", "Vellakovil"]];
+let MASTER={};const DBS={};
+const PTYPES=[["8","Plot with Building"],["7","Plot"],["9","Flats"],["6","Agricultural Land"],["5","Agriculture Land with Building"],["10","Pathway"],["11","Easement Rights"],["12","Special Kind Of Buildings"]];
+const TABS=["Property Details","Survey Details","Boundary Details","Linear Measurement","Property Remarks","Property Items"];
+const K=s=>(s||"").trim().toUpperCase();
+function parseVals(raw){const DB={};
+ for(const line of raw.split("\n")){if(!line)continue;const ti=line.indexOf("\t");if(ti<0)continue;
+  const key=line.slice(0,ti),data=line.slice(ti+1);const [vill,brit,met,cls,date]=key.split("~");
+  const sp=v=>!v||v==="-"?[null,""]:v==="0"?[0,""]:[+v.split("/")[0],(v.split("/")[1]||"").trim()];
+  const [bv,bu]=sp(brit),[mv,mu]=sp(met);const V=DB[K(vill)]||(DB[K(vill)]={});
+  for(const part of data.split(";")){const i=part.indexOf(":");if(i<0)continue;const base=part.slice(0,i).trim();
+   for(const s of part.slice(i+1).split(","))(V[base]||(V[base]=[])).push({s:s.trim(),c:cls,bv,bu,mv,mu,d:date})}}
+ return DB}
+const nat=(a,b)=>{const ax=a.match(/\d+|\D+/g)||[""],bx=b.match(/\d+|\D+/g)||[""];for(let i=0;i<Math.max(ax.length,bx.length);i++){const x=ax[i]??"",y=bx[i]??"";if(x===y)continue;const nx=/^\d+$/.test(x),ny=/^\d+$/.test(y);if(nx&&ny)return +x-+y;if(nx)return -1;if(ny)return 1;return x<y?-1:1}return 0};
+
+/* ---------- state ---------- */
+const $=id=>document.getElementById(id);
+const S={ptype:"",patta:[],other:[],old:[],surveys:[],props:[],tab:1};
+const fmtIN=n=>n==null||isNaN(n)?"":Math.round(n).toLocaleString("en-IN");
+function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2200)}
+function opt(sel,list,first="- Select -"){sel.innerHTML=(first!==null?`<option value="-1">${first}</option>`:"")+list.map(([v,t,dis])=>`<option value="${v}"${dis?" disabled":""}>${t}</option>`).join("")}
+
+/* ---------- property type ---------- */
+$("ptype").innerHTML=PTYPES.map(([v,t])=>`<label class="pill"><input type="radio" name="partyTypeRadio" value="${v}"> ${t}</label>`).join("")+`<button class="btn" type="button" id="addNew">Add</button>`;
+$("ptype").addEventListener("change",e=>{S.ptype=e.target.value;render()});
+$("addNew").onclick=()=>{if(!S.ptype){$("e_ptype").textContent="Please select Property Type";return}$("e_ptype").textContent="";go(1)};
+
+/* ---------- tabs ---------- */
+$("tabs").innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" id="t${i+1}" aria-selected="${i===0}">${t}<span class="dot"></span></button>`).join("");
+TABS.forEach((_,i)=>$("t"+(i+1)).onclick=()=>go(i+1));
+document.querySelectorAll("[data-next]").forEach(b=>b.onclick=()=>go(+b.dataset.next));
+$("goList").onclick=()=>go(7);
+const hasBuilding=()=>["8","5","9","12"].includes(S.ptype);
+function go(n){S.tab=n;const b=hasBuilding();for(let i=1;i<=7;i++)$("p"+i).hidden=!(i===n&&!(i===4&&b));$("p4b").hidden=!(n===4&&b);TABS.forEach((_,i)=>$("t"+(i+1)).setAttribute("aria-selected",i+1===n));render()}
+
+/* ---------- location ---------- */
+const sroId=()=>$("cmb_sub_registrar_office").value;
+const SM=()=>MASTER[sroId()];
+function village(){const s=SM();return s?s.villages.find(v=>v.id===$("cmb_reg_village").value):null}
+function gvil(){const v=village();return v?v.guideline.find(g=>g.id===$("cmb_guideline_village").value)||v.guideline[0]:null}
+const curDB=()=>DBS[sroId()]||null;
+function drawSROs(){opt($("cmb_sub_registrar_office"),SROS.map(([id,n])=>[id,MASTER[id]?n:n+" (not loaded)",!MASTER[id]]))}
+async function onSRO(){
+  const sid=sroId(),s=SM();
+  opt($("cmb_reg_dist"),s?s.regDist:[]);if(s)$("cmb_reg_dist").selectedIndex=1;
+  opt($("cmb_reg_village"),s?[...s.villages].sort((a,b)=>a.name.localeCompare(b.name)).map(v=>[v.id,v.name]):[]);
+  onVillage();
+  if(s&&!DBS[sid]){$("loadMsg").textContent=`Loading survey register for ${s.name}…`;
+    try{const r=await fetch(`data/${sid}.txt`);DBS[sid]=parseVals(await r.text());$("loadMsg").textContent=""}catch(e){$("loadMsg").textContent="Could not load the survey register for this SRO. Survey lists still work; values will be missing."}
+    onSurvey()}
+}
+function onVillage(){
+  const v=village();
+  opt($("cmb_guideline_village"),v?v.guideline.map(g=>[g.id,g.name]):[]);
+  if(v&&v.guideline[0])$("cmb_guideline_village").value=v.guideline[0].id;
+  opt($("cmb_local_body"),v?v.localBody:[]);if(v&&v.localBody.length)$("cmb_local_body").selectedIndex=1;
+  opt($("cmb_reg_town_revenue"),v?v.towns:[]);if(v&&v.towns.length===1)$("cmb_reg_town_revenue").selectedIndex=1;
+  if(v){const want=v.towns.length?"Urban":(areaType()==="Urban"?"Rural":areaType());if(want&&want!==areaType()){const r=document.querySelector(`input[name=areaType][value="${want}"]`);if(r)r.checked=true}}
+  onGuideline();
+}
+function onGuideline(){
+  const g=gvil();
+  opt($("cmb_revenue_dist"),g?g.revDist:[]);if(g&&g.revDist.length)$("cmb_revenue_dist").selectedIndex=1;
+  opt($("cmb_taluk"),g?g.taluk:[]);if(g&&g.taluk.length)$("cmb_taluk").selectedIndex=1;
+  const wards=g?g.wards.filter(w=>w[0]!=="0"):[];
+  opt($("cmb_reg_ward"),g?[...wards.map(w=>[w[0],w[1]]),["0","Not Available"]]:[]);
+  $("wardHint").textContent=g?(wards.length?`${wards.length} ward(s) on the portal for ${g.name}`:`Portal has no ward list for ${g.name} – choose Not Available and type the Ward No. if the document has one`):"";
+  onWard();
+  drawSurveyList();drawUrban();drawStreets();
+}
+function onWard(){const g=gvil(),wv=$("cmb_reg_ward").value;const w=g&&g.wards.find(x=>x[0]===wv&&wv!=="0");
+  $("txt_WardNo").hidden=wv!=="0";
+  opt($("cmb_reg_block"),wv==="-1"?[]:[...(w?w[2]:[]),["0","Not Available"]]);onBlock()}
+function onBlock(){$("txt_BlockNo").hidden=$("cmb_reg_block").value!=="0";render()}
+$("cmb_reg_ward").onchange=onWard;$("cmb_reg_block").onchange=onBlock;
+function surveyListFor(){const g=gvil(),a=areaType();if(!g||!a||a==="Urban")return null;const l=a==="Natham"?g.surveyN:g.surveyR;return l&&l.length&&!(l.length===1&&/Not Available/i.test(l[0]))?l:null}
+function drawSurveyList(){
+  const g=gvil(),a=areaType(),l=surveyListFor();
+  $("surveyList").innerHTML=(l||[]).map(s=>`<option value="${String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}">`).join("");
+  $("survCount").textContent=!g?"Select Registration Village first":!a?"Choose Urban, Natham or Rural to load the survey list":l?`${l.length} ${a} survey numbers on the portal for ${g.name}`:a==="Urban"?"Urban: type the T.S./survey number as on the document":`No ${a} survey list on the portal for ${g.name} – type the number`;
+  onSurvey();
+}
+document.querySelectorAll('input[name=areaType]').forEach(r=>r.addEventListener("change",drawSurveyList));
+$("cmb_sub_registrar_office").onchange=()=>{$("txt_survey").value="";onSRO()};
+$("cmb_reg_village").onchange=()=>{$("txt_survey").value="";onVillage()};
+$("cmb_guideline_village").onchange=()=>{$("txt_survey").value="";onGuideline()};
+function surveyRows(){const g=gvil(),db=curDB();return g&&db?(db[K(g.name)]||{})[$("txt_survey").value.trim()]||null:null}
+function inTPList(){const l=surveyListFor();return l?l.includes($("txt_survey").value.trim()):null}
+function onSurvey(){
+  const rows=surveyRows(),sv=$("txt_survey").value.trim();
+  const subs=rows?[...new Set(rows.map(r=>r.s))].sort(nat):[];
+  const prev=$("cmb_SubDivNo").value;
+  opt($("cmb_SubDivNo"),subs.map(s=>[s,s===""?"(no sub-division)":s]));
+  if(subs.includes(prev))$("cmb_SubDivNo").value=prev;
+  const free=!!sv&&!rows;
+  $("cmb_SubDivNo").hidden=free;$("txt_subdiv_free").hidden=!free;$("cmb_SubDivNo").disabled=!rows;
+  $("subHint").textContent=free?"Sub-divisions for this survey are not in the register – type it; Claude checks it on the portal":rows?`${subs.length} sub-divisions in the register`:"";
+  onSub();
+}
+$("txt_survey").addEventListener("input",onSurvey);
+function subRows(){const rows=surveyRows();const s=$("cmb_SubDivNo").value;return rows&&s!=="-1"?rows.filter(r=>r.s===s):[]}
+function onSub(){
+  const rs=subRows();
+  $("gvBox").hidden=!rs.length;
+  if(rs.length){
+    $("gvInfo").innerHTML=`<div class="mono">Guideline register (demo help, not on portal)</div>`+rs.map(r=>`<div class="cls"><span>${r.c}</span><span>${r.bv==null?"Refer street value":r.bv===0?"Govt. land – no value":`<b>₹${fmtIN(r.bv)}</b> / ${r.bu} · ₹${fmtIN(r.mv)} / ${r.mu}`}</span></div><div class="conv">Effective ${r.d}</div>`).join("");
+    const c=rs[0].c;
+    if(!$("cmb_land_type").value){ $("cmb_land_type").value=/^Wet/.test(c)?"Nanjai":/^Dry/.test(c)?"Punjai":""; }
+  }
+  render();
+}
+$("cmb_SubDivNo").onchange=onSub;
+$("manualSurvey").onchange=()=>{$("manualBox").hidden=!$("manualSurvey").checked;render()};
+
+/* ---------- streets ---------- */
+let STREETS=null;
+function drawStreets(){const g=gvil(),l=g&&STREETS?STREETS[g.id]||[]:[];
+  opt($("cmb_street_type"),[...l.map((s,i)=>[String(i),s[0]]),["other","OTHER (type it)"]]);
+  $("streetHint").textContent=!g?"":l.length?`${l.length} streets on the portal for ${g.name}`:`No street list on the portal for ${g.name}`;onStreet()}
+function curStreet(){const v=$("cmb_street_type").value,g=gvil();if(v==="other")return{name:$("txt_street").value.trim(),typed:true};if(v==="-1"||!g||!STREETS)return null;const s=(STREETS[g.id]||[])[+v];return s?{name:s[0],val:s[1],cls:s[2],d:s[3]}:null}
+function onStreet(){$("txt_street").hidden=$("cmb_street_type").value!=="other";const s=curStreet();
+  $("streetHint").textContent=s&&s.val?`Street value: ₹${s.val} · ${s.cls} · w.e.f. ${s.d}`:$("streetHint").textContent;render()}
+$("cmb_street_type").onchange=onStreet;
+
+/* ---------- urban (town survey) ---------- */
+let URBAN=null;
+const isUrban=()=>areaType()==="Urban";
+function townEntry(){const v=village();if(!URBAN||!v)return null;const code=$("cmb_reg_town_revenue").value,g=gvil();const L=(URBAN.villTown[v.id]||[]).filter(x=>x[0]===code);return L.find(x=>x[4]&&g&&x[4]===g.id)||L.find(x=>!x[4])||L[0]||null}
+function townObj(){const m=townEntry();return m&&m[3]?URBAN.towns[m[3]]||null:null}
+function drawUrban(){
+  const u=isUrban();
+  $("uWardBox").hidden=$("uBlockBox").hidden=$("uTsBox").hidden=$("uTownBox").hidden=!u;
+  {const v=village();opt($("cmb_u_town"),v?v.towns:[]);$("cmb_u_town").value=$("cmb_reg_town_revenue").value||"-1";if($("cmb_u_town").value==="")$("cmb_u_town").value="-1"}
+  $("rSurvBox").hidden=$("rSubBox").hidden=u;
+  if(u){$("wardBox").hidden=$("blockBox").hidden=true}else{const g=gvil();const has=g&&g.wards.some(w=>w[0]!=="0");$("wardBox").hidden=$("blockBox").hidden=!has}
+  [...$("cmb_unit").options].forEach(o=>o.hidden=o.disabled=u&&!["SF","SM"].includes(o.value));
+  if(u&&!["SF","SM"].includes($("cmb_unit").value)){$("cmb_unit").value="SM";["extTotal","extMort"].forEach(b=>$(b).innerHTML="");drawExt()}
+  if(!u)return render();
+  const t=townObj();
+  opt($("cmb_ward_no_revenue"),t?t.wards.map(w=>[w[0],w[1]]):[]);
+  $("uWardHint").textContent=!village()?"Select the Registration Village first":!(village().towns||[]).length?"This village has no town survey on the portal – use Rural or Natham":!$("cmb_reg_town_revenue").value||$("cmb_reg_town_revenue").value==="-1"?"Select the Town first (this village falls in more than one town)":t?`${t.wards.length} wards in ${t.name}`:(townEntry()&&!townEntry()[3]?"TNREGINET shows no ward list for this village + town (portal returns no taluk for it)":"No ward list for this town");
+  onUWard();
+}
+function onUWard(){const t=townObj(),w=t&&t.wards.find(x=>x[0]===$("cmb_ward_no_revenue").value);opt($("cmb_block_revenue"),w?w[2].map(b=>[b[0],b[1]]):[]);onUBlock()}
+function curTS(){const t=townObj(),w=t&&t.wards.find(x=>x[0]===$("cmb_ward_no_revenue").value),b=w&&w[2].find(x=>x[0]===$("cmb_block_revenue").value);return b?b[2]:null}
+function onUBlock(){const l=curTS();$("tsList").innerHTML=(l||[]).map(s=>`<option value="${String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}">`).join("");$("tsHint").textContent=l?`${l.length} T.S. numbers in this block`:"";render()}
+$("cmb_ward_no_revenue").onchange=onUWard;$("cmb_block_revenue").onchange=onUBlock;
+$("cmb_reg_town_revenue").addEventListener("change",drawUrban);$("cmb_guideline_village").addEventListener("change",()=>{if(isUrban())drawUrban()});
+$("cmb_u_town").onchange=()=>{$("cmb_reg_town_revenue").value=$("cmb_u_town").value;drawUrban()};
+document.querySelectorAll('input[name=areaType]').forEach(r=>r.addEventListener("change",drawUrban));
+$("txt_ts").addEventListener("input",()=>render());
+
+/* chips */
+function chipList(arrKey,inp,box){
+  const draw=()=>{$(box).innerHTML=S[arrKey].map((v,i)=>`<span class="chip">${v}<button type="button" aria-label="Remove ${v}" data-i="${i}">×</button></span>`).join("");$(box).querySelectorAll("button").forEach(b=>b.onclick=()=>{S[arrKey].splice(+b.dataset.i,1);draw();render()})};
+  return {add(){const v=$(inp).value.trim();if(!v)return;S[arrKey].push(v);$(inp).value="";draw();render()},draw};
+}
+const cP=chipList("patta","txt_PattaNo","pattaChips"),cO=chipList("other","txt_OtherTitleNo","otherChips"),cOld=chipList("old","txt_oldSurveyNo","oldChips");
+$("btnAddPattaNo").onclick=cP.add;$("btnAddOtherTitleNo").onclick=cO.add;$("btnAddOldSurvey").onclick=cOld.add;
+
+/* ---------- extents ---------- */
+const UNITS={HA:[["ha","Hectare"],["ar","Ares"],["sm","Square Meters"]],AC:[["ac","Acres"],["ct","Cents"]],SF:[["sf","Square Feet"]],SM:[["sm","Square Meters"]]};
+function drawExt(){
+  const u=$("cmb_unit").value,f=UNITS[u];
+  for(const [box,p] of [["extTotal","t"],["extMort","m"]]){
+    const old={};$(box).querySelectorAll("input").forEach(i=>old[i.id]=i.value);
+    $(box).className="ext "+(f.length===2?"two":f.length===1?"one":"");
+    $(box).innerHTML=f.map(([k,l])=>`<div class="f"><input type="number" min="0" step="any" id="${p}_${k}" aria-label="${l}" value="${old[p+'_'+k]??""}"><small>${l}</small></div>`).join("");
+    $(box).querySelectorAll("input").forEach(i=>i.oninput=render);
+  }
+}
+function sqm(p){const g=k=>parseFloat(($(p+"_"+k)||{}).value)||0;const u=$("cmb_unit").value;
+  if(u==="HA")return g("ha")*10000+g("ar")*100+g("sm");if(u==="AC")return g("ac")*4046.8564224+g("ct")*40.468564224;if(u==="SF")return g("sf")*0.09290304;return g("sm")}
+function fmtU(m,u){u=u||$("cmb_unit").value;if(!m)return"";
+  if(u==="HA"){const ha=Math.floor(m/10000),ar=Math.floor((m%10000)/100),s=m%100;return `${ha} Hectare ${ar} Ares ${+s.toFixed(2)} Square Meters`}
+  if(u==="AC"){const ac=m/4046.8564224;let a=Math.floor(ac),c=+((ac-a)*100).toFixed(2);if(c>=100){a++;c=0}return `${a} Acres ${c} Cents`}
+  if(u==="SF")return `${(+(m*10.7639104).toFixed(2)).toLocaleString("en-IN")} Square Feet`;
+  return `${(+m.toFixed(2)).toLocaleString("en-IN")} Square Meters`}
+function conv(m){return fmtU(m)}
+$("cmb_unit").onchange=()=>{["extTotal","extMort"].forEach(b=>$(b).innerHTML="");drawExt();if(S.surveys.length)toast("Unit changed – re-enter the extents");render()};
+let mvTouched=false;$("txt_mvalue").addEventListener("input",()=>{mvTouched=true;render()});
+function gvValue(){const r=subRows().find(r=>r.bv);const m=sqm("m");if(!r||!m)return null;return r.bu==="Acre"?r.bv*m/4046.8564224:r.bu==="Square Feet"?r.bv*m*10.7639104:null}
+
+/* ---------- boundary & linear ---------- */
+const bndBlock=d=>`<div class="bnd b-${d.toLowerCase()}"><div class="f"><label for="cmb_${d.toLowerCase()}_street">What is in the ${d}(Street)?</label><select id="cmb_${d.toLowerCase()}_street"><option value="-1">- Select -</option><option value="0">OTHER</option></select></div><div class="f"><label for="b_${d}">What is in the ${d}? (In English)</label><input type="text" id="b_${d}"></div><div class="f"><label for="bt_${d}">What is in the ${d}? (In Tamil)</label><input type="text" id="bt_${d}" lang="ta" placeholder="Claude fills the Tamil"></div></div>`;
+$("bndGrid").innerHTML=bndBlock("North")+bndBlock("West")+`<div class="bnd b-prop"><input type="text" id="propertyTextBox" value="Property" readonly aria-label="Property"></div>`+bndBlock("East")+bndBlock("South");
+$("btnResetBoundary").onclick=()=>{$("bndGrid").querySelectorAll("input:not([readonly])").forEach(i=>i.value="");$("bndGrid").querySelectorAll("select").forEach(s=>s.value="-1");["Lo-D","Lo-M","Lo-S","La-D","La-M","La-S"].forEach(id=>$(id).value="");render()};
+$("linGrid").innerHTML=["East","West","North","South"].map(d=>`<div class="f"><label for="l_${d}">${d} side (feet)</label><input type="text" id="l_${d}"></div>`).join("");
+
+$("btnResetBuilding").onclick=()=>{$("p4b").querySelectorAll("input[type=text]").forEach(i=>i.value="");$("chk_uds").checked=false;$("idIsNotBuldingPlanApproved").checked=true;render()};
+/* ---------- survey rows (Add) ---------- */
+function curSurvey(){if(isUrban()&&!$("manualSurvey").checked){const v=$("txt_ts").value.trim(),i=v.indexOf("/");return{survey:i<0?v:v.slice(0,i),sub:i<0?"":v.slice(i+1),manual:false,freeSub:false,urban:true}}const man=$("manualSurvey").checked;return{survey:man?$("man_survey").value.trim():$("txt_survey").value.trim(),sub:man?$("man_subdiv").value.trim():(!$("txt_subdiv_free").hidden?$("txt_subdiv_free").value.trim():($("cmb_SubDivNo").value==="-1"?"":$("cmb_SubDivNo").value)),manual:man,freeSub:!man&&!$("txt_subdiv_free").hidden}}
+$("btnAddSurvey").onclick=()=>{const c=curSurvey(),probs=checks().filter(x=>x[0]==="err"&&x[2]===2);if(probs.length){toast("Fix the marked fields first");render(true);return}
+  S.surveys.push({...c,unit:$("cmb_unit").value,area:areaType(),total:sqm("t"),mort:sqm("m"),mv:mvNum(),cls:(subRows()[0]||{}).c||""});drawSurveys();toast("Survey added");render()};
+function drawSurveys(){$("survRows").innerHTML=S.surveys.length?S.surveys.map((s,i)=>`<tr><td>${i+1}</td><td>${s.survey}</td><td>${s.sub||"–"}</td><td>${s.area||"–"}</td><td class="num">${fmtU(s.total,s.unit)}</td><td class="num">${fmtU(s.mort,s.unit)}</td><td class="num">${fmtIN(s.mv)}</td><td><button class="btn sm sec" type="button" data-del="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="8" class="empty">No survey added yet. Fill the survey and press Add.</td></tr>`;
+  $("survRows").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{S.surveys.splice(+b.dataset.del,1);drawSurveys();render()})}
+const areaType=()=>(document.querySelector('input[name=areaType]:checked')||{}).value||"";
+const mvNum=()=>{const v=parseFloat(($("txt_mvalue").value||"").replace(/,/g,""));return isNaN(v)?null:v};
+
+/* ---------- checks ---------- */
+function checks(){
+  const out=[],v=village(),c=curSurvey(),rs=subRows(),pt=(PTYPES.find(p=>p[0]===S.ptype)||[])[1]||"";
+  if(!S.ptype)out.push(["err","Select the Property Type",0]);
+  if($("cmb_sub_registrar_office").value==="-1")out.push(["err","Select the Sub Registrar Office",1]);
+  if(!v)out.push(["err","Select the Registration Village",1]);
+  const pin=$("txt_PinCode").value.trim();if(pin&&!/^6\d{5}$/.test(pin))out.push(["err","Pincode must be 6 digits starting with 6",1]);
+  if(!areaType())out.push(["err","Select Urban, Natham or Rural",2]);
+  if(c.urban){
+    if(!$("cmb_reg_town_revenue").value||$("cmb_reg_town_revenue").value==="-1")out.push(["err","Select the Town (Property Details) for an Urban property",1]);
+    if($("cmb_ward_no_revenue").value==="-1")out.push(["err","Select the Ward No",2]);
+    else if($("cmb_block_revenue").value==="-1")out.push(["err","Select the Block No",2]);
+    const l=curTS(),ts=$("txt_ts").value.trim();
+    if(!ts)out.push(["err","Select the Survey No./Sub Division No. (T.S. No.)",2]);
+    else if(l&&!l.includes(ts))out.push(["err",`T.S. No. ${ts} is not in this ward/block on the portal – check ward, block and number`,2]);
+  } else
+  if(!c.survey)out.push(["err","Select the Survey No.",2]);
+  else if(!c.manual&&inTPList()===false)out.push(["err",`Survey No. ${c.survey} is not in the portal's ${areaType()} list for this village. Check the number, try Natham/Rural, or tick "enter manually"`,2]);
+  if(!c.manual&&surveyRows()&&$("cmb_SubDivNo").value==="-1")out.push(["err","Select the Sub Divison No.",2]);
+  if(c.freeSub)out.push(["warn","Sub-division typed by hand (not in the register) – Claude will match it on the portal",2]);
+  if(c.survey&&!c.manual&&inTPList()===null&&areaType())out.push(["warn",`No ${areaType()} survey list from the portal here – survey number typed by hand`,2]);
+  if(c.manual)out.push(["warn","Survey entered manually – Claude will verify it on the portal before filing",2]);
+  const t=sqm("t"),m=sqm("m");
+  if(!m)out.push(["err","Enter the Mortgaged Survey Extent",2]);
+  if(t&&m&&m>t+0.001)out.push(["err","Mortgaged extent is larger than the total survey extent",2]);
+  for(const r of rs){
+    if(/^Govt/.test(r.c))out.push(["warn",`Guideline register shows ${r.c} for this sub-division – check title`,2]);
+    if(r.bv==null&&!curStreet())out.push(["warn","Guideline register says Refer Street Value – select the Street Name",2]);
+    const agri=/Agri/.test(pt),site=/Plot|Flats/.test(pt);
+    if(agri&&/^(Residential|Commercial|Mixed|Industries|New House)/.test(r.c))out.push(["warn",`Property type is ${pt} but the register classifies this as ${r.c}`,2]);
+    if(site&&/^(Wet|Dry)/.test(r.c))out.push(["warn",`Property type is ${pt} but the register classifies this as ${r.c} (agricultural)`,2]);
+    const dt=new Date(r.d);if(dt>new Date("2026-06-01"))out.push(["warn",`Value revised on ${r.d} – reconfirm on the portal`,2]);
+  }
+  if(rs.length>1)out.push(["warn","This sub-division has more than one land classification in the register",2]);
+  const gv=gvValue(),mv=mvNum();if(gv&&mv&&mv<gv*0.98)out.push(["warn",`Market value ₹${fmtIN(mv)} is below the guideline value ₹${fmtIN(gv)}`,2]);
+  return out;
+}
+
+/* ---------- render ---------- */
+function render(showErr){
+  const v=village(),c=curSurvey(),rs=subRows(),gv=gvValue();
+  if(!mvTouched&&gv)$("txt_mvalue").value=fmtIN(gv);
+  $("mvHint").textContent=gv?`Guideline value for the mortgaged extent ≈ ₹${fmtIN(gv)}`:"";
+  $("convTotal").textContent=conv(sqm("t"));$("convMort").textContent=conv(sqm("m"));
+  const ch=checks();
+  const errFor=(id,match)=>{const e=ch.find(x=>x[0]==="err"&&match.test(x[1]));$(id).textContent=showErr&&e?e[1]:""};
+  if(showErr){errFor("e_sro",/Sub Registrar/);errFor("e_village",/Registration Village/);errFor("e_pin",/Pincode/);errFor("e_area",/Urban/);errFor("e_survey",/Survey No/);errFor("e_subdiv",/Sub Divison/);errFor("e_ext",/extent/i)}
+  $("t4").firstChild.textContent=hasBuilding()?"Building Details":"Linear Measurement";
+  if(S.tab===4){$("p4").hidden=hasBuilding();$("p4b").hidden=!hasBuilding()}
+  for(let i=1;i<=2;i++){const d=$("t"+i).querySelector(".dot");const bad=ch.some(x=>x[0]==="err"&&x[2]===i);d.className="dot "+(bad?"err":"ok")}
+  const sro=SROS.find(s=>s[0]===$("cmb_sub_registrar_office").value);
+  const ptn=PTYPES.find(p=>p[0]===S.ptype);
+  const rows=[
+   ["Property Type",ptn?`${ptn[1]} <span class="mono">partyTypeRadio=${ptn[0]}</span>`:"–"],
+   ["Sub Registrar Office",sro?`${sro[1]} <span class="mono">${sro[0]}</span>`:"–"],
+   ["Registration Village",v?`${v.name} <span class="mono">${v.id}</span>`:"–"],
+   ["Guideline Village",gvil()?`${gvil().name} <span class="mono">${gvil().id}</span>`:"–"],
+   ["Registration District / Revenue District / Taluk",v?[["cmb_reg_dist"],["cmb_revenue_dist"],["cmb_taluk"]].map(([id])=>{const o=$(id).selectedOptions[0];return o&&o.value!=="-1"?`${o.text} <span class="mono">${o.value}</span>`:"–"}).join(" · "):"–"],
+   ["Local Body · Town · Ward · Block",v?["cmb_local_body","cmb_reg_town_revenue","cmb_reg_ward","cmb_reg_block"].map(id=>{const o=$(id).selectedOptions[0];if(!o||o.value==="-1")return"–";if(o.value==="0"){const typed=id==="cmb_reg_ward"?$("txt_WardNo").value:id==="cmb_reg_block"?$("txt_BlockNo").value:"";return typed?`${typed} <span class="mono">typed</span>`:"Not Available"}return `${o.text} <span class="mono">${o.value}</span>`}).join(" · "):"–"],
+   ["Pincode / Patta No.",`${$("txt_PinCode").value||"–"} · ${S.patta.join(", ")||"–"}`],
+   ["Unit · Area type · UDS",`${$("cmb_unit").selectedOptions[0].text} · ${areaType()||"–"} · ${(document.querySelector('input[name=uds]:checked')||{}).value==="Y"?"UDS":"No UDS"}`],
+   ["Urban: Ward / Block / T.S. No.",c.urban?[["cmb_ward_no_revenue"],["cmb_block_revenue"]].map(([id])=>{const o=$(id).selectedOptions[0];return o&&o.value!=="-1"?`${o.text} <span class="mono">${o.value}</span>`:"–"}).join(" / ")+" / "+($("txt_ts").value||"–"):"Not urban"],
+   ["Survey No. / Sub Divison No.",c.survey?`${c.survey}${c.sub?"/"+c.sub:""}${c.manual?' <span class="mono">manual</span>':""}`:"–"],
+   ["Land classification (register)",rs.map(r=>r.c).join("; ")||"–"],
+   ["Street Name",(()=>{const s=curStreet();return s?`${s.name}${s.val?` <span class="mono">₹${s.val}</span>`:""}${s.typed?' <span class="mono">typed</span>':""}`:"–"})()],
+   ["Old Survey No.",S.old.join(", ")||"–"],
+   ["Total Survey Extent",conv(sqm("t"))||"–"],
+   ["Mortgaged Survey Extent",conv(sqm("m"))||"–"],
+   ["Market Value (₹)",fmtIN(mvNum())||"–"],
+   ["Layout / RERA / Plot",[$("txt_layoutName").value,$("txt_rera").value,$("txt_plot").value].filter(Boolean).join(" · ")||"–"],
+   ["Boundaries (N / W / E / S)",["North","West","East","South"].map(d=>$("b_"+d).value||"–").join(" / ")],
+   ["Building (Door No. / Value / Plan)",hasBuilding()?`${$("txtDoorNo").value||"–"} / ${$("txtBuildingValue").value||"–"} / ${$("idIsBuldingPlanApproved").checked?"Approved":"Not Approved"}`:"Not applicable for this property type"],
+   ["Surveys added",String(S.surveys.length)]];
+  $("sheet").innerHTML=rows.map(([k,x])=>`<dt>${k}</dt><dd>${x}</dd>`).join("");
+  $("checks").innerHTML=ch.length?ch.map(([t,m])=>`<li><span class="badge ${t==="err"?"b-err":"b-warn"}">${t==="err"?"Fix":"Check"}</span><span>${m}</span></li>`).join(""):`<li><span class="badge b-ok">Ready</span><span>All checks pass for this property.</span></li>`;
+  $("propRows").innerHTML=S.props.length?S.props.map((p,i)=>`<tr><td>${i+1}</td><td>${p.ptype}</td><td>${p.sro}</td><td>${p.regDist}</td><td>${p.village}</td><td>${p.uds}</td><td class="num">${p.total}</td><td class="num">${p.mort}</td><td>${p.surveys}</td><td class="num">${p.mv}</td><td><button class="btn sm sec" type="button" data-pdel="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="11" class="empty">No property added yet.</td></tr>`;
+  $("propRows").querySelectorAll("[data-pdel]").forEach(b=>b.onclick=()=>{S.props.splice(+b.dataset.pdel,1);render()});
+}
+function entryObj(){const v=village(),c=curSurvey();return{propertyType:(PTYPES.find(p=>p[0]===S.ptype)||[])[1]||"",partyTypeRadio:S.ptype,sroId:$("cmb_sub_registrar_office").value,regVillageId:v?.id,regVillage:v?.name,guidelineVillageId:gvil()?.id,guidelineVillage:gvil()?.name,regDistrictId:$("cmb_reg_dist").value,revenueDistrictId:$("cmb_revenue_dist").value,talukId:$("cmb_taluk").value,localBodyId:$("cmb_local_body").value,townId:$("cmb_reg_town_revenue").value,urbanWard:isUrban()?$("cmb_ward_no_revenue").value:null,urbanBlock:isUrban()?$("cmb_block_revenue").value:null,tsNo:isUrban()?$("txt_ts").value:null,wardId:$("cmb_reg_ward").value,wardNoTyped:$("txt_WardNo").value,blockId:$("cmb_reg_block").value,blockNoTyped:$("txt_BlockNo").value,pincode:$("txt_PinCode").value,patta:S.patta,otherTitleNo:S.other,unit:$("cmb_unit").value,areaType:areaType(),uds:(document.querySelector('input[name=uds]:checked')||{}).value,surveyType:(document.querySelector('input[name=survType]:checked')||{}).value,survey:c.survey,subDivision:c.sub,manualSurvey:c.manual,landType:$("cmb_land_type").value,street:(curStreet()||{}).name||"",streetValue:(curStreet()||{}).val||"",oldSurveyNo:S.old,pymash:$("txt_pymash").value,totalExtent:fmtU(sqm("t")),mortgagedExtent:fmtU(sqm("m")),totalExtentSqm:+sqm("t").toFixed(2),mortgagedExtentSqm:+sqm("m").toFixed(2),marketValue:mvNum(),layout:$("txt_layoutName").value,rera:$("txt_rera").value,plot:$("txt_plot").value,boundaryType:(document.querySelector('input[name=rad_boundaryType]:checked')||{}).value==="7000205"?"Irregular":"Regular",boundaries:Object.fromEntries(["North","West","East","South"].map(d=>[d,{street:$("cmb_"+d.toLowerCase()+"_street").selectedOptions[0].text,english:$("b_"+d).value,tamil:$("bt_"+d).value}])),geo:{lon:["Lo-D","Lo-M","Lo-S"].map(i=>$(i).value),lat:["La-D","La-M","La-S"].map(i=>$(i).value)},building:hasBuilding()?{uds:$("chk_uds").checked,doorNo:$("txtDoorNo").value,oldDoorNo:$("txtOldDoorNo").value,flatNo:$("txtFlatNo").value,taxReceiptNo:$("txtTaxReceiptNo").value,waterTaxNo:$("txtWaterTaxNo").value,ebNo:$("txtEleBoardNo").value,floorNo:$("txtFloorNo").value,name:$("txtBuildingName").value,value:$("txtBuildingValue").value,planApproved:$("idIsBuldingPlanApproved").checked}:null,remarksEn:$("rem_en").value,addedSurveys:S.surveys,checks:checks().map(x=>x[0]+": "+x[1])}}
+async function copy(text){try{await navigator.clipboard.writeText(text);toast("Copied")}catch(e){const f=$("copyFallback");f.hidden=false;f.value=text;f.focus();f.select();toast("Select and copy the text below")}}
+$("copyTxt").onclick=()=>copy([...$("sheet").children].reduce((a,el,i,arr)=>i%2?a:a+el.textContent+": "+arr[i+1].textContent+"\n","")+"\n"+checks().map(x=>(x[0]==="err"?"FIX: ":"CHECK: ")+x[1]).join("\n"));
+$("copyJson").onclick=()=>copy(JSON.stringify(entryObj(),null,2));
+$("btnSave").onclick=()=>{const errs=checks().filter(x=>x[0]==="err");if(errs.length){render(true);go(errs[0][2]||1);toast(errs[0][1]);return}
+  const v=village(),c=curSurvey(),list=S.surveys.length?S.surveys:[{survey:c.survey,sub:c.sub,total:sqm("t"),mort:sqm("m"),mv:mvNum()}];
+  const sum=k=>list.reduce((a,s)=>a+(s[k]||0),0),short=m=>fmtU(m);
+  S.props.push({ptype:(PTYPES.find(p=>p[0]===S.ptype)||[])[1],sro:SM().name,regDist:($("cmb_reg_dist").selectedOptions[0]||{}).text||"",village:v.name,uds:(document.querySelector('input[name=uds]:checked')||{}).value==="Y"?"Yes":"No",total:short(sum("total")),mort:short(sum("mort")),surveys:list.map(s=>s.survey+(s.sub?"/"+s.sub:"")).join(", "),mv:fmtIN(sum("mv"))});
+  toast("Property saved to the list");go(7)};
+$("btnBack").onclick=()=>go(Math.max(1,S.tab===7?1:S.tab-1));
+$("btnNew").onclick=()=>{document.querySelectorAll(".card input[type=text],.card input[type=number],.card textarea").forEach(i=>i.value="");document.querySelectorAll('input[name=partyTypeRadio],input[name=areaType]').forEach(i=>i.checked=false);S.ptype="";S.patta=[];S.other=[];S.old=[];S.surveys=[];mvTouched=false;$("cmb_land_type").value="";$("manualSurvey").checked=false;$("manualBox").hidden=true;cP.draw();cO.draw();cOld.draw();drawSurveys();$("txt_subdiv_free").value="";drawSurveyList();go(1);toast("Blank property ready")};
+document.addEventListener("input",e=>{if(e.target.closest(".card"))render()});
+
+/* ---------- example (Velusamy DOT property) ---------- */
+drawExt();drawSROs();drawSurveys();render();
+(async()=>{
+  $("loadMsg").textContent="Loading village and survey lists…";
+  try{MASTER=await fetch("data/master.json").then(r=>r.json());$("loadMsg").textContent="";fetch("data/urban.json").then(r=>r.json()).then(u=>{URBAN=u;drawUrban()}).catch(()=>{});fetch("data/streets.json").then(r=>r.json()).then(s=>{STREETS=s;drawStreets()}).catch(()=>{})}catch(e){$("loadMsg").textContent="Could not load the village lists. Reload the page."}
+  drawSROs();
+  document.querySelector('input[name=partyTypeRadio][value="5"]').checked=true;S.ptype="5";
+  document.querySelector('input[name=areaType][value="Rural"]').checked=true;
+  $("cmb_sub_registrar_office").value="22610";await onSRO();
+  $("cmb_reg_village").value="45521";onVillage();
+  S.patta=["5155"];cP.draw();
+  $("txt_survey").value="361";onSurvey();$("cmb_SubDivNo").value="2A";onSub();
+  S.old=["361/2"];cOld.draw();
+  $("t_ha").value="0";$("t_ar").value="17";$("t_sm").value="50";$("m_ha").value="0";$("m_ar").value="17";$("m_sm").value="50";
+  render();
+})();
+
+/* ---- data mistake reports ---- */
+function selTxt(id){const e=$(id);return e&&e.selectedIndex>=0&&e.value!=="-1"&&e.value!==""?e.selectedOptions[0].text:""}
+function repCtx(){const c=curSurvey(),v=village(),g=gvil(),st=curStreet&&curStreet();return{sroId:$("cmb_sub_registrar_office").value,sro:selTxt("cmb_sub_registrar_office"),villageId:v?.id||"",village:v?.name||"",guidelineVillage:g?.name||"",localBody:selTxt("cmb_local_body"),town:selTxt("cmb_reg_town_revenue"),areaType:areaType(),ward:isUrban()?selTxt("cmb_ward_no_revenue"):selTxt("cmb_reg_ward"),block:isUrban()?selTxt("cmb_block_revenue"):selTxt("cmb_reg_block"),survey:c.survey||"",sub:c.sub||"",manual:!!c.manual,street:st?.name||""}}
+function ctxLine(x){return[x.sro,x.village&&("Village: "+x.village),x.areaType,x.town&&("Town: "+x.town),x.ward&&("Ward "+x.ward),x.block&&("Block "+x.block),x.survey&&((x.areaType==="Urban"?"T.S. ":"S.F. ")+x.survey+(x.sub?"/"+x.sub:"")),x.street&&("Street: "+x.street)].filter(Boolean).join(" · ")}
+function drawCtx(){try{$("rep_ctx").textContent="Attached: "+(ctxLine(repCtx())||"nothing selected yet")}catch(e){}}
+document.addEventListener("change",drawCtx,true);document.addEventListener("input",e=>{if(!e.target.closest("#repSec"))drawCtx()},true);
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let REPDB=null;
+$("rep_send").onclick=async()=>{const note=$("rep_note").value.trim(),cor=$("rep_correct").value.trim();if(!note&&!cor){$("rep_msg").textContent="Type the correct value or a note first.";return}
+  if(!REPDB){$("rep_msg").textContent="Reports need sign-in to claude.ai. Instead, copy this line into chat: "+$("rep_field").value+" | "+ctxLine(repCtx())+" | "+cor+" | "+note;return}
+  $("rep_send").disabled=true;$("rep_msg").textContent="Sending…";
+  try{await REPDB.collection("corrections").add({field:$("rep_field").value,correct:cor,note,ctx:repCtx(),status:"open",createdAt:Date.now()});$("rep_note").value="";$("rep_correct").value="";$("rep_msg").textContent="Report saved. Tell Claude “check corrections”.";toast("Report saved")}
+  catch(e){$("rep_msg").textContent="Could not save ("+(e.code||e.message||"error")+"). You may have view-only access – send it in chat instead."}
+  finally{$("rep_send").disabled=false}};
+(async()=>{drawCtx();setTimeout(drawCtx,1500);setTimeout(drawCtx,5000);document.addEventListener("click",()=>setTimeout(drawCtx,50),true);let db=null;try{db=await claude.use("db")}catch(e){}
+  if(!db){$("rep_list").innerHTML='<li class="sub">Report list unavailable here (sign in to claude.ai to see and send reports). You can also tell Claude in chat: SRO, village, number, what is wrong.</li>';return}
+  REPDB=db;
+  db.collection("corrections").orderBy("createdAt","desc").limit(100).onSnapshot(q=>{const d=q.docs.map(x=>x.data());const open=d.filter(r=>r.status!=="fixed").length;$("rep_count").textContent=d.length?`(${open} open, ${d.length-open} fixed)`:"";
+    $("rep_list").innerHTML=d.length?d.map(r=>`<li><span class="st ${r.status==="fixed"?"fixed":"open"}">${r.status==="fixed"?"Fixed":"Open"}</span><b>${esc(r.field)}</b>${r.correct?" → "+esc(r.correct):""}<div class="meta">${esc(ctxLine(r.ctx||{}))} · ${new Date(r.createdAt).toLocaleString("en-IN")}</div>${r.note?`<div>${esc(r.note)}</div>`:""}${r.reply?`<div class="meta" style="color:var(--ok)">Claude: ${esc(r.reply)}</div>`:""}</li>`).join(""):'<li class="sub">No reports yet.</li>'},
+    e=>{$("rep_list").innerHTML='<li class="sub">Could not load reports ('+esc(e.code||e.message)+').</li>'});
+})();
+</script>
+</body></html>

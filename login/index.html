@@ -159,7 +159,8 @@ function lockCheck(){
 }
 
 async function internalLogin(id, pw){
-  var email = id.indexOf('@') > -1 ? id : STAFF[id.toLowerCase()];
+  var lid = id.trim().toLowerCase();
+  var email = lid.indexOf('@') > -1 ? lid : (STAFF[lid] || (/^[a-z0-9][a-z0-9._-]{2,29}$/.test(lid) ? lid + '@staff.vlegalservices.in' : ''));
   if(!email) throw wrong();
   var r = await sb.auth.signInWithPassword({ email: email, password: pw });
   if(r.error){

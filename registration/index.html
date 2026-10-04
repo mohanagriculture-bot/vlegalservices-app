@@ -521,7 +521,7 @@ function branchHelper(root){const blk=root.querySelector("#govtBodyList").closes
  d.querySelector("#h_entry").onclick=()=>{const e=APP.entry;if(!e.branchAddr&&!e.branch){$("#h_msg").textContent="No branch in Entry Details yet.";return}apply(Object.assign({govtBodyList:e.bank&&e.bank!=="-1"?e.bank:""},branchVals(e)))}}
 
 /* ---------- Documents received → Google Drive (through the firm's Apps Script; staff sign-in is checked there) ---------- */
-const DRIVE_URL="";   // the deployed Apps Script web app URL (…/exec)
+const DRIVE_URL="https://script.google.com/macros/s/AKfycbxcqoewmVccK2ZPZdDxqTp79qGGwiygF9nFbqcA2Q_WlMw_5Li02xa-z_uui7xUbMLP/exec";   // the deployed Apps Script web app URL (…/exec)
 const SB_URL="https://tjvvqoomaptxscgiziks.supabase.co",SB_KEY="sb_publishable_ROQ1neYXpAnHftMmuwZrrw_YFrvNztm",SB_TOK="sb-tjvvqoomaptxscgiziks-auth-token";
 function fileList(cat){return (APP.entry.files||[]).filter(f=>f.cat===cat).map(f=>`<li>✓ <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a></li>`).join("")}
 async function staffToken(){let s;try{s=JSON.parse(sessionStorage.getItem(SB_TOK)||"null")}catch(e){}if(!s||!s.access_token)throw new Error("Sign in to the website first (uploads need the staff sign-in).");

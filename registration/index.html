@@ -470,7 +470,7 @@ function saveScreen(){const scr=$("#screen");if(!scr||APP.page!=="wizard")return
 function presenterOpts(){const D=DEEDS[APP.deedType];const o=[["-1","- Select -"]];if(!D)return o;D.parties.forEach(c=>(APP.grids[c[1]+"#"+c[2]]||[]).forEach((r,i)=>{if(r[0])o.push([c[2]+i,r[0]+" ("+c[0].replace(" Details","")+")"])}));return o}
 
 /* Property tab = the verified Property Tab replica (21 + 19 + 14 SROs) */
-function renderProperty(root){root.innerHTML=`<p class="sub">Property Details has the checked village and survey lists (Coimbatore, Erode and Tiruppur SROs) and the same tabs as the portal. Properties you save to the list are kept with this file.</p><iframe class="prop" id="propFrame" src="property.html?work=1" title="Property Details"></iframe>`}
+function renderProperty(root){root.innerHTML=`<p class="sub">Property Details has the checked village and survey lists (Coimbatore, Erode, Tiruppur and Nilgiris SROs) and the same tabs as the portal. Properties you save to the list are kept with this file.</p><iframe class="prop" id="propFrame" src="property.html?work=1" title="Property Details"></iframe>`}
 
 /* Receipt details (Deed of Receipt – unverified) */
 function renderReceipt(root){const v=APP.vals["receipt#"]||{};root.innerHTML=`<h2>Receipt Details</h2><p class="sub">Best-guess screen for MOD Discharge until checked with a Bankers/NBFC login.</p>

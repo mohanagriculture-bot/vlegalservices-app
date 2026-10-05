@@ -171,7 +171,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2600)}
 let SCR=null,OPTS={};
-const APP={page:"dash",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},done:{},docs:[]};
+const APP={page:"dash",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},gfull:{},done:{},docs:[]};
 
 /* ---------- deed configuration (tab names exactly as on the portal; unverified ones flagged) ---------- */
 const DEEDS={
@@ -307,7 +307,7 @@ function renderCreate(st){crumb("Home &gt; Registration &gt; Document Registrati
  $("#createDocProceed").onclick=()=>{const v=$("#deedType").value,er=[];if(v==="-1")er.push("Please select Nature of Document");
   if(["7","28","22","DOR"].includes(v)&&!APP.linked.length)er.push(v==="7"?"Please Link a Document (title / sale deed) before Proceed":"Please Link a Document (the earlier mortgage) before Proceed");
   if(er.length)return showErr("#cdErr",er);
-  if(APP.deedType!==v){APP.vals={};APP.grids={};APP.done={}}
+  if(APP.deedType!==v){APP.vals={};APP.grids={};APP.gfull={};APP.done={}}
   APP.deedType=v;APP.docDesc=$("#doc_desc").value;APP.tpCopy=$("#isTpNoCheck").checked?$("#tpNo").value:"";APP.tab=0;APP.child=0;prefill();go("wizard")}}
 function showErr(sel,list){$(sel).innerHTML=`<div class="errbox" role="alert"><b>Please correct the following</b><ul>${list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`}
 
@@ -448,15 +448,23 @@ function wireSpec(root,page,key,pc,grid){
  const dob=root.querySelector("#dob"),age=root.querySelector("#age");if(dob&&age)dob.onchange=()=>{const d=new Date(dob.value);if(!isNaN(d)){age.value=Math.floor((Date.now()-d)/3.15576e10)}};
  const cp=root.querySelector("#btnCopyData");if(cp)cp.onclick=()=>{const t=[...root.querySelectorAll("input[id^=chk_]:checked")].map(c=>c.value.trim()).join("\n\n");const ta=root.querySelector("#Conditions");if(ta){ta.value=t;toast("Legal conditions copied")}};
  const draw=()=>{const tb=root.querySelector("#gridRows");if(!tb)return;const rows=APP.grids[key]||[];
-  tb.innerHTML=rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map(c=>`<td>${esc(c)}</td>`).join("")}<td><button class="btn sm sec" type="button" data-rdel="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="${grid.length}" class="empty">No record added</td></tr>`;
-  tb.querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.rdel,1);draw()});scheduleSave()};
+  const full=(APP.gfull[key]=APP.gfull[key]||[]);
+  tb.innerHTML=rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map(c=>`<td>${esc(c)}</td>`).join("")}<td>${full[i]?`<button class="btn sm sec" type="button" data-redit="${i}">Edit</button> `:""}<button class="btn sm sec" type="button" data-rdel="${i}">Delete</button></td></tr>`).join(""):`<tr><td colspan="${grid.length}" class="empty">No record added</td></tr>`;
+  tb.querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rdel;rows.splice(i,1);full.splice(i,1);draw()});
+  tb.querySelectorAll("[data-redit]").forEach(b=>b.onclick=()=>{const i=+b.dataset.redit;loadFull(root,full[i]);rows.splice(i,1);full.splice(i,1);draw();toast("Loaded into the form – change and press Add again")});scheduleSave()};
  draw();
  root.querySelectorAll("button[id]").forEach(b=>{
   if(ADD_IDS.includes(b.id)&&grid)b.onclick=()=>{const er=requiredCheck(root,pc?null:b);if(!pc&&/^d7_tab4$/.test(page)){const g=id=>root.querySelector("#"+id);if(!g("txtDesc").value.trim())er.push("Please enter Description");if(!g("txtDocNoId").value.trim())er.push("Please enter Document Number");if(!g("dtDoc").value.trim())er.push("Please enter Date of Document");if(g("cmbDepositedDoc").value==="-1")er.push("Please select Document Deposited")}if(pc&&pt&&pt.value==="-1")er.unshift("Please select Party Type");
     if(er.length)return showErr("#scrErr",[...new Set(er)]);$("#scrErr").innerHTML="";
-    (APP.grids[key]=APP.grids[key]||[]).push(rowFrom(root,page,pc));draw();clearFields(root);root.addrSync&&root.addrSync();delete APP.vals[key];toast("Added to the list")};
+    (APP.grids[key]=APP.grids[key]||[]).push(rowFrom(root,page,pc));(APP.gfull[key]=APP.gfull[key]||[]).push(fullFrom(root));draw();clearFields(root);root.addrSync&&root.addrSync();delete APP.vals[key];toast("Added to the list")};
   if(RESET_IDS.includes(b.id))b.onclick=()=>{clearFields(root);root.addrSync&&root.addrSync();$("#scrErr").innerHTML=""}});
  root.addEventListener("change",()=>saveScreen())}
+/* Every field of a grid row (value + chosen text), so Claude/the portal filler gets relation, DOB, Tamil names, district/taluk/village etc. */
+function fullFrom(root){const o={},t={};root.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{if(el.type==="button"||el.type==="file"||/^(identificationNo|aadhaarConsentCheckBox)$/.test(el.id))return;o[el.id]=el.type==="checkbox"||el.type==="radio"?el.checked:el.value;if(el.tagName==="SELECT"&&el.value!=="-1")t[el.id]=el.selectedOptions[0]?.text||""});o._text=t;o._at=new Date().toISOString();return o}
+function loadFull(root,f){if(!f)return;const pt=root.querySelector("#partyType");if(pt&&f.partyType!==undefined){pt.value=f.partyType;pt.dispatchEvent(new Event("change"))}
+ root.setAddr&&root.setAddr(f.cmb_District,f.cmb_Taluk,f.cmb_Village);
+ root.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{if(!(el.id in f)||/^(partyType|cmb_District|cmb_Taluk|cmb_Village)$/.test(el.id)||el.type==="button"||el.type==="file")return;if(el.type==="checkbox"||el.type==="radio")el.checked=!!f[el.id];else el.value=f[el.id]});
+ root.addrSync&&root.addrSync();root.querySelectorAll('[data-blk^="divId_VillageOther"]').forEach(b=>b.hidden=root.querySelector("#cmb_Village")?.value!=="0")}
 function clearFields(root){root.querySelectorAll("input[type=text],textarea").forEach(i=>{if(!i.readOnly)i.value=""});root.querySelectorAll("select").forEach(s=>{if(s.id!=="partyType"&&s.id!=="cmb_Country"&&s.id!=="cmb_State")s.value="-1"});root.querySelectorAll("input[type=checkbox]").forEach(c=>{if(!/^chk_/.test(c.id))c.checked=false})}
 function saveScreen(){const scr=$("#screen");if(!scr||APP.page!=="wizard")return;const key=curKey();const o={};scr.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{if(el.type==="button")return;o[el.id]=el.type==="checkbox"||el.type==="radio"?el.checked:el.value});APP.vals[key]=o;scheduleSave()}
 function presenterOpts(){const D=DEEDS[APP.deedType];const o=[["-1","- Select -"]];if(!D)return o;D.parties.forEach(c=>(APP.grids[c[1]+"#"+c[2]]||[]).forEach((r,i)=>{if(r[0])o.push([c[2]+i,r[0]+" ("+c[0].replace(" Details","")+")"])}));return o}
@@ -574,7 +582,7 @@ const who=e=>esc(String(e||"").split("@")[0]);
 
 /* ---------- autosave ---------- */
 function propSnap(){try{const w=$("#propFrame")?.contentWindow;if(w&&w.S)APP.prop={props:w.S.props||[],surveys:w.S.surveys||[]}}catch(e){}return APP.prop||null}
-function snapshot(){return{v:1,page:["entry","create","wizard"].includes(APP.page)?APP.page:(APP.lastStep||"entry"),entry:APP.entry,deedType:APP.deedType,docDesc:APP.docDesc,linked:APP.linked,tpCopy:APP.tpCopy,tab:APP.tab,child:APP.child,vals:APP.vals,grids:APP.grids,done:APP.done,prop:propSnap(),extra:APP.extra||null}}
+function snapshot(){return{v:1,page:["entry","create","wizard"].includes(APP.page)?APP.page:(APP.lastStep||"entry"),entry:APP.entry,deedType:APP.deedType,docDesc:APP.docDesc,linked:APP.linked,tpCopy:APP.tpCopy,tab:APP.tab,child:APP.child,vals:APP.vals,grids:APP.grids,gfull:APP.gfull,done:APP.done,prop:propSnap(),extra:APP.extra||null}}
 function metaRow(){const e=APP.entry;const bank=e.bank&&e.bank!=="-1"?((findOpts("govtBodyList").find(o=>o[0]===e.bank)||[])[1]||""):"";const sro=e.sro&&e.sro!=="-1"?((findOpts("sub_reg_off").find(o=>o[0]===e.sro)||[])[1]||""):"";
  return{file_ref:fileRef()||null,deed_type:APP.deedType||e.work||null,client:e.client||null,bank:bank||null,branch:e.branch||null,sro:sro||null,drive_folder_url:((e.files||[])[0]||{}).folderUrl||null}}
 function meaningful(){const e=APP.entry;return !!(e.client||e.work||(e.bank&&e.bank!=="-1")||APP.deedType||(e.files||[]).length)}
@@ -596,10 +604,10 @@ async function doSave(){if(!sb||!meaningful())return;if(CUR.id&&!EDITABLE.includ
 setInterval(()=>{if(APP.page==="wizard"&&$("#propFrame"))scheduleSave()},5000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){if(APP.page==="wizard")saveScreen();doSave()}});
 
-function resetApp(){Object.assign(APP,{page:"",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},done:{},prop:null,extra:null,lastStep:"entry"});Object.assign(CUR,{id:null,status:"draft",lastJSON:""});setSaveState("")}
+function resetApp(){Object.assign(APP,{page:"",entry:{},deedType:"",docDesc:"",linked:[],tpCopy:"",tab:0,child:0,vals:{},grids:{},gfull:{},done:{},prop:null,extra:null,lastStep:"entry"});Object.assign(CUR,{id:null,status:"draft",lastJSON:""});setSaveState("")}
 async function newFile(){if(APP.page==="wizard")saveScreen();await flushSave();const had=CUR.id&&CUR.status==="draft";resetApp();go("entry");if(had)toast("The previous file is kept in Drafts")}
 async function openDoc(id,step){await flushSave();const {data:r,error}=await sb.from("reg_docs").select("*").eq("id",id).single();if(error)return toast("Could not open: "+error.message);
- resetApp();const d=r.data||{};Object.assign(APP,{entry:d.entry||{},deedType:d.deedType||r.deed_type||"",docDesc:d.docDesc||"",linked:d.linked||[],tpCopy:d.tpCopy||"",tab:d.tab||0,child:d.child||0,vals:d.vals||{},grids:d.grids||{},done:d.done||{},prop:d.prop||null,extra:d.extra||null,lastStep:d.page||"entry"});
+ resetApp();const d=r.data||{};Object.assign(APP,{entry:d.entry||{},deedType:d.deedType||r.deed_type||"",docDesc:d.docDesc||"",linked:d.linked||[],tpCopy:d.tpCopy||"",tab:d.tab||0,child:d.child||0,vals:d.vals||{},grids:d.grids||{},gfull:d.gfull||{},done:d.done||{},prop:d.prop||null,extra:d.extra||null,lastStep:d.page||"entry"});
  CUR.id=r.id;CUR.status=r.status;CUR.lastJSON=JSON.stringify([snapshot(),metaRow()]);
  let pg=step||d.page||"entry";if(pg==="wizard"&&!DEEDS[APP.deedType])pg="create";
  go(pg);setSaveState(EDITABLE.includes(r.status)?"Opened "+(r.file_ref||"file"):"View only – "+(STL[r.status]||r.status)+". Changes are not saved.")}

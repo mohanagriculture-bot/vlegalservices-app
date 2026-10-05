@@ -586,7 +586,9 @@ $("copyJson").onclick=()=>copy(JSON.stringify(entryObj(),null,2));
 $("btnSave").onclick=()=>{const errs=checks().filter(x=>x[0]==="err");if(errs.length){render(true);go(errs[0][2]||1);toast(errs[0][1]);return}
   const v=village(),c=curSurvey(),list=S.surveys.length?S.surveys:[{survey:c.survey,sub:c.sub,total:sqm("t"),mort:sqm("m"),mv:mvNum()}];
   const sum=k=>list.reduce((a,s)=>a+(s[k]||0),0),short=m=>fmtU(m);
-  S.props.push({ptype:(PTYPES.find(p=>p[0]===S.ptype)||[])[1],sro:SM().name,regDist:($("cmb_reg_dist").selectedOptions[0]||{}).text||"",village:v.name,uds:(document.querySelector('input[name=uds]:checked')||{}).value==="Y"?"Yes":"No",total:short(sum("total")),mort:short(sum("mort")),surveys:list.map(s=>s.survey+(s.sub?"/"+s.sub:"")).join(", "),mv:fmtIN(sum("mv"))});
+  S.props.push({ptype:(PTYPES.find(p=>p[0]===S.ptype)||[])[1],sro:SM().name,regDist:($("cmb_reg_dist").selectedOptions[0]||{}).text||"",village:v.name,uds:(document.querySelector('input[name=uds]:checked')||{}).value==="Y"?"Yes":"No",total:short(sum("total")),mort:short(sum("mort")),surveys:list.map(s=>s.survey+(s.sub?"/"+s.sub:"")).join(", "),mv:fmtIN(sum("mv")),
+   /* full record of this property (survey rows, ward/block/T.S., plot, boundaries EN+TA, linear sides, remarks) – used to file it on TNREGINET */
+   full:{...entryObj(),linear:Object.fromEntries(["East","West","North","South"].map(d=>[d,($("l_"+d)||{}).value||""])),remarksTa:($("rem_ta")||{}).value||"",savedAt:new Date().toISOString()}});
   toast("Property saved to the list");go(7)};
 $("btnBack").onclick=()=>go(Math.max(1,S.tab===7?1:S.tab-1));
 $("btnNew").onclick=()=>{document.querySelectorAll(".card input[type=text],.card input[type=number],.card textarea").forEach(i=>i.value="");document.querySelectorAll('input[name=partyTypeRadio],input[name=areaType]').forEach(i=>i.checked=false);S.ptype="";S.patta=[];S.other=[];S.old=[];S.surveys=[];mvTouched=false;$("cmb_land_type").value="";$("manualSurvey").checked=false;$("manualBox").hidden=true;cP.draw();cO.draw();cOld.draw();drawSurveys();$("txt_subdiv_free").value="";drawSurveyList();go(1);toast("Blank property ready")};

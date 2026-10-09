@@ -209,7 +209,8 @@ function render(){const p=APP.page;const st=$("#stage");
 /* ---------- helpers ---------- */
 function optsHTML(list,sel){return (list||[]).map(([v,t])=>`<option value="${esc(v)}"${String(sel)===String(v)?" selected":""}>${esc(t)}</option>`).join("")}
 function opts(ref){return typeof ref==="string"?OPTS[ref]||[]:ref||[]}
-function findOpts(id){for(const k in SCR.pages)for(const x of SCR.pages[k]){const fs=x.k==="f"?x.fs:x.k==="x"?[x.f]:[];for(const f of fs)if(f.id===id&&f.opts)return opts(f.opts)}return[]}
+function bankOpts(){let best=[];for(const k in SCR.pages)for(const x of SCR.pages[k]){const fs=x.k==="f"?x.fs:x.k==="x"?[x.f]:[];for(const f of fs)if(f.id==="govtBodyList"&&f.opts){const o=opts(f.opts);if(o.length>best.length)best=o}}return best}
+function findOpts(id){if(id==="govtBodyList")return bankOpts();for(const k in SCR.pages)for(const x of SCR.pages[k]){const fs=x.k==="f"?x.fs:x.k==="x"?[x.f]:[];for(const f of fs)if(f.id===id&&f.opts)return opts(f.opts)}return[]}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
@@ -373,7 +374,7 @@ const RESET_IDS=["resetExecutantDetailsInGrid","btnReset","resetData","ResetData
 const DEF={cmb_Country:"India",cmb_State:"Tamil Nadu"};
 function fieldHTML(f,val,note){const id=f.id||"";const nm=esc(f.name||id);let v=val??f.val??"";
  if(!v&&DEF[id]){const o=opts(f.opts).find(x=>x[1]===DEF[id]);if(o)v=o[0]}
- if(f.type==="select"){let o=opts(f.opts);if(id==="firstRelationTypeId"&&o.length<2)o=findOpts("secondRelationTypeId");if(id==="cmb_presenter")o=presenterOpts();if(id==="SroSelecttionCombo"&&o.length<2)o=[["-1","- Select -"],...(APP.entry.sro&&APP.entry.sro!=="-1"?[[APP.entry.sro,(findOpts("sub_reg_off").find(x=>x[0]===APP.entry.sro)||[])[1]||""]]:[])];
+ if(f.type==="select"){let o=opts(f.opts);if(id==="firstRelationTypeId"&&o.length<2)o=findOpts("secondRelationTypeId");if(id==="cmb_presenter")o=presenterOpts();if(id==="govtBodyList"&&o.length<3)o=bankOpts();if(id==="SroSelecttionCombo"&&o.length<2)o=[["-1","- Select -"],...(APP.entry.sro&&APP.entry.sro!=="-1"?[[APP.entry.sro,(findOpts("sub_reg_off").find(x=>x[0]===APP.entry.sro)||[])[1]||""]]:[])];
   return `<select id="${esc(id)}" name="${nm}"${f.dis?" disabled":""}>${optsHTML(o,v||"-1")}</select>`}
  if(f.type==="textarea"&&/<\w/.test(v)){const d=document.createElement("div");d.innerHTML=v.replace(/<br\s*\/?>/gi,"\n").replace(/<\/p>/gi,"\n\n");v=d.textContent.replace(/\n{3,}/g,"\n\n").trim()}
  if(f.type==="textarea")return `<textarea id="${esc(id)}" name="${nm}"${f.max?` maxlength="${f.max}"`:""}${f.ro?" readonly":""}>${esc(v)}</textarea>`;
@@ -398,6 +399,7 @@ function renderSpec(root,page,key,partyCfg){const items=(SCR.pages[page]||[]);co
     continue}
   if(x.k==="f"){
     const vis=x.fs.filter(f=>!(f.type==="button"&&/update|cancel|^copy/i.test(f.id||"")));
+    if(!vis.length&&partyCfg&&partyCfg[2]==="rep"&&/^Party Name/.test(x.lab||"")){h+=`<div class="f" data-fid="repPartyName" data-req="1" data-lab="Party Name(s)" data-alert="Please select Party Name"><label for="repPartyName">Party Name(s) <span class="req">*</span></label><select id="repPartyName" name="repPartyName"><option value="-1">- Select Party Type first -</option></select><span class="pnote" id="repPartyHint"></span></div>`;continue}
     if(!vis.length){if(x.hid)continue;const t=(x.lab+" "+x.note).trim();if(!t)continue;
       if(/^(Personal Details|Address Details)/.test(t)||/^Sr\.No\./.test(t))h+=/^Sr\.No/.test(t)?"":`<div class="heading">${esc(t)}</div>`;else h+=`<p class="pnote">${esc(t)}</p>`;continue}
     const fids=vis.map(f=>f.id).filter(Boolean);const vOther=/^divId_VillageOther/.test(x.id||"");const hideBlock=x.hid&&!vOther&&!fids.some(id=>ORGF.includes(id)||GOVF.includes(id));
@@ -431,7 +433,7 @@ function gridColsFor(page,pc){if(pc&&pc[2]!=="pre")return pc[2]==="rep"?["Sr. No
  return null}
 function selText(el){return el&&el.tagName==="SELECT"?(el.value==="-1"?"":el.selectedOptions[0]?.text||""):el?el.value:""}
 function rowFrom(root,page,pc){const g=id=>root.querySelector("#"+id);
- if(pc&&pc[2]==="rep")return[selText(g("representedParty")),"",selText(g("representationBy")),g("fullName")?.value||""];
+ if(pc&&pc[2]==="rep")return[selText(g("representedParty")),selText(g("repPartyName")),selText(g("representationBy")),g("fullName")?.value||""];
  if(pc){const pt=g("partyType")?.value;const name=pt==="7000008"?selText(g("govtBodyList")):pt==="7000007"?g("txt_OrgName")?.value:(selText(g("salutationId"))+" "+(g("fullName")?.value||"")).trim();
    return[name,g("age")?.value||"",selText(g("genderId")),selText(g("partyType")),[g("mobileNo")?.value,g("email")?.value].filter(Boolean).join(" · "),[g("txt_FullAddress")?.value,g("cmb_Village")?.value==="0"?g("txt_othr_village_name")?.value:selText(g("cmb_Village")),selText(g("cmb_Taluk")),selText(g("cmb_District")),g("txt_PinCode")?.value].filter(Boolean).join(", ")]}
  if(page.startsWith("d7")&&/_tab4$/.test(page))return[g("txtDesc")?.value||"",g("txtDocNoId")?.value||"",g("dtDoc")?.value||"",selText(g("cmbDepositedDoc"))];
@@ -443,6 +445,7 @@ function wireSpec(root,page,key,pc,grid){
  const applyPT=()=>{const v=pt.value;root.querySelectorAll("[data-fid]").forEach(b=>{const ids=b.dataset.fid.split(" ");if(ids.some(i=>ORGF.includes(i)))b.hidden=v!=="7000007";else if(ids.some(i=>GOVF.includes(i)))b.hidden=v!=="7000008";else if(PERSONAL.includes(b.dataset.blk))b.hidden=v==="7000007"||v==="7000008"})};
  wireAddress(root,key);
  if(root.querySelector("#govtBodyList"))branchHelper(root);
+ if(root.querySelector("#representedParty")&&root.querySelector("#repPartyName"))wireRepParty(root,key);
  if(pt){pt.onchange=applyPT;applyPT()}
  const prof=root.querySelector("#professionId");if(prof)prof.onchange=()=>{};
  const dob=root.querySelector("#dob"),age=root.querySelector("#age");if(dob&&age)dob.onchange=()=>{const d=new Date(dob.value);if(!isNaN(d)){age.value=Math.floor((Date.now()-d)/3.15576e10)}};
@@ -482,6 +485,22 @@ function renderReceipt(root){const v=APP.vals["receipt#"]||{};root.innerHTML=`<h
  </div>`;root.addEventListener("change",()=>saveScreen())}
 
 /* Preview (practice draft text) */
+// Representative: list the names of the party chosen in "Party Types" (e.g. Mortgagee -> the bank)
+function repPartyCandidates(word){const D=DEEDS[APP.deedType];const w=String(word||"").toLowerCase().trim();if(!w)return{names:[],label:""};
+ const c=D.parties.find(p=>!["rep","wit","pre"].includes(p[2])&&p[0].toLowerCase().includes(w));if(!c)return{names:[],label:""};
+ const key=c[1]+"#"+c[2];let names=(APP.grids[key]||[]).map(r=>r[0]).filter(Boolean);
+ if(!names.length){const v=APP.vals[key]||{};const bank=v.govtBodyList&&v.govtBodyList!=="-1"?((bankOpts().find(o=>o[0]===v.govtBodyList)||[])[1]||""):"";
+  const nm=v.partyType==="7000008"?bank:v.partyType==="7000007"?(v.txt_OrgName||""):(v.fullName||"");if(nm)names=[nm.trim()]}
+ return{names:[...new Set(names)],label:c[0]}}
+function wireRepParty(root,key){const sel=root.querySelector("#representedParty"),out=root.querySelector("#repPartyName"),hint=root.querySelector("#repPartyHint");
+ const saved=(APP.vals[key]||{}).repPartyName;
+ if(APP.deedType==="DOR"&&sel.value==="-1"){const m=[...sel.options].find(o=>/^mortgagee$/i.test(o.text.trim()));if(m)sel.value=m.value}
+ const fill=keep=>{const word=sel.value==="-1"?"":selText(sel);const {names,label}=repPartyCandidates(word);
+  if(!word){out.innerHTML='<option value="-1">- Select Party Type first -</option>';hint.textContent="";return}
+  out.innerHTML='<option value="-1">- Select -</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if(names.length===1)out.value=names[0];if(keep&&names.includes(keep))out.value=keep;
+  hint.textContent=names.length?"":`No ${word} added yet — add it on the "${label||word}" tab first.`};
+ const prev=sel.onchange;sel.onchange=e=>{if(prev)prev.call(sel,e);fill()};fill(saved)}
 function partyNames(kind){const D=DEEDS[APP.deedType];const c=D.parties.find(p=>p[2]===kind);return (APP.grids[c[1]+"#"+kind]||[]).map(r=>r[0]).filter(Boolean)}
 function propSummary(){try{const w=$("#propFrame")?.contentWindow||window._propWin;if(w&&w.entryObj){const e=w.entryObj();return e}}catch(e){}return null}
 function renderPreview(root){const D=DEEDS[APP.deedType];const ex=partyNames("exe"),cl=partyNames("cla"),wi=partyNames("wit");

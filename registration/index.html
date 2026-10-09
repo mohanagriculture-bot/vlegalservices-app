@@ -183,8 +183,8 @@ const DEEDS={
    tabs:[["Party Details","party"],["Property Details","property"],["Mortgage and Security Details","d7_tab3"],["Possession Remarks","d7_tab5"],["Legal Condition","d7_tab6"],["Reasons for availing Loan","d7_tab7"],["Supporting Details","d7_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]},
  "22":{name:"Further Charge Mortgage With Possession Deed",verified:false,parties:[["Mortgagor/ Depositor","d7_tab1_childTab1","exe"],["Mortgagee","d7_tab1_childTab2","cla"],["Representative Details","d7_tab1_childTab3","rep"],["Witness Details","d7_tab1_childTab4","wit"],["Presenter Details","d7_tab1_childTab5","pre"]],
    tabs:[["Party Details","party"],["Property Details","property"],["Mortgage and Security Details","d7_tab3"],["Possession Remarks","d7_tab5"],["Legal Condition","d7_tab6"],["Reasons for availing Loan","d7_tab7"],["Supporting Details","d7_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]},
- "DOR":{name:"Deed of Receipt (MOD Discharge)",verified:false,parties:[["Executant Details (Bank / Mortgagee)","d1_tab1_childTab2","exe"],["Claimant Details (Mortgagor)","d1_tab1_childTab1","cla"],["Representative Details","d7_tab1_childTab3","rep"],["Witness Details","d7_tab1_childTab4","wit"],["Presenter Details","d7_tab1_childTab5","pre"]],
-   tabs:[["Party Details","party"],["Property Details","property"],["Receipt Details","receipt"],["Possession Remarks","d7_tab5"],["Supporting Details","d7_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]}
+ "DOR":{name:"Deed of Receipt (MOD Discharge)",verified:true,parties:[["Mortgagee","dR_tab1_childTab1","cla"],["Mortgagor","dR_tab1_childTab2","exe"],["Representative Details","dR_tab1_childTab3","rep"],["Witness Details","dR_tab1_childTab4","wit"],["Presenter Details","dR_tab1_childTab5","pre"]],
+   tabs:[["Party Details","party"],["Property Details","property"],["Loan Repayment details","dR_tab3"],["Supporting Details","dR_tab8"],["Document Preview","preview"],["Document Valuation","valuation"]]}
 };
 const PARTY_COLS=["Sr. No.","Name","Age","Gender","Party Type","Contact Details","Full Address","Action"];
 
@@ -268,7 +268,7 @@ function copyText(t,msgSel){const done=()=>{if(msgSel)$(msgSel).textContent="Cop
 /* ---------- 3. Create Document ---------- */
 function renderCreate(st){crumb("Home &gt; Registration &gt; Document Registration &gt; <b>Presenceless Registration</b>");
  const e=APP.entry;if(!APP.deedType&&e.work)APP.deedType=e.work;
- const deedOpts=[["-1","- Select -"],["1","Sale deed"],["7","Deposit Of Title Deeds"],["28","Further Charge Mortgage Without Possession Deed"],["22","Further Charge Mortgage With Possession Deed"],["DOR","Deed of Receipt (needs Bankers/NBFC login)"]];
+ const deedOpts=[["-1","- Select -"],["1","Sale deed"],["7","Deposit Of Title Deeds"],["28","Further Charge Mortgage Without Possession Deed"],["22","Further Charge Mortgage With Possession Deed"],["DOR","Deed of Receipt"]];
  const sros=findOpts("sub_reg_off"),years=findOpts("sub_year"),books=findOpts("sub_book_no"),dtypes=findOpts("cmb_doc_type");
  st.innerHTML=`<div class="card"><h1>Create Document</h1><p class="sub">All fields marked with <span class="req">*</span> are mandatory</p>
  <div class="grid">
@@ -293,7 +293,7 @@ function renderCreate(st){crumb("Home &gt; Registration &gt; Document Registrati
   <div class="f" id="tpBox" ${APP.tpCopy?"":"hidden"}><label for="tpNo">Temporary Deed Number</label><input type="text" id="tpNo" placeholder="TP/312583247/2026" value="${esc(APP.tpCopy)}"><span class="note">Practice only: nothing is copied</span></div></div>
  <div class="row" style="margin-top:18px"><button class="btn sec" type="button" id="btnRst">Reset</button><button class="btn" type="button" id="createDocProceed">Proceed</button></div>
  <div id="cdErr"></div></div>`;
- const note=()=>{const v=$("#deedType").value,n=$("#deedNote");n.textContent=v==="DOR"?"Not offered on an individual login. These screens are a best guess until checked with a bank login.":v==="28"||v==="22"?"Linking the earlier mortgage document is mandatory for Further Charge. Screens follow the Deposit of Title Deeds layout; not yet checked on the portal.":v==="7"?"Link the title / sale deed as the previous document.":""};note();
+ const note=()=>{const v=$("#deedType").value,n=$("#deedNote");n.textContent=v==="DOR"?"Bankers/NBFC login only on the portal. Link the MOD (Deposit of Title Deeds) being discharged. Screens checked with a bank login on 09-10-2026.":v==="28"||v==="22"?"Linking the earlier mortgage document is mandatory for Further Charge. Screens follow the Deposit of Title Deeds layout; not yet checked on the portal.":v==="7"?"Link the title / sale deed as the previous document.":""};note();
  $("#deedType").onchange=note;
  $("#linkPrevDoc").onchange=e=>$("#linkBox").hidden=!e.target.checked;
  $("#isTpNoCheck").onchange=e=>$("#tpBox").hidden=!e.target.checked;
@@ -316,10 +316,10 @@ function showErr(sel,list){$(sel).innerHTML=`<div class="errbox" role="alert"><b
 function prefill(){const e=APP.entry,D=DEEDS[APP.deedType];if(!D)return;
  const ex=D.parties[0][1]+"#"+D.parties[0][2],cl=D.parties[1][1]+"#"+D.parties[1][2];
  const isDOR=APP.deedType==="DOR";
- const person=isDOR?cl:ex,bankScr=isDOR?ex:cl;
+ const person=ex,bankScr=cl;
  if(e.client&&!APP.vals[person])APP.vals[person]={partyType:"7000006",fullName:e.client,mobileNo:e.clientMobile||""};
- if(e.bank&&e.bank!=="-1"&&APP.deedType!=="1"&&!APP.vals[bankScr])APP.vals[bankScr]=Object.assign({partyType:"7000008",govtBodyList:e.bank},branchVals(e));
- if(APP.deedType!=="1"&&e.sanction){const k=APP.deedType==="DOR"?"receipt#":"d7_tab3#";APP.vals[k]=Object.assign({loanAmount:e.sanction},APP.vals[k]||{})}}
+ if(e.bank&&e.bank!=="-1"&&APP.deedType!=="1"&&!APP.vals[bankScr])APP.vals[bankScr]=Object.assign({partyType:isDOR?"7000007":"7000008",govtBodyList:e.bank},branchVals(e));
+ if(APP.deedType!=="1"&&e.sanction){const k=isDOR?"dR_tab3#":"d7_tab3#";APP.vals[k]=Object.assign(isDOR?{txt_loanAmount:e.sanction,TotConsiderationValue:e.sanction}:{loanAmount:e.sanction},APP.vals[k]||{})}}
 
 /* ---------- 4. Wizard ---------- */
 function curKey(){const D=DEEDS[APP.deedType],t=D.tabs[APP.tab][1];if(t==="party"){const c=D.parties[APP.child];return c[1]+"#"+c[2]}return t+"#"}
@@ -362,6 +362,7 @@ function tabCheck(){const D=DEEDS[APP.deedType],t=D.tabs[APP.tab][1];
  if(t==="property"){const pf=$("#propFrame");try{const w=pf&&pf.contentWindow;if(w&&w.S&&!w.S.props.length&&!w.S.surveys.length)return["Add the property in Property Details (press Add / Save and Continue inside the property screen)"]}catch(e){}return[]}
  if(["preview","valuation","agreement"].includes(t))return[];
  if(t==="d7_tab4"&&!(APP.grids["d7_tab4#"]||[]).length)return["Add at least one document of title to the list (press Add)"].concat(requiredCheck($("#screen")).filter(x=>!/Description|Document Number|Date of Document|Document Deposited/.test(x)));
+ if(t==="dR_tab3"){const er=requiredCheck($("#screen"));if((APP.grids["dR_tab3#"]||[]).length)return er.filter(x=>!/Payment|Receiving/i.test(x));return er.map(x=>/Payment|Receiving/i.test(x)?x+" (then press Add)":x)}
  return requiredCheck($("#screen"))}
 function requiredCheck(root,upto){const er=[];const simul=root.querySelector("#simultaneousSaleDeedid");root.querySelectorAll(".f[data-req]").forEach(b=>{if(b.closest("[hidden]"))return;if(upto&&(b.compareDocumentPosition(upto)&Node.DOCUMENT_POSITION_PRECEDING))return;if(simul&&!simul.checked&&/txtLinkCons|usingTpNo/.test(b.dataset.fid||""))return;const el=b.querySelector("input:not([type=checkbox]):not([type=radio]):not([type=button]),select,textarea");if(!el||el.closest("[hidden]"))return;const v=el.value;if(!v||v==="-1")er.push(b.dataset.alert||("Please enter "+b.dataset.lab))});return er}
 
@@ -369,12 +370,13 @@ function requiredCheck(root,upto){const er=[];const simul=root.querySelector("#s
 const PERSONAL=["divId_Salutation","divId_FullName","divId_FullNameLL","divId_RelatedTo","divId_FirstRelativeName","divId_FirstRelativeNameLL","divId_SecondRelatedTo","divId_SecondRelativeName","divId_SecondRelativeNameLL","divId_Dob","divId_Age","divId_Gender","divId_MaritalStatus","divId_IdentificationType","divId_IdentificationNumber","divId_Profession"];
 const ORGF=["txt_OrgName","txt_TAN","ChkForForm80g","txt_OrgNameLL","personNameDrpdwn"];
 const GOVF=["govtBodyList"];
+const GOV_PT={"dR_tab1_childTab1":"7000007"};const govPT=page=>GOV_PT[page]||"7000008";
 const ADD_IDS=["addExecutantDetailsInGrid","addReperstativeDtls","btnAdd","AddData","btnAddCons"];
 const RESET_IDS=["resetExecutantDetailsInGrid","btnReset","resetData","ResetData","btnRst"];
 const DEF={cmb_Country:"India",cmb_State:"Tamil Nadu"};
 function fieldHTML(f,val,note){const id=f.id||"";const nm=esc(f.name||id);let v=val??f.val??"";
  if(!v&&DEF[id]){const o=opts(f.opts).find(x=>x[1]===DEF[id]);if(o)v=o[0]}
- if(f.type==="select"){let o=opts(f.opts);if(id==="firstRelationTypeId"&&o.length<2)o=findOpts("secondRelationTypeId");if(id==="cmb_presenter")o=presenterOpts();if(id==="govtBodyList"&&o.length<3)o=bankOpts();if(id==="SroSelecttionCombo"&&o.length<2)o=[["-1","- Select -"],...(APP.entry.sro&&APP.entry.sro!=="-1"?[[APP.entry.sro,(findOpts("sub_reg_off").find(x=>x[0]===APP.entry.sro)||[])[1]||""]]:[])];
+ if(f.type==="select"){let o=opts(f.opts);if(id==="firstRelationTypeId"&&o.length<2)o=findOpts("secondRelationTypeId");if(id==="cmb_presenter")o=presenterOpts();if((id==="ReceivingParty"||id==="PayingParty")&&o.length<2)o=presenterOpts().filter(x=>!/^(rep|wit|pre)/.test(x[0]));if(id==="govtBodyList"&&o.length<3)o=bankOpts();if(id==="SroSelecttionCombo"&&o.length<2)o=[["-1","- Select -"],...(APP.entry.sro&&APP.entry.sro!=="-1"?[[APP.entry.sro,(findOpts("sub_reg_off").find(x=>x[0]===APP.entry.sro)||[])[1]||""]]:[])];
   return `<select id="${esc(id)}" name="${nm}"${f.dis?" disabled":""}>${optsHTML(o,v||"-1")}</select>`}
  if(f.type==="textarea"&&/<\w/.test(v)){const d=document.createElement("div");d.innerHTML=v.replace(/<br\s*\/?>/gi,"\n").replace(/<\/p>/gi,"\n\n");v=d.textContent.replace(/\n{3,}/g,"\n\n").trim()}
  if(f.type==="textarea")return `<textarea id="${esc(id)}" name="${nm}"${f.max?` maxlength="${f.max}"`:""}${f.ro?" readonly":""}>${esc(v)}</textarea>`;
@@ -405,7 +407,7 @@ function renderSpec(root,page,key,partyCfg){const items=(SCR.pages[page]||[]);co
     const fids=vis.map(f=>f.id).filter(Boolean);const vOther=/^divId_VillageOther/.test(x.id||"");const hideBlock=x.hid&&!vOther&&!fids.some(id=>ORGF.includes(id)||GOVF.includes(id));
     if(hideBlock)continue;
     const isOrg=fids.some(id=>ORGF.includes(id)),isGov=fids.some(id=>GOVF.includes(id));
-    const pt=vals.partyType||"";const hidNow=(vOther&&vals.cmb_Village!=="0")||(isOrg&&pt!=="7000007")||(isGov&&pt!=="7000008")||(PERSONAL.includes(x.id)&&(pt==="7000007"||pt==="7000008"));
+    const pt=vals.partyType||"";const hidNow=(vOther&&vals.cmb_Village!=="0")||(isOrg&&pt!=="7000007")||(isGov&&pt!==govPT(page))||(PERSONAL.includes(x.id)&&(pt==="7000007"||pt==="7000008"));
     const lab=x.lab||"";const single=vis.length===1;const f0=vis[0];
     const wide=vis.length>3||f0.type==="textarea";
     const attrs=`data-fid="${esc(fids.join(" "))}" data-blk="${esc(x.id||"")}"${x.req?` data-req="1" data-lab="${esc(lab)}" data-alert="${esc(x.alert||"")}"`:""}${hidNow?" hidden":""}`;
@@ -413,8 +415,8 @@ function renderSpec(root,page,key,partyCfg){const items=(SCR.pages[page]||[]);co
     if(vis.every(f=>f.type==="button")){h+=`<div class="f wide" ${attrs}><div class="row">${vis.map(f=>fieldHTML(f)).join("")}</div></div>`;continue}
     if(vis.length>1){const labs=lab.split(/\s{2,}/);
       const yn=(lab.match(/\b(Yes|No)\b/g)||[]);let ri=0;
-      const parts=vis.filter(f=>!f.hid).map((f,i)=>f.type==="radio"?fieldHTML(f,vals[f.id],f.id==="mortgagor"?"Yes":f.id==="not_mortgagor"?"No":(yn[ri++]||f.value)):f.type==="button"?fieldHTML(f):`<div class="f"><span class="note">${esc(fLabel(f,labs,i))}</span>${fieldHTML(f,vals[f.id])}</div>`).join("");
-      const allLab=vis.every(f=>f.type!=="radio"&&f.type!=="button");const head=vis.some(f=>f.type==="radio")?lab.replace(/\s*\b(Yes|No)\b/g,"").trim():"";
+      const parts=vis.filter(f=>!f.hid).map((f,i)=>f.type==="checkbox"&&f.lbl?fieldHTML(f,vals[f.id],f.lbl):f.type==="radio"?fieldHTML(f,vals[f.id],f.id==="mortgagor"?"Yes":f.id==="not_mortgagor"?"No":(yn[ri++]||f.value)):f.type==="button"?fieldHTML(f):`<div class="f"><span class="note">${esc(fLabel(f,labs,i))}</span>${fieldHTML(f,vals[f.id])}</div>`).join("");
+      const allLab=vis.every(f=>f.type!=="radio"&&f.type!=="button");const head=vis.some(f=>f.type==="radio"||f.type==="checkbox")?lab.replace(/\s*\b(Yes|No)\b/g,"").trim():"";
       h+=`<div class="f wide" ${attrs}>${!allLab&&head?`<span class="lab">${esc(head)}${x.req?' <span class="req">*</span>':""}</span>`:""}<div class="row" style="align-items:flex-end">${parts}</div></div>`;continue}
     h+=`<div class="f${wide?" wide":""}" ${attrs}><label for="${esc(f0.id||"")}">${esc(lab)}${x.req?' <span class="req">*</span>':""}</label>${fieldHTML(f0,vals[f0.id])}${x.note&&!/^Please/.test(x.note)?`<span class="note">${esc(x.note.replace(/Please (enter|select)[^.]*$/,""))}</span>`:""}</div>`}
  }
@@ -428,21 +430,21 @@ function lblFor(id){return({PropertyRemarks:"Possession of Property Remarks",Con
 function fLabel(f,labs,i){const m={rateOfInterest:"Rate of Interest (%)",combo_RateOfInterest:"Frequency of Interest Payment",txtYears:"Years",txtMonth:"Months",txtDays:"Days",txtLinkCons:"Temporary Deed Number / Registration Number",pattaLayoutNumber:"Patta No.",cmb_otherDocs:"Layout/Building Approval Number",cmb_prevDocument:"Previous Document No"};return m[f.id]||labs[i+1]||labs[i]||f.name||""}
 function gridColsFor(page,pc){if(pc&&pc[2]!=="pre")return pc[2]==="rep"?["Sr. No.","Represented Party","Party Name(s)","Representation By","Representative Name","Action"]:PARTY_COLS;
  if(/_tab4$/.test(page)&&page.startsWith("d7"))return["Sr.No.","Description","Document Number","Date of Document","Document Deposited","Action"];
- if(page==="d1_tab3")return["Sr. No.","Payment Mode","Payment Date","Payment Amount (₹)","Receiving Party","Action"];
+ if(/^(d1|dR)_tab3$/.test(page))return["Sr. No.","Payment Mode","Payment Date","Payment Amount (₹)","Receiving Party","Action"];
  if(/_tab8$/.test(page))return["Sr. No.","Document for","Party Name","Document","Action"];
  return null}
 function selText(el){return el&&el.tagName==="SELECT"?(el.value==="-1"?"":el.selectedOptions[0]?.text||""):el?el.value:""}
 function rowFrom(root,page,pc){const g=id=>root.querySelector("#"+id);
  if(pc&&pc[2]==="rep")return[selText(g("representedParty")),selText(g("repPartyName")),selText(g("representationBy")),g("fullName")?.value||""];
- if(pc){const pt=g("partyType")?.value;const name=pt==="7000008"?selText(g("govtBodyList")):pt==="7000007"?g("txt_OrgName")?.value:(selText(g("salutationId"))+" "+(g("fullName")?.value||"")).trim();
-   return[name,g("age")?.value||"",selText(g("genderId")),selText(g("partyType")),[g("mobileNo")?.value,g("email")?.value].filter(Boolean).join(" · "),[g("txt_FullAddress")?.value,g("cmb_Village")?.value==="0"?g("txt_othr_village_name")?.value:selText(g("cmb_Village")),selText(g("cmb_Taluk")),selText(g("cmb_District")),g("txt_PinCode")?.value].filter(Boolean).join(", ")]}
+ if(pc){const pt=g("partyType")?.value;const gb=g("govtBodyList");const name=gb&&gb.value!=="-1"&&pt===govPT(page)?selText(gb):pt==="7000007"?g("txt_OrgName")?.value:(selText(g("salutationId"))+" "+(g("fullName")?.value||"")).trim();
+   return[name,g("age")?.value||"",selText(g("genderId")),selText(g("partyType")),[g("mobileNo")?.value||g("mobileNo_1")?.value,g("email")?.value||g("email_1")?.value].filter(Boolean).join(" · "),[g("txt_FullAddress")?.value,g("cmb_Village")?.value==="0"?g("txt_othr_village_name")?.value:selText(g("cmb_Village")),selText(g("cmb_Taluk")),selText(g("cmb_District")),g("txt_PinCode")?.value].filter(Boolean).join(", ")]}
  if(page.startsWith("d7")&&/_tab4$/.test(page))return[g("txtDesc")?.value||"",g("txtDocNoId")?.value||"",g("dtDoc")?.value||"",selText(g("cmbDepositedDoc"))];
- if(page==="d1_tab3")return[selText(g("PaymentMode")),g("PaymentDate")?.value||"",g("PaymentAmount")?.value||"",selText(g("ReceivingParty"))];
+ if(/^(d1|dR)_tab3$/.test(page))return[selText(g("PaymentMode")),g("PaymentDate")?.value||"",g("PaymentAmount")?.value||"",selText(g("ReceivingParty"))];
  if(/_tab8$/.test(page))return[selText(g("PartyName")),selText(g("representedPartyNames")),[selText(g("pattaLayoutNumber")),selText(g("cmb_otherDocs")),selText(g("cmb_prevDocument"))].filter(Boolean).join(" ")];
  return[]}
 function wireSpec(root,page,key,pc,grid){
  const pt=root.querySelector("#partyType");
- const applyPT=()=>{const v=pt.value;root.querySelectorAll("[data-fid]").forEach(b=>{const ids=b.dataset.fid.split(" ");if(ids.some(i=>ORGF.includes(i)))b.hidden=v!=="7000007";else if(ids.some(i=>GOVF.includes(i)))b.hidden=v!=="7000008";else if(PERSONAL.includes(b.dataset.blk))b.hidden=v==="7000007"||v==="7000008"})};
+ const applyPT=()=>{const v=pt.value;root.querySelectorAll("[data-fid]").forEach(b=>{const ids=b.dataset.fid.split(" ");if(ids.some(i=>ORGF.includes(i)))b.hidden=v!=="7000007";else if(ids.some(i=>GOVF.includes(i)))b.hidden=v!==govPT(page);else if(PERSONAL.includes(b.dataset.blk))b.hidden=v==="7000007"||v==="7000008"})};
  wireAddress(root,key);
  if(root.querySelector("#govtBodyList"))branchHelper(root);
  if(root.querySelector("#representedParty")&&root.querySelector("#repPartyName"))wireRepParty(root,key);
@@ -491,7 +493,7 @@ function repPartyCandidates(word){const D=DEEDS[APP.deedType];const w=String(wor
  const key=c[1]+"#"+c[2];const T={"Individual":"7000006","Company/Firm/trust":"7000007","Government":"7000008"};const types={};
  let names=(APP.grids[key]||[]).filter(r=>r[0]).map(r=>{types[r[0]]=T[r[3]]||"";return r[0]});
  if(!names.length){const v=APP.vals[key]||{};const bank=v.govtBodyList&&v.govtBodyList!=="-1"?((bankOpts().find(o=>o[0]===v.govtBodyList)||[])[1]||""):"";
-  const nm=v.partyType==="7000008"?bank:v.partyType==="7000007"?(v.txt_OrgName||""):(v.fullName||"");if(nm){names=[nm.trim()];types[nm.trim()]=v.partyType||""}}
+  const nm=bank&&(v.partyType==="7000008"||v.partyType===govPT(c[1]))?bank:v.partyType==="7000007"?(v.txt_OrgName||""):(v.fullName||"");if(nm){names=[nm.trim()];types[nm.trim()]=v.partyType||""}}
  return{names:[...new Set(names)],label:c[0],types}}
 // "Representation By" as TNREGINET loads it (loadRepByList, checked 09-10-2026) – depends on the represented party's type
 const REP_BY={"7000006":[["7","Special Power Agent"],["5","Liquidator"],["6","General Power Agent"],["2","Court Appointed Curator"]],"7000007":[["7","Special Power Agent"],["5","Liquidator"],["3","Company Representative"],["6","General Power Agent"]],"7000008":[["4","Government Representative"]]};
@@ -513,7 +515,7 @@ function propSummary(){try{const w=$("#propFrame")?.contentWindow||window._propW
 function renderPreview(root){const D=DEEDS[APP.deedType];const ex=partyNames("exe"),cl=partyNames("cla"),wi=partyNames("wit");
  const v3=APP.vals["d7_tab3#"]||{},cons=APP.vals["d1_tab3#"]||{},rem=APP.vals[(APP.deedType==="1"?"d1":"d7")+"_tab5#"]||{},lc=APP.vals[(APP.deedType==="1"?"d1":"d7")+"_tab6#"]||{};
  const docs=APP.grids["d7_tab4#"]||[];const lk=APP.linked.map(l=>`${l.no}/${l.year} (${l.book}, ${l.sro})`).join("; ");
- const amt=APP.deedType==="1"?cons.TotConsiderationValue:(v3.loanAmount||(APP.vals["receipt#"]||{}).loanAmount);
+ const amt=APP.deedType==="1"?cons.TotConsiderationValue:(v3.loanAmount||(APP.vals["dR_tab3#"]||{}).txt_loanAmount);
  let t=`${D.name.toUpperCase()}\n\nThis ${D.name} is executed on ${new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"})}\n\nBY\n${ex.join("\n")||"[Party 1 – add in Party Details]"}\n(${D.parties[0][0].replace(" Details","")})\n\nIN FAVOUR OF\n${cl.join("\n")||"[Party 2 – add in Party Details]"}\n(${D.parties[1][0].replace(" Details","")})\n\n`;
  if(lk)t+=`Previous document linked: ${lk}\n\n`;
  if(amt)t+=`${APP.deedType==="1"?"Consideration":"Amount"}: ₹${Number(String(amt).replace(/,/g,"")).toLocaleString("en-IN")}\n\n`;

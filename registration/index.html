@@ -488,18 +488,25 @@ function renderReceipt(root){const v=APP.vals["receipt#"]||{};root.innerHTML=`<h
 // Representative: list the names of the party chosen in "Party Types" (e.g. Mortgagee -> the bank)
 function repPartyCandidates(word){const D=DEEDS[APP.deedType];const w=String(word||"").toLowerCase().trim();if(!w)return{names:[],label:""};
  const c=D.parties.find(p=>!["rep","wit","pre"].includes(p[2])&&p[0].toLowerCase().includes(w));if(!c)return{names:[],label:""};
- const key=c[1]+"#"+c[2];let names=(APP.grids[key]||[]).map(r=>r[0]).filter(Boolean);
+ const key=c[1]+"#"+c[2];const T={"Individual":"7000006","Company/Firm/trust":"7000007","Government":"7000008"};const types={};
+ let names=(APP.grids[key]||[]).filter(r=>r[0]).map(r=>{types[r[0]]=T[r[3]]||"";return r[0]});
  if(!names.length){const v=APP.vals[key]||{};const bank=v.govtBodyList&&v.govtBodyList!=="-1"?((bankOpts().find(o=>o[0]===v.govtBodyList)||[])[1]||""):"";
-  const nm=v.partyType==="7000008"?bank:v.partyType==="7000007"?(v.txt_OrgName||""):(v.fullName||"");if(nm)names=[nm.trim()]}
- return{names:[...new Set(names)],label:c[0]}}
+  const nm=v.partyType==="7000008"?bank:v.partyType==="7000007"?(v.txt_OrgName||""):(v.fullName||"");if(nm){names=[nm.trim()];types[nm.trim()]=v.partyType||""}}
+ return{names:[...new Set(names)],label:c[0],types}}
+// "Representation By" as TNREGINET loads it (loadRepByList, checked 09-10-2026) – depends on the represented party's type
+const REP_BY={"7000006":[["7","Special Power Agent"],["5","Liquidator"],["6","General Power Agent"],["2","Court Appointed Curator"]],"7000007":[["7","Special Power Agent"],["5","Liquidator"],["3","Company Representative"],["6","General Power Agent"]],"7000008":[["4","Government Representative"]]};
 function wireRepParty(root,key){const sel=root.querySelector("#representedParty"),out=root.querySelector("#repPartyName"),hint=root.querySelector("#repPartyHint");
  const saved=(APP.vals[key]||{}).repPartyName;
  if(APP.deedType==="DOR"&&sel.value==="-1"){const m=[...sel.options].find(o=>/^mortgagee$/i.test(o.text.trim()));if(m)sel.value=m.value}
- const fill=keep=>{const word=sel.value==="-1"?"":selText(sel);const {names,label}=repPartyCandidates(word);
+ const fill=keep=>{const word=sel.value==="-1"?"":selText(sel);const {names,label,types}=repPartyCandidates(word);
   if(!word){out.innerHTML='<option value="-1">- Select Party Type first -</option>';hint.textContent="";return}
   out.innerHTML='<option value="-1">- Select -</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
   if(names.length===1)out.value=names[0];if(keep&&names.includes(keep))out.value=keep;
-  hint.textContent=names.length?"":`No ${word} added yet — add it on the "${label||word}" tab first.`};
+  hint.textContent=names.length?"":`No ${word} added yet — add it on the "${label||word}" tab first.`;fillBy(types,keepBy)};
+ const by=root.querySelector("#representationBy");let keepBy=(APP.vals[key]||{}).representationBy,curTypes={};
+ function fillBy(t,kb){if(!by)return;if(t)curTypes=t;const nm=out.value;const pt=nm&&nm!=="-1"?(curTypes[nm]||"7000006"):"";const list=REP_BY[pt]||[];const cur=kb||by.value;
+  by.innerHTML='<option value="-1">- Select -</option>'+list.map(o=>`<option value="${o[0]}">${esc(o[1])}</option>`).join("");if(list.some(o=>o[0]===cur))by.value=cur;else if(list.length===1)by.value=list[0][0];keepBy=null}
+ out.addEventListener("change",()=>fillBy());
  const prev=sel.onchange;sel.onchange=e=>{if(prev)prev.call(sel,e);fill()};fill(saved)}
 function partyNames(kind){const D=DEEDS[APP.deedType];const c=D.parties.find(p=>p[2]===kind);return (APP.grids[c[1]+"#"+kind]||[]).map(r=>r[0]).filter(Boolean)}
 function propSummary(){try{const w=$("#propFrame")?.contentWindow||window._propWin;if(w&&w.entryObj){const e=w.entryObj();return e}}catch(e){}return null}

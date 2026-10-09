@@ -54,6 +54,7 @@ h3{font-size:1.125rem;font-weight:600;margin:14px 0 6px;color:var(--ink)}
 .sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px 18px}
 .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.off select{opacity:.55;cursor:not-allowed}
 .f.wide{grid-column:1/-1}
 .f label,.lab{font-weight:400;font-size:14px}
 .req{color:var(--req)}
@@ -364,7 +365,7 @@ function tabCheck(){const D=DEEDS[APP.deedType],t=D.tabs[APP.tab][1];
  if(t==="d7_tab4"&&!(APP.grids["d7_tab4#"]||[]).length)return["Add at least one document of title to the list (press Add)"].concat(requiredCheck($("#screen")).filter(x=>!/Description|Document Number|Date of Document|Document Deposited/.test(x)));
  if(t==="dR_tab3"){const er=requiredCheck($("#screen"));if((APP.grids["dR_tab3#"]||[]).length)return er.filter(x=>!/Payment|Receiving/i.test(x));return er.map(x=>/Payment|Receiving/i.test(x)?x+" (then press Add)":x)}
  return requiredCheck($("#screen"))}
-function requiredCheck(root,upto){const er=[];const simul=root.querySelector("#simultaneousSaleDeedid");root.querySelectorAll(".f[data-req]").forEach(b=>{if(b.closest("[hidden]"))return;if(upto&&(b.compareDocumentPosition(upto)&Node.DOCUMENT_POSITION_PRECEDING))return;if(simul&&!simul.checked&&/txtLinkCons|usingTpNo/.test(b.dataset.fid||""))return;const el=b.querySelector("input:not([type=checkbox]):not([type=radio]):not([type=button]),select,textarea");if(!el||el.closest("[hidden]"))return;const v=el.value;if(!v||v==="-1")er.push(b.dataset.alert||("Please enter "+b.dataset.lab))});return er}
+function requiredCheck(root,upto){const er=[];const simul=root.querySelector("#simultaneousSaleDeedid");root.querySelectorAll(".f[data-req]").forEach(b=>{if(b.closest("[hidden]"))return;if(upto&&(b.compareDocumentPosition(upto)&Node.DOCUMENT_POSITION_PRECEDING))return;if(simul&&!simul.checked&&/txtLinkCons|usingTpNo/.test(b.dataset.fid||""))return;const el=b.querySelector("input:not([type=checkbox]):not([type=radio]):not([type=button]),select,textarea");if(!el||el.disabled||el.closest("[hidden]"))return;const v=el.value;if(!v||v==="-1")er.push(b.dataset.alert||("Please enter "+b.dataset.lab))});return er}
 
 /* ---------- generic screen renderer (labels, order and options as read from the portal) ---------- */
 const PERSONAL=["divId_Salutation","divId_FullName","divId_FullNameLL","divId_RelatedTo","divId_FirstRelativeName","divId_FirstRelativeNameLL","divId_SecondRelatedTo","divId_SecondRelativeName","divId_SecondRelativeNameLL","divId_Dob","divId_Age","divId_Gender","divId_MaritalStatus","divId_IdentificationType","divId_IdentificationNumber","divId_Profession"];
@@ -544,7 +545,13 @@ function wireAddress(root,key){const dS=root.querySelector("#cmb_District"),tS=r
  fillT(v.cmb_Taluk);fillV(v.cmb_Village);other();
  dS.addEventListener("change",()=>{fillT();fillV();other()});tS.addEventListener("change",()=>{fillV();other()});vS.addEventListener("change",other);
  root.addrSync=()=>{fillT(tS.value);fillV(vS.value);other()};
- root.setAddr=(d,t,vl)=>{if(d){dS.value=d;fillT(t);fillV(vl);other()}}}
+ root.setAddr=(d,t,vl)=>{if(d){dS.value=d;fillT(t);fillV(vl);other()}};
+ // District/Taluk/Village are Tamil Nadu lists: for any other State they are switched off and not mandatory
+ const stS=root.querySelector("#cmb_State"),coS=root.querySelector("#cmb_Country");
+ const applyState=()=>{const st=stS?selText(stS):"Tamil Nadu",co=coS?selText(coS):"India";const tn=(!st||/tamil\s*nadu/i.test(st))&&(!co||/india/i.test(co));
+  [dS,tS,vS].forEach(x=>{if(!tn){x.value="-1";if(x!==dS)x.innerHTML='<option value="-1">- Select -</option>'}x.disabled=!tn;const b=x.closest(".f");if(b){b.classList.toggle("off",!tn);b.querySelectorAll(".req").forEach(r=>r.hidden=!tn)}});
+  if(tn&&dS.value==="-1"&&tS.options.length<2){fillT();fillV()}other()};
+ if(stS)stS.addEventListener("change",applyState);if(coS)coS.addEventListener("change",applyState);applyState()}
 function matchAddr(dist,city,addr){if(!ADDR)return{};const dn=norm(dist),words=[city,dist,...String(addr||"").split(/[,\s]+/)].map(norm).filter(w=>w.length>3);
  const ds=findOpts("cmb_District").filter(o=>o[0]!=="-1");
  const dc=[dn,...words];const d=(ds.find(o=>dc.includes(norm(o[1])))||ds.find(o=>dn&&(norm(o[1]).startsWith(dn.slice(0,5))||dn.startsWith(norm(o[1]).slice(0,5))))||[])[0];if(!d)return{};
